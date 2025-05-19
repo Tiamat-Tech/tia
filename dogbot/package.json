@@ -2,7 +2,7 @@
   "name": "dogbot",
   "version": "1.0.0",
   "description": "chatbot play",
-  "main": "index.js",
+  "type": "module",
   "directories": {
     "doc": "docs"
   },

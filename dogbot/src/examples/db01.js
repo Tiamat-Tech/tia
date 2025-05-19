@@ -1,5 +1,5 @@
-const { client, xml } = require("@xmpp/client");
-const debug = require("@xmpp/debug");
+import { client, xml } from "@xmpp/client";
+import debug from "@xmpp/debug";
 
 const xmpp = client({
     service: "xmpps://hyperdata.it",

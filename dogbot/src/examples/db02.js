@@ -1,5 +1,5 @@
-const { client, xml } = require("@xmpp/client");
-const debug = require("@xmpp/debug");
+import { client, xml } from "@xmpp/client";
+import debug from "@xmpp/debug";
 
 // Credentials and connection info for local Prosody server
 const xmpp = client({
