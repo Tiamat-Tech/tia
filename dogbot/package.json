@@ -13,7 +13,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@xmpp/client": "^0.13.1",
-    "@xmpp/debug": "^0.13.0"
+    "@xmpp/client": "^0.13.4",
+    "@xmpp/debug": "^0.13.3"
   }
 }
