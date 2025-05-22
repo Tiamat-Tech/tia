@@ -1,0 +1,19 @@
+@prefix kia: <http://purl.org/stuff/kia#> .
+@prefix metrics: <http://purl.org/stuff/metrics#> .
+
+kia:NegotiationMetrics
+    a metrics:MetricCollection ;
+    metrics:measures [
+        a metrics:Measure ;
+        metrics:name "promotion_success_rate" ;
+        metrics:value [
+            a metrics:Ratio ;
+            metrics:numerator kia:SuccessfulPromotions ;
+            metrics:denominator kia:TotalAttempts
+        ]
+    ] ;
+    metrics:optimizationGoal [
+        a metrics:Goal ;
+        metrics:target "0.95"^^xsd:decimal ;
+        metrics:minimumAcceptable "0.80"^^xsd:decimal
+    ] .

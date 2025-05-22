@@ -1,0 +1,23 @@
+@prefix kia: <http://purl.org/stuff/kia#> .
+@prefix prov: <http://www.w3.org/ns/prov#> .
+
+kia:MultiPartyNegotiation
+    a kia:NegotiationProcess ;
+    kia:participants [
+        a kia:ParticipantSet ;
+        kia:minParticipants 2 ;
+        kia:maxParticipants 10 ;
+        kia:requiresConsensus true
+    ] ;
+    kia:votingStrategy [
+        a kia:ConsensusStrategy ;
+        kia:threshold "0.75"^^xsd:decimal ;
+        kia:timeout "PT30S"^^xsd:duration ;
+        kia:fallbackStrategy kia:MajorityVote
+    ] ;
+    kia:promotionPhases (
+        kia:CapabilityDiscovery
+        kia:ProposalSubmission 
+        kia:ConsensusBuilding
+        kia:ProtocolSwitch
+    ) .
