@@ -1,4 +1,4 @@
-# dogbot
+# TIA Intelligence Agency
 
 A comprehensive XMPP (Jabber) client library and AI bot framework for Node.js.
 
