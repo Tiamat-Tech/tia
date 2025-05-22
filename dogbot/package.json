@@ -14,6 +14,7 @@
   "license": "ISC",
   "dependencies": {
     "@xmpp/client": "^0.13.4",
-    "@xmpp/debug": "^0.13.3"
+    "@xmpp/debug": "^0.13.3",
+    "hyperdata-clients": "^0.9.3"
   }
 }
