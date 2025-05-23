@@ -4,7 +4,7 @@ import debug from "@xmpp/debug";
 // Credentials and connection info for local Prosody server
 const xmpp = client({
   service: "xmpp://localhost:5222", // plain XMPP, not xmpps, as self-signed certs are used
-  domain: "localhost",
+  domain: "xmpp", // Docker PROSODY_DOMAIN is set to "xmpp"
   username: "danja",
   password: "Claudiopup",
   tls: { rejectUnauthorized: false }, // Accept self-signed certs for local/dev
@@ -28,7 +28,7 @@ xmpp.on("online", async (address) => {
     sent = true;
     const message = xml(
       "message",
-      { type: "chat", to: "alice@localhost" },
+      { type: "chat", to: "alice@xmpp" },
       xml("body", {}, "Hello from dogbot client!")
     );
     try {

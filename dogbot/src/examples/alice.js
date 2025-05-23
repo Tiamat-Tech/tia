@@ -3,7 +3,7 @@ import debug from "@xmpp/debug";
 
 const xmpp = client({
   service: "xmpp://localhost:5222",
-  domain: "localhost",
+  domain: "xmpp",
   username: "alice",
   password: "wonderland",
   tls: { rejectUnauthorized: false },

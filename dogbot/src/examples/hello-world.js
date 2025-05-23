@@ -2,10 +2,10 @@ import { client, xml } from "@xmpp/client";
 import debug from "@xmpp/debug";
 
 const xmpp = client({
-    service: "xmpps://hyperdata.it",
-    domain: "xmpp.hyperdata.it",
+    service: "xmpp://localhost:5222",
+    domain: "xmpp",
     username: "danja",
-    password: "ClaudioPup_123",
+    password: "Claudiopup",
 });
 //
 debug(xmpp, true);

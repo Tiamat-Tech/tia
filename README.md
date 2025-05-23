@@ -38,12 +38,17 @@ Run the basic examples:
 
 ```bash
 # For TBox environment (self-signed certificates)
-NODE_TLS_REJECT_UNAUTHORIZED=0 node src/examples/db01.js
-NODE_TLS_REJECT_UNAUTHORIZED=0 node src/examples/db02.js
-NODE_TLS_REJECT_UNAUTHORIZED=0 node src/examples/db03.js
+NODE_TLS_REJECT_UNAUTHORIZED=0 node src/examples/hello-world.js
+NODE_TLS_REJECT_UNAUTHORIZED=0 node src/examples/call-alice.js
+NODE_TLS_REJECT_UNAUTHORIZED=0 node src/examples/alice.js
 NODE_TLS_REJECT_UNAUTHORIZED=0 node src/examples/test-muc.js
 ```
 
+```
+ docker exec tbox-xmpp-1 bash -c 'echo -e "Claudiopup\nClaudiopup" | prosodyctl adduser            │
+│   danja@xmpp'                                                                                       │
+│   Create user danja@xmpp in Prosody without TTY 
+```
 ### AI Bot Services
 
 #### MistralBot - AI-Powered Chat Assistant
