@@ -29,9 +29,9 @@ If you're using the TBox environment, the XMPP server (Prosody) is already confi
 
 ### Basic XMPP Examples
 
-1. **db01.js** - Self-messaging example
-2. **db02.js** - Send a message to another user  
-3. **db03.js** - Listen for incoming messages
+1. **hello-world.js** - Self-messaging example
+2. **call-alice.js** - Send a message to another user  
+3. **alice.js** - Listen for incoming messages
 4. **test-muc.js** - Multi-User Chat (MUC) room example
 
 Run the basic examples:
@@ -44,7 +44,7 @@ NODE_TLS_REJECT_UNAUTHORIZED=0 node src/examples/alice.js
 NODE_TLS_REJECT_UNAUTHORIZED=0 node src/examples/test-muc.js
 ```
 
-```
+```sh
  docker exec tbox-xmpp-1 bash -c 'echo -e "Claudiopup\nClaudiopup" | prosodyctl adduser            │
 │   danja@xmpp'                                                                                       │
 │   Create user danja@xmpp in Prosody without TTY 
