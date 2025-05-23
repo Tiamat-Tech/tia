@@ -38,6 +38,7 @@ Run the basic examples:
 
 ```bash
 # For TBox environment (self-signed certificates)
+cd dogbot
 NODE_TLS_REJECT_UNAUTHORIZED=0 node src/examples/hello-world.js
 NODE_TLS_REJECT_UNAUTHORIZED=0 node src/examples/call-alice.js
 NODE_TLS_REJECT_UNAUTHORIZED=0 node src/examples/alice.js
