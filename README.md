@@ -25,6 +25,26 @@ npm install
 
 If you're using the TBox environment, the XMPP server (Prosody) is already configured and running on `localhost:5222` with domain `xmpp`. Users are pre-created including `dogbot@xmpp`.
 
+ Connecting with a client app, eg. 
+ * Server: localhost (or your server's IP if connecting remotely)
+ * Port: 5222
+ * Domain: xmpp
+ * Username: danja
+ * Password: Claudiopup
+ * JID: danja@xmpp
+
+  Security Settings:
+  - Enable TLS/SSL
+  - Accept self-signed certificates (since it's a local development server)
+
+  Popular XMPP clients:
+  - Gajim (Desktop - Linux/Windows/Mac)
+  - Conversations (Android)
+  - ChatSecure (iOS)
+  - Pidgin (Desktop - cross-platform)
+
+  The server is running on port 5222 (standard XMPP) with TLS enabled but using self-signed certificates.
+
 ## Examples
 
 ### Basic XMPP Examples
@@ -33,24 +53,56 @@ If you're using the TBox environment, the XMPP server (Prosody) is already confi
 2. **call-alice.js** - Send a message to another user  
 3. **alice.js** - Listen for incoming messages
 4. **test-muc.js** - Multi-User Chat (MUC) room example
+5. **create-muc-room.js** - Creates MUC rooms with proper protocol
+6. **test-bot-interaction.js** - Test MistralBot responses
+7. **discover-xmpp-services.js** - Discover available XMPP services
+8. **list-users.js** - List server information (limited by XMPP privacy)
 
-To run the basic examples a user needs to be created
+To run the basic examples a user needs to be created:
 
 ```bash
 # For TBox environment (self-signed certificates)
- NODE_TLS_REJECT_UNAUTHORIZED=0 node src/examples/add-user.js
+NODE_TLS_REJECT_UNAUTHORIZED=0 node src/examples/add-users.js
 NODE_TLS_REJECT_UNAUTHORIZED=0 node src/examples/hello-world.js
 NODE_TLS_REJECT_UNAUTHORIZED=0 node src/examples/call-alice.js
 NODE_TLS_REJECT_UNAUTHORIZED=0 node src/examples/alice.js
 NODE_TLS_REJECT_UNAUTHORIZED=0 node src/examples/test-muc.js
 ```
 
-The `add-user.js` script hasn't been fully tested, an alternative is :
+### XMPP Client REPL
 
+A CLI REPL client for interactive XMPP communication:
+
+```bash
+NODE_TLS_REJECT_UNAUTHORIZED=0 node src/client/repl.js danja Claudiopup
+```
+
+Commands:
+- `/help` - Show available commands
+- `/to <jid>` - Set message target (e.g., `/to alice@xmpp`)
+- `/join <room>` - Join MUC room (e.g., `/join general@conference.xmpp`)
+- `/leave` - Leave current room
+- `/quit` - Exit client
+
+### MUC Room Setup
+
+**Important:** The MistralBot requires the MUC room `general@conference.xmpp` to exist. Create it first:
+
+```bash
+# Create the required MUC room
+NODE_TLS_REJECT_UNAUTHORIZED=0 node src/examples/create-muc-room.js
+```
+
+This script:
+- Connects as admin user
+- Creates the `general@conference.xmpp` room with proper MUC protocol
+- Configures it as an instant (public) room
+- Sends a welcome message
+
+**Alternative manual method:**
 ```sh
- docker exec tbox-xmpp-1 bash -c 'echo -e "Claudiopup\nClaudiopup" | prosodyctl adduser            │
-│   danja@xmpp'                                                                                       │
-│   Create user danja@xmpp in Prosody without TTY 
+# Create users manually if add-users.js has issues
+docker exec tbox-xmpp-1 bash -c 'echo -e "Claudiopup\nClaudiopup" | prosodyctl adduser danja@xmpp'
 ```
 
 ### AI Bot Services
@@ -69,12 +121,28 @@ A complete XMPP chatbot that uses Mistral AI to provide intelligent responses in
    # Edit .env and add: MISTRAL_API_KEY=your_api_key_here
    ```
 
-3. **Start the AI bot:**
+3. **Create the MUC room (required):**
+   ```bash
+   NODE_TLS_REJECT_UNAUTHORIZED=0 node src/examples/create-muc-room.js
+   ```
+
+4. **Start the AI bot:**
    ```bash
    ./start-mistral-bot.sh
    ```
 
-4. **Test with demo bot (no API key required):**
+5. **Test the bot:**
+   ```bash
+   # Automated test
+   NODE_TLS_REJECT_UNAUTHORIZED=0 node src/examples/test-bot-interaction.js
+   
+   # Or use the interactive REPL
+   NODE_TLS_REJECT_UNAUTHORIZED=0 node src/client/repl.js danja Claudiopup
+   # Then: /join general@conference.xmpp
+   # Then: MistralBot, hello there!
+   ```
+
+6. **Test with demo bot (no API key required):**
    ```bash
    ./start-demo-bot.sh
    ```
@@ -240,21 +308,32 @@ This project is designed to work seamlessly with the TBox development environmen
 ## Files Structure
 
 ```
-dogbot/
+tia/
 ├── src/
-│   ├── examples/           # Basic XMPP examples
-│   │   ├── db01.js        # Self-messaging
-│   │   ├── db02.js        # Send message
-│   │   ├── db03.js        # Receive messages
-│   │   └── test-muc.js    # MUC testing
-│   └── services/          # AI bot services
-│       ├── mistral-bot.js # Full AI bot
-│       └── demo-bot.js    # Demo version
-├── .env.example           # Configuration template
-├── start-mistral-bot.sh   # AI bot launcher
-├── start-demo-bot.sh      # Demo bot launcher
-├── MISTRAL_BOT.md         # Detailed bot documentation
-└── README.md              # This file
+│   ├── examples/              # XMPP examples and utilities
+│   │   ├── hello-world.js     # Self-messaging example
+│   │   ├── call-alice.js      # Send message to another user
+│   │   ├── alice.js           # Listen for incoming messages
+│   │   ├── test-muc.js        # MUC room testing
+│   │   ├── add-users.js       # Create XMPP users from JSON
+│   │   ├── list-users.js      # Server information (limited)
+│   │   ├── create-muc-room.js # Create MUC rooms with proper protocol
+│   │   ├── test-bot-interaction.js # Test MistralBot responses
+│   │   ├── discover-xmpp-services.js # Discover XMPP services
+│   │   ├── users.json         # User definitions for add-users.js
+│   │   ├── db01.js            # Legacy example (self-messaging)
+│   │   ├── db02.js            # Legacy example (send message)
+│   │   └── db03.js            # Legacy example (receive messages)
+│   ├── client/                # Interactive XMPP clients
+│   │   └── repl.js            # CLI REPL client
+│   └── services/              # AI bot services
+│       ├── mistral-bot.js     # Full AI bot with Mistral API
+│       └── demo-bot.js        # Demo version (no API key needed)
+├── .env.example               # Configuration template
+├── start-mistral-bot.sh       # AI bot launcher
+├── start-demo-bot.sh          # Demo bot launcher
+├── MISTRAL_BOT.md             # Detailed bot documentation
+└── README.md                  # This file
 ```
 
 ## License

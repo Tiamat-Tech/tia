@@ -10,5 +10,13 @@
   {
     "username": "bob",
     "password": "builder"
+  },
+  {
+    "username": "dogbot",
+    "password": "woofwoof"
+  },
+  {
+    "username": "testuser",
+    "password": "testpass123"
   }
 ]
