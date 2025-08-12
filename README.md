@@ -34,22 +34,25 @@ If you're using the TBox environment, the XMPP server (Prosody) is already confi
 3. **alice.js** - Listen for incoming messages
 4. **test-muc.js** - Multi-User Chat (MUC) room example
 
-Run the basic examples:
+To run the basic examples a user needs to be created
 
 ```bash
 # For TBox environment (self-signed certificates)
-cd dogbot
+ NODE_TLS_REJECT_UNAUTHORIZED=0 node src/examples/add-user.js
 NODE_TLS_REJECT_UNAUTHORIZED=0 node src/examples/hello-world.js
 NODE_TLS_REJECT_UNAUTHORIZED=0 node src/examples/call-alice.js
 NODE_TLS_REJECT_UNAUTHORIZED=0 node src/examples/alice.js
 NODE_TLS_REJECT_UNAUTHORIZED=0 node src/examples/test-muc.js
 ```
 
+The `add-user.js` script hasn't been fully tested, an alternative is :
+
 ```sh
  docker exec tbox-xmpp-1 bash -c 'echo -e "Claudiopup\nClaudiopup" | prosodyctl adduser            │
 │   danja@xmpp'                                                                                       │
 │   Create user danja@xmpp in Prosody without TTY 
 ```
+
 ### AI Bot Services
 
 #### MistralBot - AI-Powered Chat Assistant
