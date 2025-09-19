@@ -13,8 +13,12 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.63.0",
+    "@modelcontextprotocol/sdk": "^1.18.1",
     "@xmpp/client": "^0.13.4",
     "@xmpp/debug": "^0.13.3",
-    "hyperdata-clients": "^0.9.3"
+    "dotenv": "^17.2.2",
+    "hyperdata-clients": "^0.9.3",
+    "zod": "^4.1.9"
   }
 }
