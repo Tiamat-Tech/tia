@@ -158,6 +158,29 @@ A complete XMPP chatbot that uses Mistral AI to provide intelligent responses in
 - In chat room: "MistralBot, explain quantum computing"
 - Direct message: Send to `dogbot@xmpp`
 - Bot prefix: "bot: help me with this problem"
+
+#### Lingue/IBIS Awareness (NL-first)
+- Lingue features are on by default (`LINGUE_ENABLED=true`). The bot advertises Lingue capabilities via XEP-0030, detects Issues/Positions/Arguments in natural language, and posts short meta-transparent summaries when confidence exceeds `LINGUE_CONFIDENCE_MIN` (default `0.5`).
+- Mention the bot (`MistralBot`, `bot: ...`, or `@mistralbot`) to trigger both a normal reply and, when confidence is high, an IBIS summary in the room. In DMs, summaries are sent privately.
+- Environment flags:
+  ```bash
+  LINGUE_ENABLED=true            # disable with false
+  LINGUE_CONFIDENCE_MIN=0.6      # raise to reduce summary frequency
+  ```
+- To see it in action quickly:
+  1. Ensure the MUC exists: `NODE_TLS_REJECT_UNAUTHORIZED=0 node src/examples/create-muc-room.js`.
+  2. Start the bot: `./start-mistral-bot.sh`.
+  3. Join `general@conference.xmpp` and send:  
+     `MistralBot, Issue: How should we handle authentication? I propose OAuth2 because it is standard, but the downside is complexity.`  
+     The bot will reply and, if confident, post an IBIS-style summary.
+- Demos (offline, no XMPP):
+  - `node src/examples/lingue-detect-demo.js` — detect IBIS structure and view Turtle output.
+  - `node src/examples/lingue-exchange-demo.js` — simulate two agents negotiating/accepting a structured exchange and inspecting stored positions.
+
+### Tests
+```bash
+npm test
+```
 - Tag format: "@mistralbot can you help?"
 
 #### Creating Your Own AI Agent

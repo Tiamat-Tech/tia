@@ -1,6 +1,8 @@
 import { client, xml } from "@xmpp/client";
-import { Mistral } from '@mistralai/mistralai';
-import dotenv from 'dotenv';
+import { Mistral } from "@mistralai/mistralai";
+import dotenv from "dotenv";
+import { detectIBISStructure, summarizeIBIS } from "../lib/ibis-detect.js";
+import { attachDiscoInfoResponder } from "../lib/lingue-capabilities.js";
 
 // Load environment variables from .env file
 dotenv.config();
@@ -17,6 +19,8 @@ const XMPP_CONFIG = {
 // MUC Configuration (with .env overrides)
 const MUC_ROOM = process.env.MUC_ROOM || "general@conference.xmpp";
 const BOT_NICKNAME = process.env.BOT_NICKNAME || "MistralBot";
+const LINGUE_ENABLED = process.env.LINGUE_ENABLED !== "false";
+const LINGUE_CONFIDENCE_MIN = parseFloat(process.env.LINGUE_CONFIDENCE_MIN || "0.5");
 
 // Mistral API Configuration (with .env overrides)
 const MISTRAL_API_KEY = process.env.MISTRAL_API_KEY;
@@ -35,6 +39,9 @@ class MistralBot {
   constructor() {
     this.xmpp = client(XMPP_CONFIG);
     this.setupEventHandlers();
+    if (LINGUE_ENABLED) {
+      attachDiscoInfoResponder(this.xmpp);
+    }
     this.isInRoom = false;
   }
 
@@ -100,6 +107,10 @@ class MistralBot {
                            body.toLowerCase().startsWith('bot:') ||
                            body.includes('@mistralbot');
 
+      if (shouldRespond && LINGUE_ENABLED) {
+        await this.maybePostLingueSummary(body);
+      }
+
       if (shouldRespond) {
         await this.generateAndSendResponse(body, sender);
       }
@@ -113,9 +124,25 @@ class MistralBot {
       if (body && from) {
         const sender = from.split('@')[0];
         console.log(`Direct message from ${sender}: ${body}`);
+        if (LINGUE_ENABLED) {
+          await this.maybePostLingueSummary(body, { directTo: from });
+        }
         await this.generateAndSendDirectResponse(body, from);
       }
     }
+  }
+
+  async maybePostLingueSummary(text, options = {}) {
+    const structure = detectIBISStructure(text);
+    if (structure.confidence < LINGUE_CONFIDENCE_MIN) return;
+
+    const summary = summarizeIBIS(structure);
+    const message = xml(
+      "message",
+      { type: options.directTo ? "chat" : "groupchat", to: options.directTo || MUC_ROOM },
+      xml("body", {}, summary)
+    );
+    await this.xmpp.send(message);
   }
 
   async generateAndSendResponse(message, sender) {
