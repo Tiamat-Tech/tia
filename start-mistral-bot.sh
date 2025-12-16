@@ -25,7 +25,7 @@ if [ -z "$MISTRAL_API_KEY" ]; then
 fi
 
 # Set TLS environment variable (can be overridden in .env)
-export NODE_TLS_REJECT_UNAUTHORIZED=${NODE_TLS_REJECT_UNAUTHORIZED:-0}
+# export NODE_TLS_REJECT_UNAUTHORIZED=${NODE_TLS_REJECT_UNAUTHORIZED:-0}
 
 echo "Starting MistralBot service..."
 echo "Using Mistral API for responses"

@@ -183,6 +183,38 @@ npm test
 ```
 - Tag format: "@mistralbot can you help?"
 
+### Semem Agent (chat via Semem MCP)
+
+An XMPP agent that routes replies through the remote Semem MCP HTTP interface (see `semem/docs/agent-contract.md`).
+
+**Run it:**
+```bash
+./start-semem-agent.sh
+```
+
+Defaults:
+- `SEMEM_BASE_URL=https://mcp.tensegrity.it` (override if you host Semem elsewhere)
+- Uses the same `XMPP_*`, `MUC_ROOM`, and `BOT_NICKNAME` env vars as MistralBot (nickname defaults to `Semem`).
+- Replies when mentioned in the room (`Semem`, `bot:`, or `semem:`) or in direct messages.
+
+The agent uses `/chat/enhanced` for answers and mirrors each exchange into `/tell` with lightweight metadata for retrieval.
+
+Profiles:
+- Pick with `AGENT_PROFILE=<name>`; the registry lives in `src/services/agent-registry.js` (default and lite included). Each profile can tweak Semem features, nickname, and MUC.
+- Quick Semem-only smoke test (no XMPP): `NODE_TLS_REJECT_UNAUTHORIZED=0 node src/examples/test-semem-agent.js "your question here"`
+
+### Start all agents (systemd-friendly)
+
+To launch multiple agents under one supervisor (semem, mistral, demo), run:
+```bash
+./start-all-agents.sh
+```
+
+Environment knobs:
+- `AGENTS`: comma list to limit which agents start (default: all known). Options: `semem`, `mistral`, `demo`.
+- `AGENT_PROFILE`: passed through to Semem agent.
+- `MISTRAL_API_KEY` required if `mistral` is included; missing keys cause that agent to be skipped with a warning.
+
 #### Creating Your Own AI Agent
 
 Use the dogbot framework to create custom AI agents:
