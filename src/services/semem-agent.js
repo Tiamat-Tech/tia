@@ -50,6 +50,14 @@ function stripPrefix(text) {
     .trim();
 }
 
+function parseCommand(query) {
+  const lowered = query.toLowerCase();
+  if (lowered.startsWith("tell ")) return { command: "tell", content: query.slice(5).trim() };
+  if (lowered.startsWith("ask ")) return { command: "ask", content: query.slice(4).trim() };
+  if (lowered.startsWith("augment ")) return { command: "augment", content: query.slice(8).trim() };
+  return { command: "chat", content: query };
+}
+
 async function handleIncomingMessage({ body, sender, type, reply }) {
   const trimmed = body.trim();
   const addressed = type === "chat" || isMentioned(trimmed);
@@ -59,9 +67,53 @@ async function handleIncomingMessage({ body, sender, type, reply }) {
   }
 
   const query = stripPrefix(trimmed) || trimmed;
+  const { command, content } = parseCommand(query);
 
   try {
-    const response = await sememClient.chatEnhanced(query, CHAT_FEATURES);
+    if (command === "tell") {
+      if (!content) {
+        await reply("Nothing to store. Usage: Semem tell <text>");
+        return;
+      }
+      await sememClient.tell(content, {
+        metadata: {
+          sender,
+          channel: type,
+          room: type === "groupchat" ? MUC_ROOM : sender,
+          agent: BOT_NICKNAME
+        }
+      });
+      await reply("Stored in Semem via /tell.");
+      return;
+    }
+
+    if (command === "ask") {
+      if (!content) {
+        await reply("Nothing to ask. Usage: Semem ask <question>");
+        return;
+      }
+      const result = await sememClient.ask(content, { useContext: true });
+      const answer = result?.content || result?.answer || "No answer returned.";
+      await reply(answer);
+      return;
+    }
+
+    if (command === "augment") {
+      if (!content) {
+        await reply("Nothing to augment. Usage: Semem augment <text>");
+        return;
+      }
+      const result = await sememClient.augment(content);
+      await reply(
+        result?.success
+          ? "Augment completed and stored."
+          : "Augment did not report success."
+      );
+      return;
+    }
+
+    // Default: chat
+    const response = await sememClient.chatEnhanced(content, CHAT_FEATURES);
 
     const replyText =
       response?.content ||
@@ -71,7 +123,7 @@ async function handleIncomingMessage({ body, sender, type, reply }) {
     await reply(replyText);
 
     await sememClient
-      .tell(`Query: ${query}\nAnswer: ${replyText}`, {
+      .tell(`Query: ${content}\nAnswer: ${replyText}`, {
         metadata: {
           sender,
           channel: type,
