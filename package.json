@@ -8,7 +8,7 @@
   },
   "scripts": {
     "test": "node --test test/ibis.test.js test/lingue-exchange.test.js test/lingue-store.test.js",
-    "test:integration": "vitest run test/xmpp.integration.test.js"
+    "test:integration": "vitest run test/xmpp.integration.test.js test/xmpp.bots.integration.test.js"
   },
   "keywords": [],
   "author": "Danny Ayers",

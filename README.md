@@ -187,6 +187,9 @@ npm test
   NODE_TLS_REJECT_UNAUTHORIZED=0 npm run test:integration
   ```
   (The test allows self-messages so it can observe its own post in the room; ensure your MUC reflects messages to the sender.)
+- Bot-in-MUC checks (run via the same `test:integration`, but gated by env):
+  - Mistral bot test runs when `MISTRAL_API_KEY` is set (skip with `RUN_MISTRAL_BOT_TEST=false`).
+  - Semem agent test runs only when `RUN_SEMEM_BOT_TEST=true` (assumes Semem endpoint reachable). Set `SEMEM_NICKNAME`/`AGENT_NICKNAME` if you need a specific name.
 
 ### Semem Agent (chat via Semem MCP)
 
