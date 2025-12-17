@@ -1,8 +1,16 @@
 // MCP-compatible server with XMPP test hooks
 import dotenv from 'dotenv';
+import { fileURLToPath } from 'url';
+import { dirname, join } from 'path';
 import { XmppRoomAgent } from '../../lib/xmpp-room-agent.js';
 
-dotenv.config();
+// Load .env from the caller's cwd (or TIA_ENV_PATH), then fallback to the package root
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+const projectRootEnv = join(__dirname, '../../..', '.env'); // repo root relative to this file
+const callerEnv = process.env.TIA_ENV_PATH || join(process.cwd(), '.env');
+dotenv.config({ path: callerEnv });
+dotenv.config({ path: projectRootEnv, override: false });
 
 console.error('[Server] Starting MCP debug server with XMPP test hooks');
 
@@ -19,7 +27,8 @@ const MCP_BOT_NICKNAME = process.env.MCP_BOT_NICKNAME || process.env.BOT_NICKNAM
 
 const state = {
   xmppReady: false,
-  lastIncoming: null
+  lastIncoming: null,
+  xmppAgent: null  // Lazy-initialized
 };
 
 // Simple JSON-RPC 2.0 response helper
@@ -34,26 +43,32 @@ function createResponse(id, result = null, error = null) {
   );
 }
 
-// Initialize XMPP agent for debug traffic
-const xmppAgent = new XmppRoomAgent({
-  xmppConfig: XMPP_CONFIG,
-  roomJid: MUC_ROOM,
-  nickname: MCP_BOT_NICKNAME,
-  onMessage: async ({ body, sender, from, type }) => {
-    state.lastIncoming = {
-      body,
-      sender,
-      from,
-      type,
-      receivedAt: new Date().toISOString()
-    };
-    console.error(`[XMPP] ${type} from ${sender}: ${body}`);
-  },
-  logger: console
-});
+// Lazy initialization of XMPP agent
+function getXmppAgent() {
+  if (!state.xmppAgent) {
+    state.xmppAgent = new XmppRoomAgent({
+      xmppConfig: XMPP_CONFIG,
+      roomJid: MUC_ROOM,
+      nickname: MCP_BOT_NICKNAME,
+      onMessage: async ({ body, sender, from, type }) => {
+        state.lastIncoming = {
+          body,
+          sender,
+          from,
+          type,
+          receivedAt: new Date().toISOString()
+        };
+        console.error(`[XMPP] ${type} from ${sender}: ${body}`);
+      },
+      logger: console
+    });
+  }
+  return state.xmppAgent;
+}
 
 async function startXmpp() {
   try {
+    const xmppAgent = getXmppAgent();
     await xmppAgent.start();
     state.xmppReady = true;
     console.error(
@@ -64,7 +79,9 @@ async function startXmpp() {
   }
 }
 
-startXmpp();
+// Don't auto-connect to XMPP on startup to avoid blocking MCP initialization
+// XMPP will connect on first xmppStatus or xmppSend call
+// startXmpp();
 
 // Buffer to accumulate incoming data
 let buffer = '';
@@ -84,68 +101,135 @@ process.stdin.on('data', (chunk) => {
         console.error('[Server] Received request:', JSON.stringify(request, null, 2));
 
         const method = request.method;
-        const params = request.params || request.arguments || {};
+        const params = request.params || {};
 
-        if (method === 'echo' || method === 'callTool') {
-          const message = params.message || '';
+        if (method === 'initialize') {
           const response = createResponse(request.id, {
-            content: [{ type: 'text', text: `Echo: ${message}` }]
+            serverInfo: { name: 'tia-agents-mcp', version: '1.0.0' },
+            capabilities: {
+              resources: {},
+              tools: {},
+              prompts: {}
+            }
           });
           process.stdout.write(response);
-          process.stdout.emit('drain');
-        } else if (method === 'xmppSend') {
-          const message = params.message || 'XMPP test message';
-          const target = params.to || MUC_ROOM;
+        } else if (method === 'notifications/initialized') {
+          // No response needed for notifications
+          console.error('[Server] Client initialized');
+        } else if (method === 'tools/list') {
+          const response = createResponse(request.id, {
+            tools: [
+              {
+                name: 'echo',
+                description: 'Echo back a message',
+                inputSchema: {
+                  type: 'object',
+                  properties: {
+                    message: { type: 'string', description: 'The message to echo back' }
+                  },
+                  required: ['message']
+                }
+              },
+              {
+                name: 'xmppStatus',
+                description: 'Get XMPP connection status and last received message',
+                inputSchema: {
+                  type: 'object',
+                  properties: {}
+                }
+              },
+              {
+                name: 'xmppSend',
+                description: 'Send a test message via XMPP',
+                inputSchema: {
+                  type: 'object',
+                  properties: {
+                    message: { type: 'string', description: 'The message to send' }
+                  },
+                  required: ['message']
+                }
+              }
+            ]
+          });
+          process.stdout.write(response);
+        } else if (method === 'tools/call') {
+          const toolName = params.name;
+          const args = params.arguments || {};
 
-          if (!state.xmppReady) {
-            const response = createResponse(request.id, null, {
-              code: -32001,
-              message: 'XMPP not connected'
+          if (toolName === 'echo') {
+            const message = args.message || '';
+            const response = createResponse(request.id, {
+              content: [{ type: 'text', text: `Echo: ${message}` }]
             });
             process.stdout.write(response);
-            process.stdout.emit('drain');
-            continue;
-          }
+          } else if (toolName === 'xmppStatus') {
+            // Lazy-start XMPP on first status check
+            if (!state.xmppReady) {
+              console.error('[XMPP] Starting connection on demand...');
+              startXmpp().catch(err => console.error('[XMPP] Startup failed:', err));
+            }
 
-          xmppAgent
-            .sendGroupMessage(message)
-            .then(() => {
-              const response = createResponse(request.id, {
-                sent: true,
-                to: target,
-                message
-              });
-              process.stdout.write(response);
-              process.stdout.emit('drain');
-            })
-            .catch((err) => {
-              const response = createResponse(request.id, null, {
-                code: -32002,
-                message: `XMPP send failed: ${err.message}`
-              });
-              process.stdout.write(response);
-              process.stdout.emit('drain');
+            const response = createResponse(request.id, {
+              content: [{
+                type: 'text',
+                text: JSON.stringify({
+                  connected: state.xmppReady && state.xmppAgent?.isInRoom,
+                  room: MUC_ROOM,
+                  nickname: MCP_BOT_NICKNAME,
+                  lastIncoming: state.lastIncoming
+                }, null, 2)
+              }]
             });
-        } else if (method === 'xmppStatus') {
-          const response = createResponse(request.id, {
-            connected: state.xmppReady && xmppAgent.isInRoom,
-            room: MUC_ROOM,
-            nickname: MCP_BOT_NICKNAME,
-            lastIncoming: state.lastIncoming
-          });
-          process.stdout.write(response);
-          process.stdout.emit('drain');
+            process.stdout.write(response);
+          } else if (toolName === 'xmppSend') {
+            const message = args.message || 'XMPP test message';
+
+            // Lazy-start XMPP on first use
+            if (!state.xmppReady) {
+              console.error('[XMPP] Starting connection on demand...');
+              startXmpp().catch(err => console.error('[XMPP] Startup failed:', err));
+
+              const response = createResponse(request.id, null, {
+                code: -32001,
+                message: 'XMPP connecting, try again shortly'
+              });
+              process.stdout.write(response);
+            } else {
+              getXmppAgent()
+                .sendGroupMessage(message)
+                .then(() => {
+                  const response = createResponse(request.id, {
+                    content: [{
+                      type: 'text',
+                      text: JSON.stringify({ sent: true, to: MUC_ROOM, message }, null, 2)
+                    }]
+                  });
+                  process.stdout.write(response);
+                })
+                .catch((err) => {
+                  const response = createResponse(request.id, null, {
+                    code: -32002,
+                    message: `XMPP send failed: ${err.message}`
+                  });
+                  process.stdout.write(response);
+                });
+            }
+          } else {
+            const response = createResponse(request.id, null, {
+              code: -32601,
+              message: `Unknown tool: ${toolName}`
+            });
+            process.stdout.write(response);
+          }
         } else {
           const response = createResponse(request.id, null, {
             code: -32601,
             message: 'Method not found'
           });
           process.stdout.write(response);
-          process.stdout.emit('drain');
         }
       } catch (error) {
         console.error('[Server] Error processing request:', error);
-        console.error('[Server] Could not send error response - no request ID available');
       }
     }
   } catch (error) {

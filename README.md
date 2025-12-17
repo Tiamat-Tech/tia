@@ -182,6 +182,11 @@ A complete XMPP chatbot that uses Mistral AI to provide intelligent responses in
 npm test
 ```
 - Tag format: "@mistralbot can you help?"
+- XMPP integration check (requires live server and env set: `XMPP_SERVICE`, `XMPP_DOMAIN`, `XMPP_USERNAME`, `XMPP_PASSWORD`, `MUC_ROOM`):
+  ```bash
+  NODE_TLS_REJECT_UNAUTHORIZED=0 npm run test:integration
+  ```
+  (The test allows self-messages so it can observe its own post in the room; ensure your MUC reflects messages to the sender.)
 
 ### Semem Agent (chat via Semem MCP)
 

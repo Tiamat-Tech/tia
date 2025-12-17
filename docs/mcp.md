@@ -1,5 +1,29 @@
 # Model Context Protocol (MCP) Implementation
 
+```sh
+claude mcp add tia-agents npx -y -p tia-agents node ./node_modules/tia-agents/src/mcp/servers/Echo.js
+```
+
+or
+
+```sh
+codex mcp add tia-agents npx -y -p tia-agents node ./node_modules/tia-agents/src/mcp/servers/Echo.js
+```
+
+[mcp_servers.tia-agents]
+command = "node"
+args = ["/home/danny/hyperdata/tia/src/mcp/servers/Echo.js"]
+
+claude mcp add tia-agents node /home/danny/hyperdata/tia/src/mcp/servers/Echo.js
+ 
+ File modified: /home/danny/.claude.json [project: /home/danny/hyperdata/tia]
+
+codex mcp add tia-agents --env TIA_ENV_PATH=/home/danny/hyperdata/tia/.env -- node /home/danny/hyperdata/tia/src/mcp/servers/Echo.js
+
+[mcp_servers.tia-agents]
+command = "npx"
+args = ["-y", "-p", "tia-agents", "node", "-e", "import('tia-agents/src/mcp/servers/Echo.js')"]
+
 ## Overview
 This document describes the MCP client and server implementation that enables JSON-RPC 2.0 based communication between processes using standard input/output.
 
@@ -149,6 +173,10 @@ MCP_BOT_NICKNAME=McpDebug
 ```
 
 On startup the server will join the MUC and log any messages it sees. Use `xmppStatus` to check join state and last observed message; use `xmppSend` to post a test message into the room.
+
+`.env` resolution:
+- First looks in the current working directory (or `TIA_ENV_PATH` if set).
+- Then falls back to the package root `.env` (when running from a checkout).
 
 ## Error Handling
 

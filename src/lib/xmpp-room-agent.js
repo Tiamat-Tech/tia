@@ -1,13 +1,14 @@
 import { client, xml } from "@xmpp/client";
 
 export class XmppRoomAgent {
-  constructor({ xmppConfig, roomJid, nickname, onMessage, logger = console }) {
+  constructor({ xmppConfig, roomJid, nickname, onMessage, allowSelfMessages = false, logger = console }) {
     this.xmpp = client(xmppConfig);
     this.roomJid = roomJid;
     this.nickname = nickname;
     this.onMessage = onMessage;
     this.logger = logger;
     this.isInRoom = false;
+    this.allowSelfMessages = allowSelfMessages;
 
     this.setupEventHandlers();
   }
@@ -43,7 +44,11 @@ export class XmppRoomAgent {
 
       if (type === "groupchat") {
         const from = stanza.attrs.from;
-        if (!from || from.endsWith(`/${this.nickname}`) || stanza.getChild("delay")) {
+        if (
+          !from ||
+          (!this.allowSelfMessages && from.endsWith(`/${this.nickname}`)) ||
+          stanza.getChild("delay")
+        ) {
           return;
         }
         const sender = from.split("/")[1] || "unknown";
