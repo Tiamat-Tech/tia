@@ -15,9 +15,13 @@ const baseSememConfig = {
   authToken: process.env.SEMEM_AUTH_TOKEN
 };
 
+const SEMEM_NICKNAME = process.env.SEMEM_NICKNAME?.trim();
+const SEMEM_LITE_NICKNAME = process.env.SEMEM_LITE_NICKNAME?.trim();
+const AGENT_NICKNAME = process.env.AGENT_NICKNAME?.trim();
+
 const profiles = {
   default: {
-    nickname: process.env.BOT_NICKNAME || "Semem",
+    nickname: SEMEM_NICKNAME || AGENT_NICKNAME || "Semem",
     roomJid: process.env.MUC_ROOM || "general@conference.xmpp",
     features: {
       useWikipedia: true,
@@ -28,7 +32,7 @@ const profiles = {
     xmppOverrides: {}
   },
   lite: {
-    nickname: process.env.BOT_NICKNAME || "SememLite",
+    nickname: SEMEM_LITE_NICKNAME || SEMEM_NICKNAME || AGENT_NICKNAME || "SememLite",
     roomJid: process.env.MUC_ROOM || "general@conference.xmpp",
     features: {
       useWikipedia: false,
@@ -47,10 +51,11 @@ export function listProfiles() {
 export function loadAgentProfile(name = "default") {
   const profile = profiles[name] || profiles.default;
   const resolvedName = profiles[name] ? name : "default";
+  const nicknameOverride = process.env.AGENT_NICKNAME?.trim();
 
   return {
     profileName: resolvedName,
-    nickname: profile.nickname,
+    nickname: nicknameOverride || profile.nickname,
     roomJid: profile.roomJid,
     features: profile.features,
     sememConfig: { ...baseSememConfig, ...profile.sememOverrides },

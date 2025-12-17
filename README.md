@@ -194,7 +194,10 @@ An XMPP agent that routes replies through the remote Semem MCP HTTP interface (s
 
 Defaults:
 - `SEMEM_BASE_URL=https://mcp.tensegrity.it` (override if you host Semem elsewhere)
-- Uses the same `XMPP_*`, `MUC_ROOM`, and `BOT_NICKNAME` env vars as MistralBot (nickname defaults to `Semem`).
+- Uses the same `XMPP_*` and `MUC_ROOM` env vars as MistralBot.
+- Nickname config (sits happily in `.env` when running multiple bots):
+  - `SEMEM_NICKNAME` (default profile) or `SEMEM_LITE_NICKNAME` (lite profile)
+  - `AGENT_NICKNAME` overrides either profile for a one-off run (e.g., systemd drop-in)
 - Replies when mentioned in the room (`Semem`, `bot:`, or `semem:`) or in direct messages.
 
 The agent uses `/chat/enhanced` for answers and mirrors each exchange into `/tell` with lightweight metadata for retrieval.

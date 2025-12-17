@@ -76,6 +76,80 @@ Echoes back the received message.
 }
 ```
 
+#### xmppStatus
+Reports XMPP connection state for the debug agent and the last message observed in the room.
+
+**Request:**
+```json
+{
+  "jsonrpc": "2.0",
+  "id": "status-1",
+  "method": "xmppStatus"
+}
+```
+
+**Response:**
+```json
+{
+  "jsonrpc": "2.0",
+  "id": "status-1",
+  "result": {
+    "connected": true,
+    "room": "general@conference.xmpp",
+    "nickname": "McpDebug",
+    "lastIncoming": {
+      "body": "hello room",
+      "sender": "alice",
+      "from": "general@conference.xmpp/alice",
+      "type": "groupchat",
+      "receivedAt": "2024-01-01T00:00:00.000Z"
+    }
+  }
+}
+```
+
+#### xmppSend
+Sends a test message to the configured MUC for basic connectivity checks.
+
+**Request:**
+```json
+{
+  "jsonrpc": "2.0",
+  "id": "send-1",
+  "method": "xmppSend",
+  "params": {
+    "message": "Test message from MCP"
+  }
+}
+```
+
+**Response:**
+```json
+{
+  "jsonrpc": "2.0",
+  "id": "send-1",
+  "result": {
+    "sent": true,
+    "to": "general@conference.xmpp",
+    "message": "Test message from MCP"
+  }
+}
+```
+
+### XMPP Debug Agent Configuration
+
+The MCP server (`src/mcp/servers/Echo.js`) now spins up a lightweight XMPP participant for debugging. Configure it via `.env`:
+```
+XMPP_SERVICE=xmpp://localhost:5222       # or xmpps://host:5222 with NODE_TLS_REJECT_UNAUTHORIZED=0
+XMPP_DOMAIN=xmpp
+XMPP_USERNAME=dogbot
+XMPP_PASSWORD=woofwoof
+MUC_ROOM=general@conference.xmpp
+MCP_BOT_NICKNAME=McpDebug
+```
+
+On startup the server will join the MUC and log any messages it sees. Use `xmppStatus` to check join state and last observed message; use `xmppSend` to post a test message into the room.
+
 ## Error Handling
 
 ### Common Error Codes

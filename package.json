@@ -1,7 +1,7 @@
 {
-  "name": "dogbot",
-  "version": "1.0.0",
-  "description": "chatbot play",
+  "name": "tia-agents",
+  "version": "0.1.0",
+  "description": "TIA Intelligence Agency",
   "type": "module",
   "directories": {
     "doc": "docs"
@@ -10,8 +10,8 @@
     "test": "node --test \"test/**/*.js\""
   },
   "keywords": [],
-  "author": "",
-  "license": "ISC",
+  "author": "Danny Ayers",
+  "license": "MIT",
   "dependencies": {
     "@anthropic-ai/sdk": "^0.63.0",
     "@modelcontextprotocol/sdk": "^1.18.1",
