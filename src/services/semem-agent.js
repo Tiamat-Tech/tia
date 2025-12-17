@@ -13,6 +13,7 @@ const MUC_ROOM = profile.roomJid;
 const BOT_NICKNAME = profile.nickname;
 const CHAT_FEATURES = profile.features || {};
 const ACTIVE_PROFILE = profile.profileName;
+XMPP_CONFIG.resource = process.env.AGENT_RESOURCE || XMPP_CONFIG.resource || BOT_NICKNAME;
 
 const sememClient = new SememClient({
   baseUrl: profile.sememConfig.baseUrl,
@@ -41,7 +42,7 @@ function isMentioned(body) {
 }
 
 function stripPrefix(text) {
-  const nicknamePattern = new RegExp(`^${escapeRegex(BOT_NICKNAME)}\\s*:`, "i");
+  const nicknamePattern = new RegExp(`^${escapeRegex(BOT_NICKNAME)}\\s*[:,-]\\s*`, "i");
   return text
     .replace(nicknamePattern, "")
     .replace(/^bot:\s*/i, "")
@@ -52,7 +53,10 @@ function stripPrefix(text) {
 async function handleIncomingMessage({ body, sender, type, reply }) {
   const trimmed = body.trim();
   const addressed = type === "chat" || isMentioned(trimmed);
-  if (!addressed) return;
+  if (!addressed) {
+    console.log(`[SememAgent] Ignoring message (not addressed): ${body}`);
+    return;
+  }
 
   const query = stripPrefix(trimmed) || trimmed;
 
@@ -90,6 +94,7 @@ async function start() {
     console.log(`Profile: ${ACTIVE_PROFILE}`);
   }
   console.log(`XMPP: ${XMPP_CONFIG.service} (domain ${XMPP_CONFIG.domain})`);
+  console.log(`Resource: ${XMPP_CONFIG.resource}`);
   console.log(`Room: ${MUC_ROOM}`);
   console.log(`Semem API: ${profile.sememConfig.baseUrl}`);
   console.log(

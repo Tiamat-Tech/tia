@@ -49,6 +49,20 @@ export class XmppRoomAgent {
           (!this.allowSelfMessages && from.endsWith(`/${this.nickname}`)) ||
           stanza.getChild("delay")
         ) {
+          if (this.logger.debug) {
+            this.logger.debug(
+              "[XMPP] Ignoring groupchat",
+              JSON.stringify({
+                reason: !from
+                  ? "missing-from"
+                  : (!this.allowSelfMessages && from.endsWith(`/${this.nickname}`))
+                  ? "self-message"
+                  : "delayed",
+                from,
+                body
+              })
+            );
+          }
           return;
         }
         const sender = from.split("/")[1] || "unknown";

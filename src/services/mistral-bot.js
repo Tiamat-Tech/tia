@@ -13,6 +13,7 @@ const XMPP_CONFIG = {
   domain: process.env.XMPP_DOMAIN || "xmpp",
   username: process.env.XMPP_USERNAME || "dogbot",
   password: process.env.XMPP_PASSWORD || "woofwoof",
+  resource: process.env.XMPP_RESOURCE,
   tls: { rejectUnauthorized: false }
 };
 
@@ -25,6 +26,11 @@ const LINGUE_CONFIDENCE_MIN = parseFloat(process.env.LINGUE_CONFIDENCE_MIN || "0
 // Mistral API Configuration (with .env overrides)
 const MISTRAL_API_KEY = process.env.MISTRAL_API_KEY;
 const MISTRAL_MODEL = process.env.MISTRAL_MODEL || "mistral-small-latest";
+
+// Prefer a stable resource that matches the bot nickname for clarity in logs
+if (!XMPP_CONFIG.resource) {
+  XMPP_CONFIG.resource = BOT_NICKNAME;
+}
 
 if (!MISTRAL_API_KEY) {
   console.error("MISTRAL_API_KEY environment variable is required");

@@ -206,6 +206,7 @@ Defaults:
 - Nickname config (sits happily in `.env` when running multiple bots):
   - `SEMEM_NICKNAME` (default profile) or `SEMEM_LITE_NICKNAME` (lite profile)
   - `AGENT_NICKNAME` overrides either profile for a one-off run (e.g., systemd drop-in)
+  - `AGENT_RESOURCE` / `XMPP_RESOURCE` sets the XMPP resource; defaults to the nickname for clarity in MUC logs
 - Replies when mentioned in the room (`Semem`, `bot:`, or `semem:`) or in direct messages.
 
 The agent uses `/chat/enhanced` for answers and mirrors each exchange into `/tell` with lightweight metadata for retrieval.

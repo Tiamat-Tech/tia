@@ -17,6 +17,7 @@ XMPP_DOMAIN=tensegrity.it
 XMPP_USERNAME=dogbot
 XMPP_PASSWORD=woofwoof
 MUC_ROOM=general@conference.tensegrity.it
+XMPP_RESOURCE=SememTest               # optional: set XMPP resource; defaults to bot nickname
 
 # Optional for bots under test
 MISTRAL_API_KEY=...                     # required to test the Mistral bot
