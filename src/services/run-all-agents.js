@@ -6,16 +6,30 @@ dotenv.config();
 const AGENT_DEFINITIONS = {
   semem: {
     command: "node src/services/semem-agent.js",
-    description: "Semem MCP-backed agent"
+    description: "Semem MCP-backed agent",
+    env: {
+      AGENT_RESOURCE: process.env.AGENT_RESOURCE || "Semem"
+    }
   },
   mistral: {
     command: "node src/services/mistral-bot.js",
     description: "Mistral API-backed bot",
-    requiredEnv: ["MISTRAL_API_KEY"]
+    requiredEnv: ["MISTRAL_API_KEY"],
+    env: {
+      BOT_NICKNAME: process.env.BOT_NICKNAME || "MistralBot",
+      XMPP_RESOURCE: process.env.XMPP_RESOURCE || process.env.BOT_NICKNAME || "MistralBot"
+    }
   },
   demo: {
     command: "node src/services/demo-bot.js",
-    description: "Demo bot (no API key needed)"
+    description: "Demo bot (no API key needed)",
+    env: {
+      DEMO_BOT_NICKNAME: process.env.DEMO_BOT_NICKNAME || "DemoBot",
+      DEMO_XMPP_RESOURCE:
+        process.env.DEMO_XMPP_RESOURCE ||
+        process.env.DEMO_BOT_NICKNAME ||
+        "DemoBot"
+    }
   }
 };
 
@@ -51,7 +65,7 @@ function startAgent(agentName, { command, requiredEnv = [], description }) {
   const child = spawn(command, {
     shell: true,
     stdio: "inherit",
-    env: process.env
+    env: { ...process.env, ...(AGENT_DEFINITIONS[agentName].env || {}) }
   });
 
   processes.set(agentName, child);

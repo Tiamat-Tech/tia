@@ -13,5 +13,9 @@ echo "  AGENTS=${AGENTS:-<all known>}"
 echo "  Agent profile: ${AGENT_PROFILE:-default}"
 echo "  Semem API: ${SEMEM_BASE_URL:-https://mcp.tensegrity.it}"
 echo "  XMPP service: ${XMPP_SERVICE:-xmpp://localhost:5222}"
+echo "  Bot nicknames/resources:"
+echo "    Mistral: ${BOT_NICKNAME:-MistralBot} / ${XMPP_RESOURCE:-<auto>}"
+echo "    Semem:   ${SEMEM_NICKNAME:-${SEMEM_LITE_NICKNAME:-${AGENT_NICKNAME:-Semem}}} / ${AGENT_RESOURCE:-${XMPP_RESOURCE:-<auto>}}"
+echo "    Demo:    ${BOT_NICKNAME:-DemoBot} / ${XMPP_RESOURCE:-<auto>}"
 
 node src/services/run-all-agents.js

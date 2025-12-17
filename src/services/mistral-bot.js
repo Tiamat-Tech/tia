@@ -44,6 +44,10 @@ const mistralClient = new Mistral({ apiKey: MISTRAL_API_KEY });
 class MistralBot {
   constructor() {
     this.xmpp = client(XMPP_CONFIG);
+    this.nickname = BOT_NICKNAME;
+    this.joinAttempts = 0;
+    this.maxJoinRetries = 3;
+    this.jidBare = null;
     this.setupEventHandlers();
     if (LINGUE_ENABLED) {
       attachDiscoInfoResponder(this.xmpp);
@@ -63,6 +67,7 @@ class MistralBot {
 
     this.xmpp.on("online", async (address) => {
       console.log(`Bot connected as ${address.toString()}`);
+      this.jidBare = address.bare().toString().toLowerCase();
       await this.joinMUC();
     });
 
@@ -75,23 +80,41 @@ class MistralBot {
     try {
       const presence = xml(
         "presence",
-        { to: `${MUC_ROOM}/${BOT_NICKNAME}` },
+        { to: `${MUC_ROOM}/${this.nickname}` },
         xml("x", { xmlns: "http://jabber.org/protocol/muc" })
       );
       
       await this.xmpp.send(presence);
-      console.log(`Joining MUC room: ${MUC_ROOM}`);
+      console.log(`Joining MUC room: ${MUC_ROOM} as ${this.nickname}`);
     } catch (err) {
       console.error("Failed to join MUC:", err);
     }
   }
 
   async handleStanza(stanza) {
+    // Handle nickname conflicts
+    if (stanza.is("presence") && stanza.attrs.type === "error" && stanza.attrs.from?.startsWith(MUC_ROOM)) {
+      const errorNode = stanza.getChild("error");
+      const conflict = errorNode?.getChild("conflict");
+      if (conflict && this.joinAttempts < this.maxJoinRetries) {
+        this.joinAttempts += 1;
+        const newNick = `${BOT_NICKNAME}-${Math.random().toString(16).slice(2, 6)}`;
+        console.warn(
+          `[MistralBot] Nickname conflict, retrying as ${newNick} (${this.joinAttempts}/${this.maxJoinRetries})`
+        );
+        this.nickname = newNick;
+        await this.joinMUC();
+        return;
+      }
+      console.error(`[MistralBot] Presence error: ${errorNode ? errorNode.toString() : "unknown"}`);
+      return;
+    }
+
     // Handle MUC presence confirmations
     if (stanza.is("presence") && stanza.attrs.from?.startsWith(MUC_ROOM)) {
-      if (stanza.attrs.from === `${MUC_ROOM}/${BOT_NICKNAME}`) {
+      if (stanza.attrs.from === `${MUC_ROOM}/${this.nickname}`) {
         this.isInRoom = true;
-        console.log("Successfully joined MUC room");
+        console.log(`Successfully joined MUC room as ${this.nickname}`);
       }
       return;
     }
@@ -100,8 +123,23 @@ class MistralBot {
     if (stanza.is("message") && stanza.attrs.type === "groupchat") {
       const from = stanza.attrs.from;
       const body = stanza.getChildText("body");
-      
-      if (!body || !from || from.endsWith(`/${BOT_NICKNAME}`)) {
+      if (!body || !from) return;
+
+      const fromLower = from.toLowerCase();
+      const nickLower = this.nickname.toLowerCase();
+      const isSelfNick = fromLower.endsWith(`/${nickLower}`);
+      const isSelfBare = this.jidBare && fromLower.startsWith(`${this.jidBare}/`);
+      const isDelayed = !!stanza.getChild("delay");
+
+      if (isSelfNick || isSelfBare || isDelayed) {
+        return; // Ignore our own or delayed messages
+      }
+
+      if (fromLower.includes(this.nickname.toLowerCase())) {
+        // no-op; just avoid eslint unused
+      }
+
+      if (!body) {
         return; // Ignore empty messages or our own messages
       }
 
@@ -109,9 +147,13 @@ class MistralBot {
       console.log(`[${sender}]: ${body}`);
 
       // Respond if mentioned or if message starts with "bot:"
-      const shouldRespond = body.toLowerCase().includes(BOT_NICKNAME.toLowerCase()) || 
-                           body.toLowerCase().startsWith('bot:') ||
-                           body.includes('@mistralbot');
+      const lowerBody = body.toLowerCase();
+      const dynamicAtMention = `@${BOT_NICKNAME.toLowerCase()}`;
+      const shouldRespond =
+        lowerBody.includes(BOT_NICKNAME.toLowerCase()) ||
+        lowerBody.startsWith("bot:") ||
+        lowerBody.includes(dynamicAtMention) ||
+        lowerBody.includes("@mistralbot"); // legacy tag
 
       if (shouldRespond && LINGUE_ENABLED) {
         await this.maybePostLingueSummary(body);

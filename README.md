@@ -2,9 +2,21 @@
 
 A comprehensive XMPP (Jabber) client library and AI bot framework for Node.js.
 
-## Overview
+## Overview (user-first)
 
 This project provides both basic XMPP client examples and a complete AI-powered chatbot service. It includes examples for connecting to XMPP servers, sending and receiving messages, working with Multi-User Chat (MUC) rooms, and deploying AI agents that can participate in conversations using the Mistral AI API.
+
+- **What you can do right away**
+  - Run a Mistral-powered bot in a MUC or DM.
+  - Run a Semem-backed agent that can `tell/ask/augment` via Semem MCP.
+  - Use a demo bot for quick checks.
+  - Use the MCP debug agent for XMPP connectivity tests.
+  - Run live XMPP integration tests (see testing docs).
+
+- **Docs (user-first)**
+  - Agent capabilities & commands: `docs/agents.md`
+  - Testing & env setup: `docs/testing.md`
+  - MCP server details & XMPP debug hooks: `docs/mcp.md`
 
 ## Prerequisites
 

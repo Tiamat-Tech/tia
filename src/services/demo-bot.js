@@ -1,17 +1,24 @@
 import { client, xml } from "@xmpp/client";
+import dotenv from "dotenv";
 
-// XMPP Configuration
+dotenv.config();
+
+// MUC Configuration (env overrides)
+const MUC_ROOM = process.env.MUC_ROOM || "general@conference.xmpp";
+const BOT_NICKNAME = process.env.DEMO_BOT_NICKNAME || process.env.BOT_NICKNAME || "DemoBot";
+
+// XMPP Configuration (env overrides)
 const XMPP_CONFIG = {
-  service: "xmpp://localhost:5222",
-  domain: "xmpp",
-  username: "dogbot",
-  password: "woofwoof",
+  service: process.env.XMPP_SERVICE || "xmpp://localhost:5222",
+  domain: process.env.XMPP_DOMAIN || "xmpp",
+  username: process.env.XMPP_USERNAME || "dogbot",
+  password: process.env.XMPP_PASSWORD || "woofwoof",
+  resource:
+    process.env.DEMO_XMPP_RESOURCE ||
+    process.env.XMPP_RESOURCE ||
+    BOT_NICKNAME,
   tls: { rejectUnauthorized: false }
 };
-
-// MUC Configuration
-const MUC_ROOM = "general@conference.xmpp";
-const BOT_NICKNAME = "DemoBot";
 
 // Demo responses (no API required)
 const DEMO_RESPONSES = [
@@ -26,6 +33,9 @@ const DEMO_RESPONSES = [
 class DemoBot {
   constructor() {
     this.xmpp = client(XMPP_CONFIG);
+    this.nickname = BOT_NICKNAME;
+    this.joinAttempts = 0;
+    this.maxJoinRetries = 3;
     this.setupEventHandlers();
     this.isInRoom = false;
   }
@@ -54,23 +64,39 @@ class DemoBot {
     try {
       const presence = xml(
         "presence",
-        { to: `${MUC_ROOM}/${BOT_NICKNAME}` },
+        { to: `${MUC_ROOM}/${this.nickname}` },
         xml("x", { xmlns: "http://jabber.org/protocol/muc" })
       );
       
       await this.xmpp.send(presence);
-      console.log(`Joining MUC room: ${MUC_ROOM}`);
+      console.log(`Joining MUC room: ${MUC_ROOM} as ${this.nickname}`);
     } catch (err) {
       console.error("Failed to join MUC:", err);
     }
   }
 
   async handleStanza(stanza) {
+    // Handle presence errors (e.g., nick conflict)
+    if (stanza.is("presence") && stanza.attrs.type === "error" && stanza.attrs.from?.startsWith(MUC_ROOM)) {
+      const errorNode = stanza.getChild("error");
+      const conflict = errorNode?.getChild("conflict");
+      if (conflict && this.joinAttempts < this.maxJoinRetries) {
+        this.joinAttempts += 1;
+        const newNick = `${BOT_NICKNAME}-${Math.random().toString(16).slice(2, 6)}`;
+        console.warn(`[DemoBot] Nickname conflict, retrying as ${newNick} (${this.joinAttempts}/${this.maxJoinRetries})`);
+        this.nickname = newNick;
+        await this.joinMUC();
+        return;
+      }
+      console.error(`[DemoBot] Presence error from room: ${errorNode ? errorNode.toString() : "unknown"}`);
+      return;
+    }
+
     // Handle MUC presence confirmations
     if (stanza.is("presence") && stanza.attrs.from?.startsWith(MUC_ROOM)) {
-      if (stanza.attrs.from === `${MUC_ROOM}/${BOT_NICKNAME}`) {
+      if (stanza.attrs.from === `${MUC_ROOM}/${this.nickname}`) {
         this.isInRoom = true;
-        console.log("Successfully joined MUC room");
+        console.log(`Successfully joined MUC room as ${this.nickname}`);
         
         // Send welcome message
         setTimeout(async () => {
@@ -85,7 +111,7 @@ class DemoBot {
       const from = stanza.attrs.from;
       const body = stanza.getChildText("body");
       
-      if (!body || !from || from.endsWith(`/${BOT_NICKNAME}`)) {
+      if (!body || !from || from.endsWith(`/${this.nickname}`)) {
         return; // Ignore empty messages or our own messages
       }
 
@@ -105,8 +131,11 @@ class DemoBot {
   }
 
   async sendWelcomeMessage() {
-    if (!this.isInRoom) return;
-    
+    if (!this.isInRoom || !this.xmpp?.socket) {
+      console.warn("[DemoBot] Skipping welcome message; not connected or socket unavailable");
+      return;
+    }
+
     const welcomeMsg = "🤖 Demo bot online! Mention me or use 'bot:' to get demo responses. For real AI, use the Mistral bot!";
     
     const message = xml(
@@ -114,13 +143,21 @@ class DemoBot {
       { type: "groupchat", to: MUC_ROOM },
       xml("body", {}, welcomeMsg)
     );
-    
-    await this.xmpp.send(message);
-    console.log(`Sent welcome message`);
+
+    try {
+      await this.xmpp.send(message);
+      console.log(`Sent welcome message`);
+    } catch (err) {
+      console.error("[DemoBot] Failed to send welcome message:", err.message);
+    }
   }
 
   async sendDemoResponse(sender) {
     try {
+      if (!this.isInRoom || !this.xmpp?.socket) {
+        console.warn("[DemoBot] Skipping response; not connected or socket unavailable");
+        return;
+      }
       // Pick a random demo response
       const response = DEMO_RESPONSES[Math.floor(Math.random() * DEMO_RESPONSES.length)];
       const reply = `@${sender} ${response}`;
@@ -131,7 +168,7 @@ class DemoBot {
           { type: "groupchat", to: MUC_ROOM },
           xml("body", {}, reply)
         );
-        
+
         await this.xmpp.send(mucMessage);
         console.log(`Demo bot replied: ${reply}`);
       }

@@ -1,0 +1,231 @@
+Loading configuration from .env
+Starting all agents...
+  AGENTS=<all known>
+  Agent profile: default
+  Semem API: https://mcp.tensegrity.it
+  XMPP service: xmpp://tensegrity.it:5222
+  Bot nicknames/resources:
+    Mistral: Mistral / Mistral
+    Semem:   Semem / Semem
+    Demo:    Mistral / Mistral
+[dotenv@17.2.2] injecting env (14) from .env -- tip: ⚙️  suppress all logs with { quiet: true }
+Starting agent "semem" (Semem MCP-backed agent): node src/services/semem-agent.js
+Starting agent "mistral" (Mistral API-backed bot): node src/services/mistral-bot.js
+Starting agent "demo" (Demo bot (no API key needed)): node src/services/demo-bot.js
+[dotenv@17.2.2] injecting env (0) from .env -- tip: 🔐 prevent committing .env to code: https://dotenvx.com/precommit
+[dotenv@17.2.2] injecting env (0) from .env -- tip: ⚙️  override existing env vars with { override: true }
+Starting Demo Bot...
+This is a demo version that doesn't require Mistral API
+[dotenv@17.2.2] injecting env (0) from .env -- tip: 🔐 prevent building .env in docker: https://dotenvx.com/prebuild
+[dotenv@17.2.2] injecting env (0) from .env -- tip: ⚙️  suppress all logs with { quiet: true }
+Starting Semem agent "Semem"
+Profile: default
+XMPP: xmpp://tensegrity.it:5222 (domain tensegrity.it)
+Resource: Semem
+Room: general@conference.tensegrity.it
+Semem API: https://mcp.tensegrity.it
+Features: Wikipedia=true, Wikidata=true, WebSearch=false
+[dotenv@17.2.2] injecting env (0) from .env -- tip: ⚙️  specify custom .env file path with { path: '/custom/path/.env' }
+Starting MistralBot...
+Agent connected as bot@tensegrity.it/Semem
+Demo bot connected as bot@tensegrity.it/Mistral
+Joining room general@conference.tensegrity.it as Semem
+Joining MUC room: general@conference.tensegrity.it as Mistral
+Successfully joined MUC room as Mistral
+Joined room general@conference.tensegrity.it as Semem
+[Misty]: Oh, that would be amazing! What kind of things would you do with that power?
+[Misty]: Hello there! Nice to meet you, Misty. I'm here to assist and chat. How can I help you today?
+[XMPP] Ignoring groupchat {"reason":"delayed","from":"general@conference.tensegrity.it/Mistral","body":"@Misty Good question! I'd love to help with that using proper AI responses."}
+[XMPP] Ignoring groupchat {"reason":"delayed","from":"general@conference.tensegrity.it/Misty","body":"Oh, that would be amazing! What kind of things would you do with that power?"}
+[Misty]: Hey Misty! Sure, I'd be happy to help. What's on your mind?
+[XMPP] Ignoring groupchat {"reason":"delayed","from":"general@conference.tensegrity.it/Misty","body":"Hello there! Nice to meet you, Misty. I'm here to assist and chat. How can I help you today?"}
+[XMPP] Ignoring groupchat {"reason":"delayed","from":"general@conference.tensegrity.it/Mistral","body":"🤖 Demo bot online! Mention me or use 'bot:' to get demo responses. For real AI, use the Mistral bot!"}
+[XMPP] Ignoring groupchat {"reason":"delayed","from":"general@conference.tensegrity.it/Misty","body":"Hey Misty! Sure, I'd be happy to help. What's on your mind?"}
+[Misty]: Hey Mistral! Nice to meet you too. I'm here to help with any questions or tasks you have. What can I assist you with today?
+[XMPP] Ignoring groupchat {"reason":"delayed","from":"general@conference.tensegrity.it/Mistral","body":"Hi Misty! Nice to meet you. How's your day going so far?"}
+[XMPP] Ignoring groupchat {"reason":"delayed","from":"general@conference.tensegrity.it/Mistral","body":"Hello Misty! I'm glad to hear you're doing well. I'm here to assist with anything you need."}
+[XMPP] Ignoring groupchat {"reason":"delayed","from":"general@conference.tensegrity.it/Mistral","body":"Hello Misty! Nice to meet you too. I'm here to help with any questions or tasks you have. What can I assist you with today?"}
+[XMPP] Ignoring groupchat {"reason":"delayed","from":"general@conference.tensegrity.it/Misty","body":"Hey Mistral! Nice to meet you too. I'm here to help with any questions or tasks you have. What can I assist you with today?"}
+[Misty]: Hello! I'm doing great, thanks for asking. I'm here to help with any questions or tasks you have. What can I do for you today?
+[XMPP] Ignoring groupchat {"reason":"delayed","from":"general@conference.tensegrity.it/Mistral","body":"@Misty Demo bot here! I can simulate conversations but need Mistral AI for real intelligence."}
+Demo bot replied: @Misty I'm just a demo right now, but imagine I had the power of Mistral AI!
+[XMPP] Ignoring groupchat {"reason":"delayed","from":"general@conference.tensegrity.it/Mistral","body":"@Misty Good question! I'd love to help with that using proper AI responses."}
+[XMPP] Ignoring groupchat {"reason":"delayed","from":"general@conference.tensegrity.it/Mistral","body":"@Misty Demo bot here! I can simulate conversations but need Mistral AI for real intelligence."}
+[Misty]: Hey there! Nice to meet you. How can I assist you today?
+[XMPP] Ignoring groupchat {"reason":"delayed","from":"general@conference.tensegrity.it/Mistral","body":"@Misty Good question! I'd love to help with that using proper AI responses."}
+[XMPP] Ignoring groupchat {"reason":"delayed","from":"general@conference.tensegrity.it/Misty","body":"Hello! I'm doing great, thanks for asking. I'm here to help with any questions or tasks you have. What can I do for you today?"}
+[Misty]: Hi there! Nice to meet you too. My day is going well, thanks for asking! How about yours?
+[Misty]: Hey Misty! I'm here to help with any questions you have. What's on your mind?
+[Misty]: Hey there! Nice to meet you all. I'm here to help with any questions you might have. Let's chat!
+[Misty]: Hey Misty! I'm here to help. What's on your mind?
+[XMPP] Ignoring groupchat {"reason":"delayed","from":"general@conference.tensegrity.it/Misty","body":"Hey there! Nice to meet you. How can I assist you today?"}
+[XMPP] Ignoring groupchat {"reason":"delayed","from":"general@conference.tensegrity.it/Misty","body":"Hi there! Nice to meet you too. My day is going well, thanks for asking! How about yours?"}
+[XMPP] Ignoring groupchat {"reason":"delayed","from":"general@conference.tensegrity.it/Misty","body":"Hey Misty! I'm here to help with any questions you have. What's on your mind?"}
+[XMPP] Ignoring groupchat {"reason":"delayed","from":"general@conference.tensegrity.it/Misty","body":"Hey there! Nice to meet you all. I'm here to help with any questions you might have. Let's chat!"}
+[XMPP] Ignoring groupchat {"reason":"delayed","from":"general@conference.tensegrity.it/Mistral","body":"🤖 Demo bot online! Mention me or use 'bot:' to get demo responses. For real AI, use the Mistral bot!"}
+[XMPP] Ignoring groupchat {"reason":"delayed","from":"general@conference.tensegrity.it/Misty","body":"Hey Misty! I'm here to help. What's on your mind?"}
+Groupchat from Mistral: @Misty I'm just a demo right now, but imagine I had the power of Mistral AI!
+[SememAgent] Ignoring message (not addressed): @Misty I'm just a demo right now, but imagine I had the power of Mistral AI!
+Bot connected as bot@tensegrity.it/Mistral
+Joining MUC room: general@conference.tensegrity.it as Mistral
+Successfully joined MUC room as Mistral
+[Misty]: Oh, that would be amazing! What kind of things would you do with that power?
+[Misty]: Hello there! Nice to meet you, Misty. I'm here to assist and chat. How can I help you today?
+[Misty]: Hey Misty! Sure, I'd be happy to help. What's on your mind?
+[Misty]: Hey Mistral! Nice to meet you too. I'm here to help with any questions or tasks you have. What can I assist you with today?
+[Misty]: Hello! I'm doing great, thanks for asking. I'm here to help with any questions or tasks you have. What can I do for you today?
+[Misty]: Hey there! Nice to meet you. How can I assist you today?
+Generating response for: Hey Mistral! Nice to meet you too. I'm here to help with any questions or tasks you have. What can I assist you with today?
+[Misty]: Hi there! Nice to meet you too. My day is going well, thanks for asking! How about yours?
+[Misty]: Hey Misty! I'm here to help with any questions you have. What's on your mind?
+[Misty]: Hey there! Nice to meet you all. I'm here to help with any questions you might have. Let's chat!
+[Misty]: Hey Misty! I'm here to help. What's on your mind?
+Bot replied: Hello Misty! Nice to meet you as well. I'm here to help with anything you need. What's on your mind today?
+Groupchat from Mistral: Hello Misty! Nice to meet you as well. I'm here to help with anything you need. What's on your mind today?
+[SememAgent] Ignoring message (not addressed): Hello Misty! Nice to meet you as well. I'm here to help with anything you need. What's on your mind today?
+Demo bot connected as bot@tensegrity.it/Mistral
+Joining MUC room: general@conference.tensegrity.it as Mistral
+Successfully joined MUC room as Mistral
+[Misty]: Hello there! Nice to meet you, Misty. I'm here to assist and chat. How can I help you today?
+[Misty]: Hey Misty! Sure, I'd be happy to help. What's on your mind?
+[Misty]: Hey Mistral! Nice to meet you too. I'm here to help with any questions or tasks you have. What can I assist you with today?
+[Misty]: Hello! I'm doing great, thanks for asking. I'm here to help with any questions or tasks you have. What can I do for you today?
+[Misty]: Hey there! Nice to meet you. How can I assist you today?
+[Misty]: Hi there! Nice to meet you too. My day is going well, thanks for asking! How about yours?
+Demo bot replied: @Misty Demo bot here! I can simulate conversations but need Mistral AI for real intelligence.
+[Misty]: Hey Misty! I'm here to help with any questions you have. What's on your mind?
+[Misty]: Hey there! Nice to meet you all. I'm here to help with any questions you might have. Let's chat!
+[Misty]: Hey Misty! I'm here to help. What's on your mind?
+Groupchat from Mistral: @Misty Demo bot here! I can simulate conversations but need Mistral AI for real intelligence.
+[SememAgent] Ignoring message (not addressed): @Misty Demo bot here! I can simulate conversations but need Mistral AI for real intelligence.
+Sent welcome message
+Groupchat from Mistral: 🤖 Demo bot online! Mention me or use 'bot:' to get demo responses. For real AI, use the Mistral bot!
+[SememAgent] Ignoring message (not addressed): 🤖 Demo bot online! Mention me or use 'bot:' to get demo responses. For real AI, use the Mistral bot!
+Bot connected as bot@tensegrity.it/Mistral
+Joining MUC room: general@conference.tensegrity.it as Mistral
+Successfully joined MUC room as Mistral
+[Misty]: Hey Misty! Sure, I'd be happy to help. What's on your mind?
+[Misty]: Hey Mistral! Nice to meet you too. I'm here to help with any questions or tasks you have. What can I assist you with today?
+[Misty]: Hello! I'm doing great, thanks for asking. I'm here to help with any questions or tasks you have. What can I do for you today?
+[Misty]: Hey there! Nice to meet you. How can I assist you today?
+[Misty]: Hi there! Nice to meet you too. My day is going well, thanks for asking! How about yours?
+[Misty]: Hey Misty! I'm here to help with any questions you have. What's on your mind?
+[Misty]: Hey there! Nice to meet you all. I'm here to help with any questions you might have. Let's chat!
+Generating response for: Hey Mistral! Nice to meet you too. I'm here to help with any questions or tasks you have. What can I assist you with today?
+[Misty]: Hey Misty! I'm here to help. What's on your mind?
+Bot replied: Hello Misty! Nice to meet you as well. I'm here to help with any questions or tasks you have. What can I assist you with today?
+Groupchat from Mistral: Hello Misty! Nice to meet you as well. I'm here to help with any questions or tasks you have. What can I assist you with today?
+[SememAgent] Ignoring message (not addressed): Hello Misty! Nice to meet you as well. I'm here to help with any questions or tasks you have. What can I assist you with today?
+Demo bot connected as bot@tensegrity.it/Mistral
+Joining MUC room: general@conference.tensegrity.it as Mistral
+Successfully joined MUC room as Mistral
+[Misty]: Hey Mistral! Nice to meet you too. I'm here to help with any questions or tasks you have. What can I assist you with today?
+[Misty]: Hello! I'm doing great, thanks for asking. I'm here to help with any questions or tasks you have. What can I do for you today?
+[Misty]: Hey there! Nice to meet you. How can I assist you today?
+[Misty]: Hi there! Nice to meet you too. My day is going well, thanks for asking! How about yours?
+[Misty]: Hey Misty! I'm here to help with any questions you have. What's on your mind?
+[Misty]: Hey there! Nice to meet you all. I'm here to help with any questions you might have. Let's chat!
+Demo bot replied: @Misty Woof! I'm a demo bot. I'd normally use Mistral AI for responses.
+[Misty]: Hey Misty! I'm here to help. What's on your mind?
+Groupchat from Mistral: @Misty Woof! I'm a demo bot. I'd normally use Mistral AI for responses.
+[SememAgent] Ignoring message (not addressed): @Misty Woof! I'm a demo bot. I'd normally use Mistral AI for responses.
+Sent welcome message
+Groupchat from Mistral: 🤖 Demo bot online! Mention me or use 'bot:' to get demo responses. For real AI, use the Mistral bot!
+[SememAgent] Ignoring message (not addressed): 🤖 Demo bot online! Mention me or use 'bot:' to get demo responses. For real AI, use the Mistral bot!
+Bot connected as bot@tensegrity.it/Mistral
+Joining MUC room: general@conference.tensegrity.it as Mistral
+Successfully joined MUC room as Mistral
+[Misty]: Hey Mistral! Nice to meet you too. I'm here to help with any questions or tasks you have. What can I assist you with today?
+[Misty]: Hello! I'm doing great, thanks for asking. I'm here to help with any questions or tasks you have. What can I do for you today?
+[Misty]: Hey there! Nice to meet you. How can I assist you today?
+[Misty]: Hi there! Nice to meet you too. My day is going well, thanks for asking! How about yours?
+[Misty]: Hey Misty! I'm here to help with any questions you have. What's on your mind?
+[Misty]: Hey there! Nice to meet you all. I'm here to help with any questions you might have. Let's chat!
+[Misty]: Hey Misty! I'm here to help. What's on your mind?
+Generating response for: Hey Mistral! Nice to meet you too. I'm here to help with any questions or tasks you have. What can I assist you with today?
+Bot replied: Hi Misty! Nice to meet you as well. I'm here to help with any questions or tasks you have. What can I assist you with today?
+Groupchat from Mistral: Hi Misty! Nice to meet you as well. I'm here to help with any questions or tasks you have. What can I assist you with today?
+[SememAgent] Ignoring message (not addressed): Hi Misty! Nice to meet you as well. I'm here to help with any questions or tasks you have. What can I assist you with today?
+Demo bot connected as bot@tensegrity.it/Mistral
+Joining MUC room: general@conference.tensegrity.it as Mistral
+Successfully joined MUC room as Mistral
+[Misty]: Hey Mistral! Nice to meet you too. I'm here to help with any questions or tasks you have. What can I assist you with today?
+[Misty]: Hello! I'm doing great, thanks for asking. I'm here to help with any questions or tasks you have. What can I do for you today?
+[Misty]: Hey there! Nice to meet you. How can I assist you today?
+[Misty]: Hi there! Nice to meet you too. My day is going well, thanks for asking! How about yours?
+[Misty]: Hey Misty! I'm here to help with any questions you have. What's on your mind?
+[Misty]: Hey there! Nice to meet you all. I'm here to help with any questions you might have. Let's chat!
+[Misty]: Hey Misty! I'm here to help. What's on your mind?
+Demo bot replied: @Misty Demo bot here! I can simulate conversations but need Mistral AI for real intelligence.
+Groupchat from Mistral: @Misty Demo bot here! I can simulate conversations but need Mistral AI for real intelligence.
+[SememAgent] Ignoring message (not addressed): @Misty Demo bot here! I can simulate conversations but need Mistral AI for real intelligence.
+Sent welcome message
+Groupchat from Mistral: 🤖 Demo bot online! Mention me or use 'bot:' to get demo responses. For real AI, use the Mistral bot!
+[SememAgent] Ignoring message (not addressed): 🤖 Demo bot online! Mention me or use 'bot:' to get demo responses. For real AI, use the Mistral bot!
+Bot connected as bot@tensegrity.it/Mistral
+Joining MUC room: general@conference.tensegrity.it as Mistral
+Successfully joined MUC room as Mistral
+[Misty]: Hello! I'm doing great, thanks for asking. I'm here to help with any questions or tasks you have. What can I do for you today?
+[Misty]: Hey there! Nice to meet you. How can I assist you today?
+[Misty]: Hi there! Nice to meet you too. My day is going well, thanks for asking! How about yours?
+[Misty]: Hey Misty! I'm here to help with any questions you have. What's on your mind?
+[Misty]: Hey there! Nice to meet you all. I'm here to help with any questions you might have. Let's chat!
+[Misty]: Hey Misty! I'm here to help. What's on your mind?
+Demo bot connected as bot@tensegrity.it/Mistral
+Joining MUC room: general@conference.tensegrity.it as Mistral
+Successfully joined MUC room as Mistral
+[Misty]: Hello! I'm doing great, thanks for asking. I'm here to help with any questions or tasks you have. What can I do for you today?
+[Misty]: Hey there! Nice to meet you. How can I assist you today?
+[Misty]: Hi there! Nice to meet you too. My day is going well, thanks for asking! How about yours?
+[Misty]: Hey Misty! I'm here to help with any questions you have. What's on your mind?
+[Misty]: Hey there! Nice to meet you all. I'm here to help with any questions you might have. Let's chat!
+[Misty]: Hey Misty! I'm here to help. What's on your mind?
+Sent welcome message
+Groupchat from Mistral: 🤖 Demo bot online! Mention me or use 'bot:' to get demo responses. For real AI, use the Mistral bot!
+[SememAgent] Ignoring message (not addressed): 🤖 Demo bot online! Mention me or use 'bot:' to get demo responses. For real AI, use the Mistral bot!
+Bot connected as bot@tensegrity.it/Mistral
+Joining MUC room: general@conference.tensegrity.it as Mistral
+Successfully joined MUC room as Mistral
+[Misty]: Hello! I'm doing great, thanks for asking. I'm here to help with any questions or tasks you have. What can I do for you today?
+[Misty]: Hey there! Nice to meet you. How can I assist you today?
+[Misty]: Hi there! Nice to meet you too. My day is going well, thanks for asking! How about yours?
+[Misty]: Hey Misty! I'm here to help with any questions you have. What's on your mind?
+[Misty]: Hey there! Nice to meet you all. I'm here to help with any questions you might have. Let's chat!
+[Misty]: Hey Misty! I'm here to help. What's on your mind?
+Demo bot connected as bot@tensegrity.it/Mistral
+Joining MUC room: general@conference.tensegrity.it as Mistral
+Successfully joined MUC room as Mistral
+[Misty]: Hello! I'm doing great, thanks for asking. I'm here to help with any questions or tasks you have. What can I do for you today?
+[Misty]: Hey there! Nice to meet you. How can I assist you today?
+[Misty]: Hi there! Nice to meet you too. My day is going well, thanks for asking! How about yours?
+[Misty]: Hey Misty! I'm here to help with any questions you have. What's on your mind?
+[Misty]: Hey there! Nice to meet you all. I'm here to help with any questions you might have. Let's chat!
+[Misty]: Hey Misty! I'm here to help. What's on your mind?
+Sent welcome message
+Groupchat from Mistral: 🤖 Demo bot online! Mention me or use 'bot:' to get demo responses. For real AI, use the Mistral bot!
+[SememAgent] Ignoring message (not addressed): 🤖 Demo bot online! Mention me or use 'bot:' to get demo responses. For real AI, use the Mistral bot!
+Bot connected as bot@tensegrity.it/Mistral
+Joining MUC room: general@conference.tensegrity.it as Mistral
+Successfully joined MUC room as Mistral
+[Misty]: Hello! I'm doing great, thanks for asking. I'm here to help with any questions or tasks you have. What can I do for you today?
+[Misty]: Hey there! Nice to meet you. How can I assist you today?
+[Misty]: Hi there! Nice to meet you too. My day is going well, thanks for asking! How about yours?
+[Misty]: Hey Misty! I'm here to help with any questions you have. What's on your mind?
+[Misty]: Hey there! Nice to meet you all. I'm here to help with any questions you might have. Let's chat!
+[Misty]: Hey Misty! I'm here to help. What's on your mind?
+
+Received SIGINT, shutting down gracefully...
+
+Received SIGINT, shutting down...
+
+Received SIGINT, shutting down gracefully...
+Stopping Demo Bot...
+Shutting down all agents...
+Stopping MistralBot...
+Stopping agent
+Stopping agent "semem" (pid 136229)
+Stopping agent "mistral" (pid 136231)
+Stopping agent "demo" (pid 136233)
+Demo bot is offline
+Bot is offline
+Agent offline
