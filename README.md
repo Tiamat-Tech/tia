@@ -1,8 +1,8 @@
 # TIA Intelligence Agency
 
-A comprehensive XMPP (Jabber) client library and AI bot framework for Node.js.
+An experimental XMPP (Jabber) client library and AI bot framework for Node.js.
 
-## Overview (user-first)
+## Overview
 
 This project provides both basic XMPP client examples and a complete AI-powered chatbot service. It includes examples for connecting to XMPP servers, sending and receiving messages, working with Multi-User Chat (MUC) rooms, and deploying AI agents that can participate in conversations using the Mistral AI API.
 
