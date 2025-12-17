@@ -32,6 +32,7 @@ XMPP_RESOURCE=...                      # optional; defaults to bot nickname
   - `SEMEM_NICKNAME` (default profile name) or `SEMEM_LITE_NICKNAME` (lite profile)
   - `AGENT_NICKNAME` (one-off override), `AGENT_RESOURCE` (resource override)
   - `AGENT_PROFILE` (`default` or `lite`), toggles feature flags (Wikipedia/Wikidata)
+- **Nickname conflicts**: the agent will auto-rename on MUC conflict by appending a short suffix (up to a few retries).
 - **Triggers in MUC/DM**:
   - `Semem tell <text>`: calls `/tell` to store content with metadata.
   - `Semem ask <question>`: calls `/ask` with context.
@@ -46,6 +47,7 @@ XMPP_RESOURCE=...                      # optional; defaults to bot nickname
 - **Capabilities**:
   - MCP methods: `initialize`, `echo`, `xmppStatus` (reports connection + last message), `xmppSend` (posts a test message to the MUC).
   - Useful for connectivity debugging.
+- **Nickname conflicts**: auto-renames with a short suffix if the MUC reports a conflict.
 
 ### Demo Bot
 - **Script**: `src/services/demo-bot.js`

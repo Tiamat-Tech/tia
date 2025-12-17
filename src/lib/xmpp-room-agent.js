@@ -1,14 +1,27 @@
 import { client, xml } from "@xmpp/client";
 
 export class XmppRoomAgent {
-  constructor({ xmppConfig, roomJid, nickname, onMessage, allowSelfMessages = false, logger = console }) {
+  constructor({
+    xmppConfig,
+    roomJid,
+    nickname,
+    onMessage,
+    allowSelfMessages = false,
+    onConflictRename = true,
+    maxJoinRetries = 3,
+    logger = console
+  }) {
     this.xmpp = client(xmppConfig);
     this.roomJid = roomJid;
     this.nickname = nickname;
+    this.currentNickname = nickname;
     this.onMessage = onMessage;
     this.logger = logger;
     this.isInRoom = false;
     this.allowSelfMessages = allowSelfMessages;
+    this.onConflictRename = onConflictRename;
+    this.maxJoinRetries = maxJoinRetries;
+    this.joinAttempts = 0;
 
     this.setupEventHandlers();
   }
@@ -29,10 +42,30 @@ export class XmppRoomAgent {
     });
 
     this.xmpp.on("stanza", async (stanza) => {
+      // Handle MUC errors (e.g., nickname conflict)
+      if (stanza.is("presence") && stanza.attrs.type === "error" && stanza.attrs.from?.startsWith(this.roomJid)) {
+        const errorNode = stanza.getChild("error");
+        const conflict = errorNode?.getChild("conflict");
+        if (conflict && this.onConflictRename && this.joinAttempts < this.maxJoinRetries) {
+          this.joinAttempts += 1;
+          const newNick = `${this.nickname}-${Math.random().toString(16).slice(2, 6)}`;
+          this.logger.warn(
+            `[XMPP] Nickname conflict detected for ${this.currentNickname}. Retrying as ${newNick} (${this.joinAttempts}/${this.maxJoinRetries})`
+          );
+          this.currentNickname = newNick;
+          await this.joinRoom();
+          return;
+        }
+        this.logger.error(
+          `[XMPP] Presence error from room ${this.roomJid}: ${errorNode ? errorNode.toString() : "unknown"}`
+        );
+        return;
+      }
+
       if (stanza.is("presence") && stanza.attrs.from?.startsWith(this.roomJid)) {
-        if (stanza.attrs.from === `${this.roomJid}/${this.nickname}`) {
+        if (stanza.attrs.from === `${this.roomJid}/${this.currentNickname}`) {
           this.isInRoom = true;
-          this.logger.info(`Joined room ${this.roomJid}`);
+          this.logger.info(`Joined room ${this.roomJid} as ${this.currentNickname}`);
         }
         return;
       }
@@ -46,7 +79,7 @@ export class XmppRoomAgent {
         const from = stanza.attrs.from;
         if (
           !from ||
-          (!this.allowSelfMessages && from.endsWith(`/${this.nickname}`)) ||
+          (!this.allowSelfMessages && from.endsWith(`/${this.currentNickname}`)) ||
           stanza.getChild("delay")
         ) {
           if (this.logger.debug) {
@@ -98,13 +131,14 @@ export class XmppRoomAgent {
   }
 
   async joinRoom() {
+    this.isInRoom = false;
     const presence = xml(
       "presence",
-      { to: `${this.roomJid}/${this.nickname}` },
+      { to: `${this.roomJid}/${this.currentNickname}` },
       xml("x", { xmlns: "http://jabber.org/protocol/muc" })
     );
     await this.xmpp.send(presence);
-    this.logger.info(`Joining room ${this.roomJid}`);
+    this.logger.info(`Joining room ${this.roomJid} as ${this.currentNickname}`);
   }
 
   async sendGroupMessage(message) {
