@@ -1,0 +1,17 @@
+[Unit]
+Description=TIA Agents (Semem, Mistral, Demo)
+After=network.target
+
+[Service]
+Type=simple
+WorkingDirectory=/home/danny/hyperdata/tia
+# Optional: load shared environment (XMPP creds, API keys, etc.)
+EnvironmentFile=/home/danny/hyperdata/tia/.env
+Environment=NODE_ENV=production
+ExecStart=/home/danny/hyperdata/tia/start-all-agents.sh
+Restart=on-failure
+RestartSec=5
+User=danny
+
+[Install]
+WantedBy=multi-user.target
