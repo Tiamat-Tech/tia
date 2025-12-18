@@ -1,4 +1,7 @@
 import dotenv from "dotenv";
+import fs from "fs";
+import path from "path";
+import { loadAgentConfig as loadFileConfig } from "../agents/config-loader.js";
 
 dotenv.config();
 
@@ -19,6 +22,20 @@ const baseSememConfig = {
 const SEMEM_NICKNAME = process.env.SEMEM_NICKNAME?.trim();
 const SEMEM_LITE_NICKNAME = process.env.SEMEM_LITE_NICKNAME?.trim();
 const AGENT_NICKNAME = process.env.AGENT_NICKNAME?.trim();
+
+function mergeConfig(fileConfig = {}) {
+  const xmpp = {
+    ...baseXmppConfig,
+    ...(fileConfig.xmpp || {})
+  };
+  const semem = {
+    baseUrl: fileConfig.semem?.baseUrl || baseSememConfig.baseUrl,
+    authToken: process.env[fileConfig.semem?.authTokenEnv || "SEMEM_AUTH_TOKEN"] || baseSememConfig.authToken,
+    timeoutMs: fileConfig.semem?.timeoutMs
+  };
+  const features = fileConfig.semem?.features || {};
+  return { xmpp, semem, features };
+}
 
 const profiles = {
   default: {
@@ -50,17 +67,20 @@ export function listProfiles() {
 }
 
 export function loadAgentProfile(name = "default") {
+  const fileProfile = loadFileConfig(name);
   const profile = profiles[name] || profiles.default;
-  const resolvedName = profiles[name] ? name : "default";
+  const resolvedName = profiles[name] || fileProfile ? name : "default";
   const nicknameOverride = process.env.AGENT_NICKNAME?.trim();
+
+  const merged = mergeConfig(fileProfile || profile);
 
   return {
     profileName: resolvedName,
-    nickname: nicknameOverride || profile.nickname,
-    roomJid: profile.roomJid,
-    features: profile.features,
-    sememConfig: { ...baseSememConfig, ...profile.sememOverrides },
-    xmppConfig: { ...baseXmppConfig, ...profile.xmppOverrides }
+    nickname: nicknameOverride || fileProfile?.nickname || profile.nickname,
+    roomJid: fileProfile?.roomJid || profile.roomJid,
+    features: fileProfile?.semem?.features || profile.features,
+    sememConfig: merged.semem,
+    xmppConfig: merged.xmpp
   };
 }
 

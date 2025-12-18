@@ -7,35 +7,18 @@ const AGENT_DEFINITIONS = {
   semem: {
     command: "node src/services/semem-agent.js",
     description: "Semem MCP-backed agent",
-    env: {
-      AGENT_RESOURCE: process.env.AGENT_RESOURCE || "Semem",
-      AGENT_NICKNAME: process.env.SEMEM_NICKNAME || "Semem"
-    }
+    env: { AGENT_PROFILE: "semem" }
   },
   mistral: {
     command: "node src/services/mistral-bot.js",
     description: "Mistral API-backed bot",
     requiredEnv: ["MISTRAL_API_KEY"],
-    env: {
-      BOT_NICKNAME: process.env.MISTRAL_NICKNAME || process.env.BOT_NICKNAME || "MistralBot",
-      XMPP_RESOURCE:
-        process.env.MISTRAL_RESOURCE ||
-        process.env.XMPP_RESOURCE ||
-        process.env.MISTRAL_NICKNAME ||
-        process.env.BOT_NICKNAME ||
-        "MistralBot"
-    }
+    env: { AGENT_PROFILE: "mistral" }
   },
   demo: {
     command: "node src/services/demo-bot.js",
     description: "Demo bot (no API key needed)",
-    env: {
-      DEMO_BOT_NICKNAME: process.env.DEMO_BOT_NICKNAME || "DemoBot",
-      DEMO_XMPP_RESOURCE:
-        process.env.DEMO_XMPP_RESOURCE ||
-        process.env.DEMO_BOT_NICKNAME ||
-        "DemoBot"
-    }
+    env: { AGENT_PROFILE: "demo" }
   }
 };
 
@@ -73,33 +56,6 @@ function startAgent(agentName, { command, requiredEnv = [], description }) {
     stdio: "inherit",
     env: {
       ...process.env,
-      ...{
-        BOT_NICKNAME:
-          agentName === "mistral"
-            ? process.env.MISTRAL_NICKNAME || "Mistral"
-            : process.env.BOT_NICKNAME,
-        XMPP_RESOURCE:
-          agentName === "mistral"
-            ? process.env.MISTRAL_RESOURCE ||
-              process.env.MISTRAL_NICKNAME ||
-              process.env.BOT_NICKNAME ||
-              "Mistral"
-            : process.env.XMPP_RESOURCE,
-        DEMO_BOT_NICKNAME:
-          agentName === "demo" ? process.env.DEMO_BOT_NICKNAME || "Demo" : process.env.DEMO_BOT_NICKNAME,
-        DEMO_XMPP_RESOURCE:
-          agentName === "demo"
-            ? process.env.DEMO_XMPP_RESOURCE || process.env.DEMO_BOT_NICKNAME || "Demo"
-            : process.env.DEMO_XMPP_RESOURCE,
-        AGENT_NICKNAME:
-          agentName === "semem"
-            ? process.env.SEMEM_NICKNAME || process.env.AGENT_NICKNAME || "Semem"
-            : process.env.AGENT_NICKNAME,
-        AGENT_RESOURCE:
-          agentName === "semem"
-            ? process.env.AGENT_RESOURCE || process.env.SEMEM_RESOURCE || process.env.SEMEM_NICKNAME || "Semem"
-            : process.env.AGENT_RESOURCE
-      },
       ...(AGENT_DEFINITIONS[agentName].env || {})
     }
   });

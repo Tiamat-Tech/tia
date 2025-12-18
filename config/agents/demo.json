@@ -1,0 +1,10 @@
+{
+  "xmpp": {
+    "service": "xmpp://tensegrity.it:5222",
+    "domain": "tensegrity.it",
+    "username": "demo",
+    "password": "demopass",
+    "resource": "demo"
+  },
+  "nickname": "demo"
+}

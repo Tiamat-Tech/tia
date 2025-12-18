@@ -1,0 +1,21 @@
+{
+  "xmpp": {
+    "service": "xmpp://tensegrity.it:5222",
+    "domain": "tensegrity.it",
+    "username": "semem",
+    "password": "semempass",
+    "resource": "semem"
+  },
+  "nickname": "semem",
+  "profile": "default",
+  "semem": {
+    "baseUrl": "https://mcp.tensegrity.it",
+    "authTokenEnv": "SEMEM_AUTH_TOKEN",
+    "timeoutMs": 8000,
+    "features": {
+      "useWikipedia": true,
+      "useWikidata": true,
+      "useWebSearch": false
+    }
+  }
+}

@@ -8,8 +8,11 @@ import logger from "../lib/logger-lite.js";
 
 dotenv.config();
 
-const requestedProfile = process.env.AGENT_PROFILE || "default";
+const requestedProfile = process.env.AGENT_PROFILE || "semem";
 const profile = loadAgentProfile(requestedProfile);
+if (!profile?.nickname || !profile?.xmppConfig?.username) {
+  throw new Error("Semem agent profile is missing nickname or XMPP username");
+}
 
 const XMPP_CONFIG = profile.xmppConfig;
 const MUC_ROOM = profile.roomJid;
@@ -17,7 +20,7 @@ const BOT_NICKNAME = profile.nickname;
 const CHAT_FEATURES = profile.features || {};
 const ACTIVE_PROFILE = profile.profileName;
 XMPP_CONFIG.resource =
-  process.env.AGENT_RESOURCE || process.env.SEMEM_RESOURCE || BOT_NICKNAME;
+  process.env.AGENT_RESOURCE || process.env.SEMEM_RESOURCE || profile.xmppConfig.resource || BOT_NICKNAME;
 
 const sememProvider = new SememProvider({
   sememConfig: profile.sememConfig,
@@ -31,7 +34,7 @@ const runner = new AgentRunner({
   roomJid: MUC_ROOM,
   nickname: BOT_NICKNAME,
   provider: sememProvider,
-  mentionDetector: createMentionDetector(BOT_NICKNAME, ["semem", "bot"]),
+  mentionDetector: createMentionDetector(BOT_NICKNAME, [BOT_NICKNAME]),
   commandParser: defaultCommandParser,
   allowSelfMessages: false,
   logger

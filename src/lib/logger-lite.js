@@ -21,7 +21,14 @@ log.methodFactory = function (methodName, logLevel, loggerName) {
     rawMethod(...args);
     if (fileStream) {
       const line = `[${new Date().toISOString()}] ${methodName.toUpperCase()} ${args
-        .map((a) => (typeof a === "string" ? a : JSON.stringify(a)))
+        .map((a) => {
+          if (typeof a === "string") return a;
+          try {
+            return JSON.stringify(a);
+          } catch {
+            return "[circular]";
+          }
+        })
         .join(" ")}\n`;
       try {
         fileStream.write(line);
