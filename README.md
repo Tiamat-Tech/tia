@@ -2,7 +2,7 @@
 
 An experimental XMPP (Jabber) client library and AI bot framework for Node.js.
 
-## Overview
+## Overview (user-first)
 
 This project provides both basic XMPP client examples and a complete AI-powered chatbot service. It includes examples for connecting to XMPP servers, sending and receiving messages, working with Multi-User Chat (MUC) rooms, and deploying AI agents that can participate in conversations using the Mistral AI API.
 
@@ -17,6 +17,44 @@ This project provides both basic XMPP client examples and a complete AI-powered 
   - Agent capabilities & commands: `docs/agents.md`
   - Testing & env setup: `docs/testing.md`
   - MCP server details & XMPP debug hooks: `docs/mcp.md`
+  - Server/systemd setup: `docs/server.md`
+  - Debate/Chair/Recorder notes: `docs/debating-society.md`
+
+## Deploying the bots
+
+1) Install deps
+```bash
+npm install
+```
+
+2) Set secrets/env (root `.env`)
+```
+NODE_TLS_REJECT_UNAUTHORIZED=0
+LINGUE_ENABLED=true
+MISTRAL_API_KEY=...
+SEMEM_AUTH_TOKEN=...
+SEMEM_BASE_URL=https://mcp.tensegrity.it
+# optional: LOG_FILE=logs/agents.log LOG_LEVEL=info
+```
+
+3) Set agent profiles (XMPP creds/resources)
+- Edit `config/agents/*.json` for each agent (mistral, semem, demo, chair, recorder). Each file defines:
+  - `xmpp.service/domain/username/password/resource`
+  - `roomJid` (e.g., `general@conference.tensegrity.it`)
+  - Provider settings (model, Semem base URL, etc.)
+- Do not rely on `.env` for XMPP usernames/resources; profiles must be correct and distinct.
+
+4) Start scripts
+- All agents: `./start-all-agents.sh`
+- Debate-only (chair + recorder): `./start-debate-agents.sh`
+- Individual agents: `AGENT_PROFILE=<name> node src/services/<agent>.js`
+
+5) Systemd (server)
+- Use `misc/tia-agents.service` (see `docs/server.md`): copy to `/etc/systemd/system/`, `systemctl daemon-reload`, `systemctl enable --now tia-agents.service`.
+
+6) Troubleshooting
+- Ensure each agent has a unique XMPP account/resource; if the server disallows multiple resources on one account, use separate usernames.
+- Check logs: set `LOG_FILE`/`LOG_LEVEL`, or `journalctl -u tia-agents.service -f` when running under systemd.
 
 ## Prerequisites
 
