@@ -40,7 +40,7 @@ function mergeConfig(fileConfig = {}) {
 const profiles = {
   default: {
     nickname: SEMEM_NICKNAME || AGENT_NICKNAME || "Semem",
-    roomJid: process.env.MUC_ROOM || "general@conference.xmpp",
+    roomJid: process.env.MUC_ROOM || "general@conference.tensegrity.it",
     features: {
       useWikipedia: true,
       useWikidata: true,

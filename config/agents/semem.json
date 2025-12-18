@@ -4,9 +4,10 @@
     "domain": "tensegrity.it",
     "username": "semem",
     "password": "semempass",
-    "resource": "semem"
+    "resource": "Semem"
   },
-  "nickname": "semem",
+  "nickname": "Semem",
+  "roomJid": "general@conference.tensegrity.it",
   "profile": "default",
   "semem": {
     "baseUrl": "https://mcp.tensegrity.it",

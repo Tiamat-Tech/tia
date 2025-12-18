@@ -4,7 +4,8 @@
     "domain": "tensegrity.it",
     "username": "demo",
     "password": "demopass",
-    "resource": "demo"
+    "resource": "Demo"
   },
-  "nickname": "demo"
+  "nickname": "Demo",
+  "roomJid": "general@conference.tensegrity.it"
 }

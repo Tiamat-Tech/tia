@@ -4,9 +4,10 @@
     "domain": "tensegrity.it",
     "username": "mistral",
     "password": "mistralpass",
-    "resource": "mistral"
+    "resource": "Mistral"
   },
-  "nickname": "mistral",
+  "nickname": "Mistral",
+  "roomJid": "general@conference.tensegrity.it",
   "mistral": {
     "model": "mistral-small-latest",
     "apiKeyEnv": "MISTRAL_API_KEY"
