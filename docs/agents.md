@@ -47,6 +47,7 @@ XMPP_RESOURCE=...                      # optional; defaults to bot nickname
 - Env:
   - `SEMEM_BASE_URL` (default `https://mcp.tensegrity.it`)
   - `SEMEM_AUTH_TOKEN` if needed
+  - `SEMEM_HTTP_TIMEOUT_MS` (default 8000) timeout for Semem HTTP calls
   - `SEMEM_NICKNAME` (default profile) or `SEMEM_LITE_NICKNAME` (lite profile)
   - `AGENT_NICKNAME` (one-off override), `AGENT_RESOURCE` (resource override)
   - `AGENT_PROFILE` (`default` or `lite`) toggles feature flags (Wikipedia/Wikidata)

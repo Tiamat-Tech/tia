@@ -3,12 +3,14 @@ import dotenv from "dotenv";
 dotenv.config();
 
 const DEFAULT_BASE_URL = process.env.SEMEM_BASE_URL || "https://mcp.tensegrity.it";
+const DEFAULT_TIMEOUT_MS = parseInt(process.env.SEMEM_HTTP_TIMEOUT_MS || "8000", 10);
 
 export class SememClient {
   constructor({
     baseUrl = DEFAULT_BASE_URL,
     authToken = process.env.SEMEM_AUTH_TOKEN,
-    fetchImpl = globalThis.fetch
+    fetchImpl = globalThis.fetch,
+    timeoutMs = DEFAULT_TIMEOUT_MS
   } = {}) {
     if (!fetchImpl) {
       throw new Error("A fetch implementation is required for SememClient.");
@@ -17,6 +19,7 @@ export class SememClient {
     this.baseUrl = baseUrl.endsWith("/") ? baseUrl.slice(0, -1) : baseUrl;
     this.authToken = authToken;
     this.fetch = fetchImpl;
+    this.timeoutMs = timeoutMs;
   }
 
   buildHeaders() {
@@ -29,11 +32,25 @@ export class SememClient {
 
   async post(path, payload) {
     const url = `${this.baseUrl}${path}`;
-    const response = await this.fetch(url, {
-      method: "POST",
-      headers: this.buildHeaders(),
-      body: JSON.stringify(payload)
-    });
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), this.timeoutMs);
+
+    let response;
+    try {
+      response = await this.fetch(url, {
+        method: "POST",
+        headers: this.buildHeaders(),
+        body: JSON.stringify(payload),
+        signal: controller.signal
+      });
+    } catch (err) {
+      clearTimeout(timeout);
+      if (err.name === "AbortError") {
+        throw new Error(`Semem request timed out after ${this.timeoutMs}ms`);
+      }
+      throw err;
+    }
+    clearTimeout(timeout);
 
     const text = await response.text();
     let data;

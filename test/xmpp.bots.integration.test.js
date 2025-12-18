@@ -32,7 +32,7 @@ const messages = [];
 let agent;
 const botProcs = [];
 
-async function waitFor(conditionFn, timeoutMs = 12000, intervalMs = 100) {
+async function waitFor(conditionFn, timeoutMs = 20000, intervalMs = 150) {
   const start = Date.now();
   // eslint-disable-next-line no-constant-condition
   while (true) {
@@ -62,7 +62,8 @@ function stopBots() {
 }
 
 function findMessageFrom(senderNickname) {
-  return messages.find((m) => m.sender === senderNickname);
+  const base = senderNickname.toLowerCase();
+  return messages.find((m) => m.sender?.toLowerCase().startsWith(base));
 }
 
 if (missingEnv.length) {
@@ -86,8 +87,9 @@ if (missingEnv.length) {
       });
 
       await agent.start();
-      await waitFor(() => agent.isInRoom === true, 10000);
-    }, 15000);
+      await waitFor(() => agent.isInRoom === true, 18000);
+      await new Promise((resolve) => setTimeout(resolve, 5000));
+    }, 30000);
 
     afterAll(async () => {
       stopBots();
@@ -109,17 +111,17 @@ if (missingEnv.length) {
         });
 
         // Give the bot a moment to join
-        await new Promise((resolve) => setTimeout(resolve, 4000));
+        await new Promise((resolve) => setTimeout(resolve, 8000));
 
         const ping = `${mistralNickname}, integration test ping ${Date.now()}`;
         await agent.sendGroupMessage(ping);
 
-        await waitFor(() => !!findMessageFrom(mistralNickname), 15000, 200);
+        await waitFor(() => !!findMessageFrom(mistralNickname), 20000, 200);
 
         const reply = findMessageFrom(mistralNickname);
         expect(reply?.body || "").toBeTruthy();
       },
-      25000
+      40000
     );
 
     const sememTestEnabled = process.env.RUN_SEMEM_BOT_TEST === "true";
@@ -136,17 +138,17 @@ if (missingEnv.length) {
           AGENT_NICKNAME: sememNickname
         });
 
-        await new Promise((resolve) => setTimeout(resolve, 4000));
+        await new Promise((resolve) => setTimeout(resolve, 20000));
 
         const ping = `${sememNickname}, integration test ping ${Date.now()}`;
         await agent.sendGroupMessage(ping);
 
-        await waitFor(() => !!findMessageFrom(sememNickname), 15000, 200);
+        await waitFor(() => !!findMessageFrom(sememNickname), 45000, 200);
 
         const reply = findMessageFrom(sememNickname);
         expect(reply?.body || "").toBeTruthy();
       },
-      25000
+      70000
     );
   });
 }

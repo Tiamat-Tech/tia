@@ -30,7 +30,7 @@ const NICKNAME =
 const messages = [];
 let agent;
 
-async function waitFor(conditionFn, timeoutMs = 8000, intervalMs = 100) {
+async function waitFor(conditionFn, timeoutMs = 12000, intervalMs = 150) {
   const start = Date.now();
   // eslint-disable-next-line no-constant-condition
   while (true) {

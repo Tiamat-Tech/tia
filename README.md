@@ -33,30 +33,6 @@ npm install
 
 ## Quick Start
 
-### For TBox Users
-
-If you're using the TBox environment, the XMPP server (Prosody) is already configured and running on `localhost:5222` with domain `xmpp`. Users are pre-created including `dogbot@xmpp`.
-
- Connecting with a client app, eg. 
- * Server: localhost (or your server's IP if connecting remotely)
- * Port: 5222
- * Domain: xmpp
- * Username: danja
- * Password: Claudiopup
- * JID: danja@xmpp
-
-  Security Settings:
-  - Enable TLS/SSL
-  - Accept self-signed certificates (since it's a local development server)
-
-  Popular XMPP clients:
-  - Gajim (Desktop - Linux/Windows/Mac)
-  - Conversations (Android)
-  - ChatSecure (iOS)
-  - Pidgin (Desktop - cross-platform)
-
-  The server is running on port 5222 (standard XMPP) with TLS enabled but using self-signed certificates.
-
 ## Examples
 
 ### Basic XMPP Examples
@@ -73,7 +49,6 @@ If you're using the TBox environment, the XMPP server (Prosody) is already confi
 To run the basic examples a user needs to be created:
 
 ```bash
-# For TBox environment (self-signed certificates)
 NODE_TLS_REJECT_UNAUTHORIZED=0 node src/examples/add-users.js
 NODE_TLS_REJECT_UNAUTHORIZED=0 node src/examples/hello-world.js
 NODE_TLS_REJECT_UNAUTHORIZED=0 node src/examples/call-alice.js
@@ -202,6 +177,8 @@ npm test
 - Bot-in-MUC checks (run via the same `test:integration`, but gated by env):
   - Mistral bot test runs when `MISTRAL_API_KEY` is set (skip with `RUN_MISTRAL_BOT_TEST=false`).
   - Semem agent test runs only when `RUN_SEMEM_BOT_TEST=true` (assumes Semem endpoint reachable). Set `SEMEM_NICKNAME`/`AGENT_NICKNAME` if you need a specific name.
+  - Semem tell/ask roundtrip runs when `RUN_SEMEM_BOT_TEST=true` (sends `tell Semem that Glitch is a canary` then asks `what is Glitch?` to verify storage/retrieval).
+- Direct Semem check (no XMPP): `node src/examples/semem-direct-test.js "Glitch is a canary" "What is Glitch?"`
 
 ### Semem Agent (chat via Semem MCP)
 
@@ -384,36 +361,6 @@ This project is designed to work seamlessly with the TBox development environmen
 - Check room permissions and creation settings
 - Verify bot has joined room successfully
 
-## Files Structure
-
-```
-tia/
-├── src/
-│   ├── examples/              # XMPP examples and utilities
-│   │   ├── hello-world.js     # Self-messaging example
-│   │   ├── call-alice.js      # Send message to another user
-│   │   ├── alice.js           # Listen for incoming messages
-│   │   ├── test-muc.js        # MUC room testing
-│   │   ├── add-users.js       # Create XMPP users from JSON
-│   │   ├── list-users.js      # Server information (limited)
-│   │   ├── create-muc-room.js # Create MUC rooms with proper protocol
-│   │   ├── test-bot-interaction.js # Test MistralBot responses
-│   │   ├── discover-xmpp-services.js # Discover XMPP services
-│   │   ├── users.json         # User definitions for add-users.js
-│   │   ├── db01.js            # Legacy example (self-messaging)
-│   │   ├── db02.js            # Legacy example (send message)
-│   │   └── db03.js            # Legacy example (receive messages)
-│   ├── client/                # Interactive XMPP clients
-│   │   └── repl.js            # CLI REPL client
-│   └── services/              # AI bot services
-│       ├── mistral-bot.js     # Full AI bot with Mistral API
-│       └── demo-bot.js        # Demo version (no API key needed)
-├── .env.example               # Configuration template
-├── start-mistral-bot.sh       # AI bot launcher
-├── start-demo-bot.sh          # Demo bot launcher
-├── MISTRAL_BOT.md             # Detailed bot documentation
-└── README.md                  # This file
-```
 
 ## License
 

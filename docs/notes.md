@@ -1,3 +1,10 @@
+RUN_SEMEM_BOT_TEST=true NODE_TLS_REJECT_UNAUTHORIZED=0 npm run test:integration
+
+node src/examples/semem-direct-test.js "Glitch is a canary" "What is Glitch?"
+
+
+---
+
 npm install @xmpp/client @xmpp/debug
 
 https://platform.openai.com/docs/quickstart?context=node
