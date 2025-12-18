@@ -2,7 +2,7 @@ import dotenv from "dotenv";
 import { AgentRunner } from "../agents/core/agent-runner.js";
 import { createMentionDetector } from "../agents/core/mention-detector.js";
 import { defaultCommandParser } from "../agents/core/command-parser.js";
-import { MistralProvider } from "../agents/providers/mistral-provider.js";
+import { ChairProvider } from "../agents/providers/chair-provider.js";
 import logger from "../lib/logger-lite.js";
 import loadAgentConfig from "../agents/config-loader.js";
 
@@ -30,12 +30,8 @@ if (!XMPP_CONFIG.service || !XMPP_CONFIG.domain || !XMPP_CONFIG.username || !XMP
 const MUC_ROOM = fileConfig.roomJid || "general@conference.tensegrity.it";
 const BOT_NICKNAME = fileConfig.nickname;
 
-const provider = new MistralProvider({
-  apiKey: process.env.MISTRAL_API_KEY,
-  model: (fileConfig.mistral && fileConfig.mistral.model) || process.env.MISTRAL_MODEL || "mistral-small-latest",
+const provider = new ChairProvider({
   nickname: BOT_NICKNAME,
-  lingueEnabled: process.env.LINGUE_ENABLED !== "false",
-  lingueConfidenceMin: parseFloat(process.env.LINGUE_CONFIDENCE_MIN || "0.5"),
   logger
 });
 
