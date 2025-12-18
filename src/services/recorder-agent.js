@@ -15,15 +15,19 @@ if (!fileConfig?.nickname || !fileConfig?.xmpp?.username) {
 }
 
 const XMPP_CONFIG = {
-  service: process.env.XMPP_SERVICE || fileConfig.xmpp?.service || "xmpp://localhost:5222",
-  domain: process.env.XMPP_DOMAIN || fileConfig.xmpp?.domain || "xmpp",
-  username: process.env.XMPP_USERNAME || fileConfig.xmpp?.username,
-  password: process.env.XMPP_PASSWORD || fileConfig.xmpp?.password,
-  resource: process.env.RECORDER_RESOURCE || fileConfig.xmpp?.resource || fileConfig.nickname,
+  service: fileConfig.xmpp?.service,
+  domain: fileConfig.xmpp?.domain,
+  username: fileConfig.xmpp?.username,
+  password: fileConfig.xmpp?.password,
+  resource: fileConfig.xmpp?.resource || fileConfig.nickname,
   tls: { rejectUnauthorized: false }
 };
 
-const MUC_ROOM = fileConfig.roomJid || process.env.MUC_ROOM || "general@conference.tensegrity.it";
+if (!XMPP_CONFIG.service || !XMPP_CONFIG.domain || !XMPP_CONFIG.username || !XMPP_CONFIG.password) {
+  throw new Error("Recorder agent XMPP config incomplete; check profile file");
+}
+
+const MUC_ROOM = fileConfig.roomJid || "general@conference.tensegrity.it";
 const BOT_NICKNAME = fileConfig.nickname;
 
 const sememConfig = {

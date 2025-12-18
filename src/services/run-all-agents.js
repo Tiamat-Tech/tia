@@ -25,7 +25,7 @@ const AGENT_DEFINITIONS = {
     command: "node src/services/recorder-agent.js",
     description: "Recorder agent (logs to Semem)",
     env: { AGENT_PROFILE: "recorder" },
-    requiredEnv: ["SEMEM_BASE_URL"]
+    requiredEnv: ["SEMEM_AUTH_TOKEN"]
   },
   demo: {
     command: "node src/services/demo-bot.js",

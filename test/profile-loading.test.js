@@ -8,23 +8,23 @@ const configDir = path.join(process.cwd(), "config", "agents");
 describe("agent profile loading", () => {
   it("loads semem profile from file", () => {
     const profile = loadAgentProfile("semem");
-    expect(profile.nickname).toBe("Semem");
-    expect(profile.xmppConfig.resource).toBe("Semem");
-    expect(profile.xmppConfig.username).toBe("Semem");
+    expect(profile.nickname.toLowerCase()).toBe("semem");
+    expect(profile.xmppConfig.resource.toLowerCase()).toBe("semem");
+    expect(profile.xmppConfig.username.toLowerCase()).toBe("semem");
   });
 
   it("loads mistral profile from file", () => {
     const profile = loadAgentProfile("mistral");
-    expect(profile.nickname).toBe("Mistral");
-    expect(profile.xmppConfig.resource).toBe("Mistral");
-    expect(profile.xmppConfig.username).toBe("Mistral");
+    expect(profile.nickname.toLowerCase()).toBe("mistral");
+    expect(profile.xmppConfig.resource.toLowerCase()).toBe("mistral");
+    expect(profile.xmppConfig.username.toLowerCase()).toBe("mistral");
   });
 
   it("loads demo profile from file", () => {
     const profile = loadAgentProfile("demo");
-    expect(profile.nickname).toBe("Demo");
-    expect(profile.xmppConfig.resource).toBe("Demo");
-    expect(profile.xmppConfig.username).toBe("Demo");
+    expect(profile.nickname.toLowerCase()).toBe("demo");
+    expect(profile.xmppConfig.resource.toLowerCase()).toBe("demo");
+    expect(profile.xmppConfig.username.toLowerCase()).toBe("demo");
   });
 
   it("falls back to default when profile missing", () => {

@@ -14,13 +14,22 @@ if (!profile?.nickname || !profile?.xmppConfig?.username) {
   throw new Error("Semem agent profile is missing nickname or XMPP username");
 }
 
-const XMPP_CONFIG = profile.xmppConfig;
+const XMPP_CONFIG = {
+  service: profile.xmppConfig?.service,
+  domain: profile.xmppConfig?.domain,
+  username: profile.xmppConfig?.username,
+  password: profile.xmppConfig?.password,
+  resource: profile.xmppConfig?.resource || profile.nickname,
+  tls: { rejectUnauthorized: false }
+};
+if (!XMPP_CONFIG.service || !XMPP_CONFIG.domain || !XMPP_CONFIG.username || !XMPP_CONFIG.password) {
+  throw new Error("Semem agent XMPP config incomplete; check profile file");
+}
+
 const MUC_ROOM = profile.roomJid;
 const BOT_NICKNAME = profile.nickname;
 const CHAT_FEATURES = profile.features || {};
 const ACTIVE_PROFILE = profile.profileName;
-XMPP_CONFIG.resource =
-  process.env.AGENT_RESOURCE || process.env.SEMEM_RESOURCE || profile.xmppConfig.resource || BOT_NICKNAME;
 
 const sememProvider = new SememProvider({
   sememConfig: profile.sememConfig,

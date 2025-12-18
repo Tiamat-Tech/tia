@@ -10,22 +10,27 @@ dotenv.config();
 
 const profileName = process.env.AGENT_PROFILE || "demo";
 const fileConfig = loadAgentConfig(profileName) || {};
+if (!fileConfig?.nickname || !fileConfig?.xmpp?.username) {
+  throw new Error("Demo agent profile is missing nickname or XMPP username");
+}
 
-const DEMO_BOT_NICKNAME =
-  fileConfig.nickname || process.env.DEMO_BOT_NICKNAME || "DemoBot";
-const DEMO_XMPP_RESOURCE =
-  process.env.DEMO_XMPP_RESOURCE || fileConfig.xmpp?.resource || DEMO_BOT_NICKNAME;
+const DEMO_BOT_NICKNAME = fileConfig.nickname;
+const DEMO_XMPP_RESOURCE = fileConfig.xmpp?.resource || DEMO_BOT_NICKNAME;
 
 const XMPP_CONFIG = {
-  service: process.env.XMPP_SERVICE || fileConfig.xmpp?.service || "xmpp://localhost:5222",
-  domain: process.env.XMPP_DOMAIN || fileConfig.xmpp?.domain || "xmpp",
-  username: process.env.XMPP_USERNAME || fileConfig.xmpp?.username,
-  password: process.env.XMPP_PASSWORD || fileConfig.xmpp?.password,
+  service: fileConfig.xmpp?.service,
+  domain: fileConfig.xmpp?.domain,
+  username: fileConfig.xmpp?.username,
+  password: fileConfig.xmpp?.password,
   resource: DEMO_XMPP_RESOURCE,
   tls: { rejectUnauthorized: false }
 };
 
-const MUC_ROOM = fileConfig.roomJid || process.env.MUC_ROOM || "general@conference.xmpp";
+if (!XMPP_CONFIG.service || !XMPP_CONFIG.domain || !XMPP_CONFIG.username || !XMPP_CONFIG.password) {
+  throw new Error("Demo agent XMPP config incomplete; check profile file");
+}
+
+const MUC_ROOM = fileConfig.roomJid || "general@conference.tensegrity.it";
 
 const provider = new DemoProvider({ nickname: DEMO_BOT_NICKNAME, logger });
 
