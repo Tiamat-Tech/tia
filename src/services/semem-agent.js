@@ -4,6 +4,7 @@ import { AgentRunner } from "../agents/core/agent-runner.js";
 import { createMentionDetector } from "../agents/core/mention-detector.js";
 import { defaultCommandParser } from "../agents/core/command-parser.js";
 import { SememProvider } from "../agents/providers/semem-provider.js";
+import logger from "../lib/logger-lite.js";
 
 dotenv.config();
 
@@ -22,7 +23,7 @@ const sememProvider = new SememProvider({
   sememConfig: profile.sememConfig,
   botNickname: BOT_NICKNAME,
   chatFeatures: CHAT_FEATURES,
-  logger: console
+  logger
 });
 
 const runner = new AgentRunner({
@@ -33,7 +34,7 @@ const runner = new AgentRunner({
   mentionDetector: createMentionDetector(BOT_NICKNAME, ["semem", "bot"]),
   commandParser: defaultCommandParser,
   allowSelfMessages: false,
-  logger: console
+  logger
 });
 
 async function start() {

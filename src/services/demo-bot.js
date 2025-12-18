@@ -3,6 +3,7 @@ import { AgentRunner } from "../agents/core/agent-runner.js";
 import { createMentionDetector } from "../agents/core/mention-detector.js";
 import { defaultCommandParser } from "../agents/core/command-parser.js";
 import { DemoProvider } from "../agents/providers/demo-provider.js";
+import logger from "../lib/logger-lite.js";
 
 dotenv.config();
 
@@ -31,7 +32,7 @@ const runner = new AgentRunner({
   mentionDetector: createMentionDetector(DEMO_BOT_NICKNAME, [DEMO_BOT_NICKNAME.toLowerCase(), "bot", "demobot"]),
   commandParser: defaultCommandParser,
   allowSelfMessages: false,
-  logger: console
+  logger
 });
 
 async function start() {

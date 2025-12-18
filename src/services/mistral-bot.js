@@ -3,6 +3,7 @@ import { AgentRunner } from "../agents/core/agent-runner.js";
 import { createMentionDetector } from "../agents/core/mention-detector.js";
 import { defaultCommandParser } from "../agents/core/command-parser.js";
 import { MistralProvider } from "../agents/providers/mistral-provider.js";
+import logger from "../lib/logger-lite.js";
 
 dotenv.config();
 
@@ -32,7 +33,7 @@ const provider = new MistralProvider({
   nickname: BOT_NICKNAME,
   lingueEnabled: LINGUE_ENABLED,
   lingueConfidenceMin: LINGUE_CONFIDENCE_MIN,
-  logger: console
+  logger
 });
 
 const runner = new AgentRunner({
@@ -43,7 +44,7 @@ const runner = new AgentRunner({
   mentionDetector: createMentionDetector(BOT_NICKNAME, [BOT_NICKNAME.toLowerCase(), "bot", "mistralbot"]),
   commandParser: defaultCommandParser,
   allowSelfMessages: false,
-  logger: console
+  logger
 });
 
 async function start() {
