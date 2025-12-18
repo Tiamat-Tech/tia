@@ -11,6 +11,7 @@ export class AgentRunner {
     mentionDetector,
     commandParser,
     allowSelfMessages = false,
+    respondToAll = false,
     logger = console
   }) {
     if (!provider?.handle) {
@@ -23,6 +24,7 @@ export class AgentRunner {
       mentionDetector || createMentionDetector(nickname, [nickname?.toLowerCase()]);
     this.commandParser = commandParser || defaultCommandParser;
     this.logger = logger;
+    this.respondToAll = respondToAll;
 
     this.agent = new XmppRoomAgent({
       xmppConfig,
@@ -35,7 +37,7 @@ export class AgentRunner {
   }
 
   async handleMessage({ body, sender, type, roomJid, reply }) {
-    const addressed = type === "chat" || this.mentionDetector(body);
+    const addressed = this.respondToAll || type === "chat" || this.mentionDetector(body);
     if (!addressed) {
       this.logger.debug?.(`[AgentRunner] Ignoring message (not addressed): ${body}`);
       return;

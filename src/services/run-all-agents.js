@@ -15,6 +15,18 @@ const AGENT_DEFINITIONS = {
     requiredEnv: ["MISTRAL_API_KEY"],
     env: { AGENT_PROFILE: "mistral" }
   },
+  chair: {
+    command: "node src/services/chair-agent.js",
+    description: "Chair agent (debate orchestration)",
+    env: { AGENT_PROFILE: "chair" },
+    requiredEnv: ["MISTRAL_API_KEY"]
+  },
+  recorder: {
+    command: "node src/services/recorder-agent.js",
+    description: "Recorder agent (logs to Semem)",
+    env: { AGENT_PROFILE: "recorder" },
+    requiredEnv: ["SEMEM_BASE_URL"]
+  },
   demo: {
     command: "node src/services/demo-bot.js",
     description: "Demo bot (no API key needed)",
