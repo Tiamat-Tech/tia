@@ -22,7 +22,7 @@ The design goal is a clean, library-ready architecture that supports both deploy
 
 ## Start Here (Docs)
 
-- Agent capabilities & commands: `docs/agents.md`
+- [Agent capabilities & commands](docs/agents.md): `docs/agents.md`
 - Lingue integration: `docs/lingue-integration.md`
 - MCP client guide: `docs/mcp-client.md`
 - MCP server guide: `docs/mcp-server.md`
@@ -30,6 +30,7 @@ The design goal is a clean, library-ready architecture that supports both deploy
 - Testing & env: `docs/testing.md`
 - Server deployment: `docs/server.md`
 - Debate/Chair/Recorder notes: `docs/debating-society.md`
+- Lingue docs index (ontology/protocol): https://danja.github.io/lingue/ or `../lingue/docs/index.md`
 
 ## Architecture At A Glance
 

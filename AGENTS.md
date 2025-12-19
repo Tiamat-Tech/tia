@@ -1,20 +1,22 @@
 # Repository Guidelines
 
 ## Project Structure & Modules
-- `src/services`: Long-running bots (`mistral-bot.js`, `demo-bot.js`) started via the helper shell scripts.
+- `src/services`: Long-running bots (`mistral-bot.js`, `demo-bot.js`, `prolog-agent.js`, `mcp-loopback-agent.js`) started via the helper shell scripts.
 - `src/examples`: Task-focused scripts for XMPP setup, MUC creation, and message flow testing; runnable directly with `node`.
-- `src/lib`: Connection utilities for XMPP/OpenAI plus logging helpers; keep shared logic here.
+- `src/lib`: Connection utilities for XMPP plus logging helpers; keep shared logic here.
 - `src/client`: CLI REPL for interactive chats during manual verification.
-- `src/mcp`: Model Context Protocol client and server prototypes; experimental integrations belong here.
+- `src/mcp`: Model Context Protocol client/server bridges and test servers; integrations belong here.
 - `docs`, `_README.md`, `README.md`: Reference material; mirror new behavior in `README.md`.
 
 ## Setup, Build, and Run
 - Install deps: `npm install`.
 - Start AI bot: `./start-mistral-bot.sh` (requires `.env` with `MISTRAL_API_KEY`, optional `XMPP_*` overrides).
 - Start demo bot (no API key): `./start-demo-bot.sh`.
+- Start Prolog agent: `AGENT_PROFILE=prolog node src/services/prolog-agent.js`.
+- Start MCP loopback agent: `AGENT_PROFILE=mcp-loopback MCP_LOOPBACK_MODE=in-memory node src/services/mcp-loopback-agent.js`.
 - Create MUC room: `NODE_TLS_REJECT_UNAUTHORIZED=0 node src/examples/create-muc-room.js`.
 - REPL client: `NODE_TLS_REJECT_UNAUTHORIZED=0 node src/client/repl.js <user> <pass>`.
-- Example smoke tests: `NODE_TLS_REJECT_UNAUTHORIZED=0 node src/examples/test-bot-interaction.js`. `npm test` is currently a placeholder.
+- Example smoke tests: `NODE_TLS_REJECT_UNAUTHORIZED=0 node src/examples/test-bot-interaction.js`. `npm test` runs unit and integration fixtures.
 
 ## Coding Style & Naming
 - Node ESM (`type: "module"`); prefer `import`/`export` and avoid new CommonJS (refactor existing CJS when touched).
@@ -23,7 +25,8 @@
 - Environment-driven config defaults live near the top of each file; keep new defaults together.
 
 ## Testing Guidelines
-- No formal test suite yet; favor runnable example scripts per feature.
+- `npm test` runs the current unit and integration test set.
+- Favor runnable example scripts per feature alongside Vitest coverage.
 - Name new checks after the scenario (`test-muc-joins.js`, `test-bot-interaction.js`) and place beside other examples.
 - When adding behavior, supply a minimal reproduction script and expected output notes in comments or `docs/`.
 

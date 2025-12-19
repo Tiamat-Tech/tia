@@ -17,5 +17,6 @@ echo "  Bot nicknames/resources:"
 echo "    Mistral: ${BOT_NICKNAME:-MistralBot} / ${XMPP_RESOURCE:-<auto>}"
 echo "    Semem:   ${SEMEM_NICKNAME:-${SEMEM_LITE_NICKNAME:-${AGENT_NICKNAME:-Semem}}} / ${AGENT_RESOURCE:-${XMPP_RESOURCE:-<auto>}}"
 echo "    Demo:    ${BOT_NICKNAME:-DemoBot} / ${XMPP_RESOURCE:-<auto>}"
+echo "    Prolog:  ${PROLOG_NICKNAME:-Prolog} / ${PROLOG_RESOURCE:-<auto>}"
 
 node src/services/run-all-agents.js

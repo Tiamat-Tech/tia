@@ -31,6 +31,11 @@ const AGENT_DEFINITIONS = {
     command: "node src/services/demo-bot.js",
     description: "Demo bot (no API key needed)",
     env: { AGENT_PROFILE: "demo" }
+  },
+  prolog: {
+    command: "node src/services/prolog-agent.js",
+    description: "Prolog agent (tau-prolog)",
+    env: { AGENT_PROFILE: "prolog" }
   }
 };
 
