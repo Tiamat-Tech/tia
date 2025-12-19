@@ -5,11 +5,19 @@
 @prefix ai: <https://tensegrity.it/vocab/ai-provider#> .
 @prefix dcterms: <http://purl.org/dc/terms/> .
 @prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+@prefix lng: <http://purl.org/stuff/lingue/> .
+@prefix ibis: <https://vocab.methodandstructure.com/ibis#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
 
-<#chair> a agent:ConversationalAgent, agent:AIAgent, agent:ModeratorAgent ;
+<#chair> a agent:ConversationalAgent, agent:AIAgent, agent:ModeratorAgent, lng:Agent ;
   foaf:nick "Chair" ;
   schema:identifier "chair" ;
   dcterms:created "2024-12-01T00:00:00Z"^^xsd:dateTime ;
+
+  lng:supports lng:HumanChat, lng:IBISText ;
+  lng:prefers lng:HumanChat ;
+  lng:understands <https://vocab.methodandstructure.com/ibis#> ;
+  lng:profile <#chair-lingue-profile> ;
 
   agent:xmppAccount [
     a xmpp:Account ;
@@ -27,3 +35,10 @@
     ai:model "mistral-small-latest" ;
     ai:apiKeyEnv "MISTRAL_API_KEY"
   ] .
+
+<#chair-lingue-profile> a lng:Profile ;
+  lng:availability lng:Process ;
+  lng:in [ a lng:Interface ; rdfs:label "XMPP MUC text" ] ;
+  lng:out [ a lng:Interface ; rdfs:label "XMPP MUC text + IBIS RDF" ] ;
+  lng:dependsOn [ a lng:Environment ; rdfs:label "XMPP/Prosody" ] ;
+  lng:alang "JavaScript" .

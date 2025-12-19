@@ -1,0 +1,22 @@
+# Base definitions
+@prefix sh: <http://www.w3.org/ns/shacl#> .
+@prefix agent: <http://example.org/agent#> .
+@prefix protocol: <http://example.org/protocol#> .
+
+# Agent capability descriptions
+agent:Agent1 a agent:Agent ;
+    protocol:supports protocol:HTTP, protocol:MQTT, protocol:CoAP .
+
+agent:Agent2 a agent:Agent ;
+    protocol:supports protocol:HTTP, protocol:CoAP, protocol:DDS .
+
+# SHACL shape to validate protocol intersection
+protocol:IntersectionShape a sh:NodeShape ;
+    sh:targetClass agent:Agent ;
+    sh:property [
+        sh:path protocol:supports ;
+        sh:in ( protocol:HTTP protocol:CoAP ) ;  # Common protocols
+        sh:minCount 1 ;
+    ] .
+
+# Validation result will show agents supporting both HTTP and CoAP

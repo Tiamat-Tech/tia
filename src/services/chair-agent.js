@@ -5,6 +5,8 @@ import { defaultCommandParser } from "../agents/core/command-parser.js";
 import { ChairProvider } from "../agents/providers/chair-provider.js";
 import logger from "../lib/logger-lite.js";
 import { loadAgentProfile } from "../agents/profile-loader.js";
+import { LingueNegotiator, LANGUAGE_MODES } from "../lib/lingue/index.js";
+import { HumanChatHandler, IBISTextHandler } from "../lib/lingue/handlers/index.js";
 
 dotenv.config();
 
@@ -40,11 +42,26 @@ const provider = new ChairProvider({
   logger
 });
 
+const handlers = {};
+if (profile.supportsLingueMode(LANGUAGE_MODES.HUMAN_CHAT)) {
+  handlers[LANGUAGE_MODES.HUMAN_CHAT] = new HumanChatHandler({ logger });
+}
+if (profile.supportsLingueMode(LANGUAGE_MODES.IBIS_TEXT)) {
+  handlers[LANGUAGE_MODES.IBIS_TEXT] = new IBISTextHandler({ logger });
+}
+
+const negotiator = new LingueNegotiator({
+  profile,
+  handlers,
+  logger
+});
+
 const runner = new AgentRunner({
   xmppConfig: XMPP_CONFIG,
   roomJid: MUC_ROOM,
   nickname: BOT_NICKNAME,
   provider,
+  negotiator,
   mentionDetector: createMentionDetector(BOT_NICKNAME, [BOT_NICKNAME]),
   commandParser: defaultCommandParser,
   allowSelfMessages: false,

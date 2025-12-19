@@ -1,0 +1,238 @@
+@prefix : <http://purl.org/stuff/lingue/> .
+@prefix lng: <http://purl.org/stuff/lingue/> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+@prefix dct: <http://purl.org/dc/terms/> .
+@prefix foaf: <http://xmlns.com/foaf/0.1/> .
+@prefix sh: <http://www.w3.org/ns/shacl#> .
+
+lng:
+    a owl:Ontology ;
+    dct:title "Lingue Ontology" ;
+    dct:description "Draft vocabulary for Lingue-capable agents, profiles, capabilities, and exchanges. Initial transport focus is XMPP MUC. Version 0.1.0." ;
+    owl:versionInfo "0.1.0" ;
+    dct:creator "Lingue project" .
+
+# Core classes
+
+lng:Agent a owl:Class ;
+    rdfs:subClassOf foaf:Agent ;
+    rdfs:label "Agent" ;
+    rdfs:comment "Participant in Lingue interactions (software or human)." .
+
+lng:Resource a owl:Class ;
+    rdfs:subClassOf rdfs:Resource ;
+    rdfs:label "Lingue Resource" ;
+    rdfs:comment "Base class for profile-described resources." .
+
+lng:Profile a owl:Class ;
+    rdfs:subClassOf lng:Resource ;
+    rdfs:label "Profile" ;
+    rdfs:comment "RPP-derived profile describing an agent's runnable or conversational capabilities." .
+
+lng:Component a owl:Class ;
+    rdfs:subClassOf lng:Resource ;
+    rdfs:label "Component" ;
+    rdfs:comment "Grouping class for profile attribute values (RPP-derived)." .
+
+lng:Availability a owl:Class ;
+    rdfs:subClassOf lng:Component ;
+    rdfs:label "Availability" ;
+    rdfs:comment "Machine-readability of a process or algorithm (definition/source/executable/process)." .
+
+lng:Dependency a owl:Class ;
+    rdfs:subClassOf lng:Component ;
+    rdfs:label "Dependency" ;
+    rdfs:comment "Required resources to operate (libraries, runtimes, environments)." .
+
+lng:Environment a owl:Class ;
+    rdfs:subClassOf lng:Dependency ;
+    rdfs:label "Environment" ;
+    rdfs:comment "Runtime environment dependency (e.g., OS, VM, XMPP server)." .
+
+lng:Library a owl:Class ;
+    rdfs:subClassOf lng:Dependency ;
+    rdfs:label "Library" ;
+    rdfs:comment "Library dependency required by the profile." .
+
+lng:Algorithm a owl:Class ;
+    rdfs:subClassOf lng:Component ;
+    rdfs:label "Algorithm" ;
+    rdfs:comment "Abstract algorithm or process implementation identifier." .
+
+lng:Interface a owl:Class ;
+    rdfs:subClassOf lng:Component ;
+    rdfs:label "Interface" ;
+    rdfs:comment "Input/output interface description for a process." .
+
+lng:DataFormat a owl:Class ;
+    rdfs:subClassOf lng:Interface ;
+    rdfs:label "Data format" ;
+    rdfs:comment "Format of data consumed or produced by a process." .
+
+lng:Encoding a owl:Class ;
+    rdfs:subClassOf lng:Interface ;
+    rdfs:label "Encoding" ;
+    rdfs:comment "Low-level encoding of input/output data." .
+
+lng:Capability a owl:Class ;
+    rdfs:label "Capability" ;
+    rdfs:comment "Advertised ability such as a channel or language mode." .
+
+lng:Channel a owl:Class ;
+    rdfs:subClassOf lng:Capability ;
+    rdfs:label "Channel" ;
+    rdfs:comment "Communication medium used for exchanges." .
+
+lng:LanguageMode a owl:Class ;
+    rdfs:subClassOf lng:Capability ;
+    rdfs:label "Language mode" ;
+    rdfs:comment "Communicative idiom (human text, IBIS text, Prolog program, etc.)." .
+
+lng:Exchange a owl:Class ;
+    rdfs:label "Exchange" ;
+    rdfs:comment "Interaction instance covering negotiation, ASK, or TELL payloads." .
+
+lng:ProtocolShape a owl:Class ;
+    rdfs:subClassOf sh:NodeShape ;
+    rdfs:label "Protocol shape" ;
+    rdfs:comment "SHACL shapes used to validate capability overlap and protocol constraints." .
+
+# Properties
+
+lng:supports a owl:ObjectProperty ;
+    rdfs:domain lng:Agent ;
+    rdfs:range lng:Capability ;
+    rdfs:label "supports" ;
+    rdfs:comment "Advertises that an agent can use a capability, language mode, or channel." .
+
+lng:prefers a owl:ObjectProperty ;
+    rdfs:domain lng:Agent ;
+    rdfs:range lng:LanguageMode ;
+    rdfs:label "prefers" ;
+    rdfs:comment "Preferred outgoing language mode for an agent." .
+
+lng:profile a owl:ObjectProperty ;
+    rdfs:domain lng:Agent ;
+    rdfs:range lng:Profile ;
+    rdfs:label "profile" ;
+    rdfs:comment "Links an agent to its Lingue profile." .
+
+lng:understands a owl:ObjectProperty ;
+    rdfs:domain lng:Agent ;
+    rdfs:range rdfs:Resource ;
+    rdfs:label "understands" ;
+    rdfs:comment "Vocabularies, serializations, or schemas an agent can process (e.g., IBIS, SHACL, MIME IRIs)." .
+
+lng:offers a owl:ObjectProperty ;
+    rdfs:domain lng:Agent ;
+    rdfs:range lng:Exchange ;
+    rdfs:label "offers" ;
+    rdfs:comment "Proposes a structured exchange to a peer." .
+
+lng:asks a owl:ObjectProperty ;
+    rdfs:domain lng:Agent ;
+    rdfs:range lng:Exchange ;
+    rdfs:label "asks" ;
+    rdfs:comment "Marks an exchange as a request for information or capability." .
+
+lng:tells a owl:ObjectProperty ;
+    rdfs:domain lng:Agent ;
+    rdfs:range lng:Exchange ;
+    rdfs:label "tells" ;
+    rdfs:comment "Marks an exchange as an assertion/response." .
+
+lng:dependsOn a owl:ObjectProperty ;
+    rdfs:domain lng:Profile ;
+    rdfs:range lng:Dependency ;
+    rdfs:label "depends on" ;
+    rdfs:comment "Declares a dependency required by the profile." .
+
+lng:hasDependency a owl:ObjectProperty ;
+    rdfs:domain lng:Profile ;
+    rdfs:range lng:Dependency ;
+    rdfs:label "has dependency" ;
+    rdfs:comment "Alias for dependsOn to preserve legacy naming." ;
+    owl:equivalentProperty lng:dependsOn .
+
+lng:in a owl:ObjectProperty ;
+    rdfs:domain lng:Profile ;
+    rdfs:range lng:Interface ;
+    rdfs:label "in" ;
+    rdfs:comment "Describes input interface characteristics." .
+
+lng:out a owl:ObjectProperty ;
+    rdfs:domain lng:Profile ;
+    rdfs:range lng:Interface ;
+    rdfs:label "out" ;
+    rdfs:comment "Describes output interface characteristics." .
+
+lng:availability a owl:ObjectProperty ;
+    rdfs:domain lng:Profile ;
+    rdfs:range lng:Availability ;
+    rdfs:label "availability" ;
+    rdfs:comment "Machine-readability level of the profiled process." .
+
+lng:alang a owl:DatatypeProperty ;
+    rdfs:domain lng:Algorithm ;
+    rdfs:range rdfs:Literal ;
+    rdfs:label "algorithm language" ;
+    rdfs:comment "Programming or specification language used by the algorithm." .
+
+lng:location a owl:ObjectProperty ;
+    rdfs:domain lng:Profile ;
+    rdfs:range rdfs:Resource ;
+    rdfs:label "location" ;
+    rdfs:comment "Locator (IRI) for an executable, service endpoint, or related resource." .
+
+lng:usesLanguageMode a owl:ObjectProperty ;
+    rdfs:domain lng:Exchange ;
+    rdfs:range lng:LanguageMode ;
+    rdfs:label "uses language mode" ;
+    rdfs:comment "Language mode selected for this exchange." .
+
+lng:usesChannel a owl:ObjectProperty ;
+    rdfs:domain lng:Exchange ;
+    rdfs:range lng:Channel ;
+    rdfs:label "uses channel" ;
+    rdfs:comment "Channel selected for this exchange (e.g., XMPP MUC)." .
+
+# Individuals (controlled terms)
+
+lng:HumanChat a lng:LanguageMode ;
+    rdfs:label "Human chat" ;
+    rdfs:comment "Human-readable free text; MIME text/plain." .
+
+lng:IBISText a lng:LanguageMode ;
+    rdfs:label "IBIS text" ;
+    rdfs:comment "Text carrying IBIS semantics; MIME text/plain with optional IBIS RDF attachment." .
+
+lng:PrologProgram a lng:LanguageMode ;
+    rdfs:label "Prolog program" ;
+    rdfs:comment "Prolog clauses or queries; MIME text/x-prolog." .
+
+lng:AgentProfileExchange a lng:LanguageMode ;
+    rdfs:label "Agent profile exchange" ;
+    rdfs:comment "RDF profile payload in Turtle or RDF/XML; MIME text/turtle or application/rdf+xml." .
+
+lng:XMPPMUC a lng:Channel ;
+    rdfs:label "XMPP MUC" ;
+    rdfs:comment "XMPP multi-user chat channel for Lingue interactions." .
+
+lng:Definition a lng:Availability ;
+    rdfs:label "Definition" ;
+    rdfs:comment "Abstract or human-readable description only." .
+
+lng:Source a lng:Availability ;
+    rdfs:label "Source" ;
+    rdfs:comment "Source code available but needs build or external runtime." .
+
+lng:Executable a lng:Availability ;
+    rdfs:label "Executable" ;
+    rdfs:comment "Single runtime dependency (interpreter/VM/OS) sufficient to execute." .
+
+lng:Process a lng:Availability ;
+    rdfs:label "Process" ;
+    rdfs:comment "Directly invokable online process or service endpoint." .

@@ -1,0 +1,366 @@
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix bibo: <http://purl.org/ontology/bibo/> .
+@prefix dct: <http://purl.org/dc/terms/> .
+@prefix foaf: <http://xmlns.com/foaf/0.1/> .
+@prefix ibis: <https://vocab.methodandstructure.com/ibis#> .
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+@prefix rdfa: <http://www.w3.org/ns/rdfa#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+@prefix vann: <http://purl.org/vocab/vann/> .
+@prefix xhv: <http://www.w3.org/1999/xhtml/vocab#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+
+<http://www.cc.gatech.edu/~ellendo/rittel/rittel-issues.pdf>
+    dct:creator "Horst Rittel"@en, "Werner Kunz"@en ;
+    dct:date "1970"^^xsd:gYear ;
+    dct:title "Issues as Elements of Information Systems"@en .
+
+<http://www.cs.hut.fi/Opinnot/T-93.850/2005/Papers/gIBIS1988-conklin.pdf>
+    dct:creator "Jeff Conklin"@en, "Michael L. Begeman"@en ;
+    dct:date "1988"^^xsd:gYear ;
+    dct:title "gIBIS: a hypertext tool for exploratory policy discussion"@en .
+
+<https://doriantaylor.com/person/dorian-taylor#me>
+    foaf:name "Dorian Taylor"@en .
+
+<https://vocab.methodandstructure.com/ibis>
+    a bibo:Specification ;
+    xhv:contents <https://vocab.methodandstructure.com/> ;
+    xhv:index <https://vocab.methodandstructure.com/> ;
+    xhv:top <https://vocab.methodandstructure.com/> ;
+    xhv:up <https://vocab.methodandstructure.com/> ;
+    rdfa:usesVocabulary <http://www.w3.org/1999/xhtml/vocab#> .
+
+<https://vocab.methodandstructure.com/ibis#>
+    dct:created "2012-12-11T22:22:53-08:00"^^xsd:dateTime ;
+    dct:creator <https://doriantaylor.com/person/dorian-taylor#me> ;
+    dct:modified "2012-12-12T16:04:50-08:00"^^xsd:dateTime, "2014-02-24T21:14:13Z"^^xsd:dateTime, "2018-02-22T03:39:14Z"^^xsd:dateTime, "2019-03-24T22:37:22Z"^^xsd:dateTime, "2023-12-18T02:25:31Z"^^xsd:dateTime, "2024-01-05T04:05:24Z"^^xsd:dateTime, "2025-04-10T02:30:11Z"^^xsd:dateTime, "2025-05-09T04:08:32Z"^^xsd:dateTime, "2025-10-31T22:26:31Z"^^xsd:dateTime ;
+    dct:references skos:Concept ;
+    dct:title "IBIS (bis) Vocabulary"@en ;
+    bibo:uri <https://vocab.methodandstructure.com/ibis#> ;
+    vann:preferredNamespacePrefix "ibis" ;
+    a owl:Ontology ;
+    rdfs:comment "This document specifies a vocabulary for describing an IBIS (issue-based information system)."@en ;
+    rdfs:isDefinedBy <https://vocab.methodandstructure.com/ibis#> ;
+    rdfs:label "IBIS"@en ;
+    rdfs:seeAlso <http://dublincore.org/documents/dcmi-terms/>, <http://en.wikipedia.org/wiki/Issue-Based_Information_System>, <http://www.cc.gatech.edu/~ellendo/rittel/rittel-issues.pdf>, <http://www.cs.hut.fi/Opinnot/T-93.850/2005/Papers/gIBIS1988-conklin.pdf>, <http://www.w3.org/TR/prov-o/>, <https://vocab.methodandstructure.com/ibis.n3>, <https://vocab.methodandstructure.com/ibis.rdf>, <https://vocab.methodandstructure.com/process-model#>, <https://web.archive.org/web/20120606063823/http://hyperdata.org/xmlns/ibis/> ;
+    owl:imports <http://www.w3.org/2004/02/skos/core#> ;
+    owl:versionInfo "0.7" .
+
+ibis:Argument
+    a owl:Class ;
+    rdfs:comment "An Argument is a type of Issue that explicitly supports or refutes a Position."@en ;
+    rdfs:isDefinedBy <https://vocab.methodandstructure.com/ibis#> ;
+    rdfs:label "Argument"@en ;
+    rdfs:subClassOf ibis:Issue, [
+        a owl:Restriction ;
+        owl:allValuesFrom ibis:Argument ;
+        owl:onProperty ibis:replaces
+    ], [
+        a owl:Restriction ;
+        owl:allValuesFrom ibis:Argument ;
+        owl:onProperty ibis:replaced-by
+    ] ;
+    owl:disjointWith ibis:Position ;
+    skos:usageNote "An Argument need not only relate in scope to another Argument, but it must only be replaced by another argument."@en .
+
+ibis:Entity
+    a owl:Class ;
+    rdfs:comment "ibis:Entity is the abstract superclass of from which the more specific entities are derived."@en ;
+    rdfs:isDefinedBy <https://vocab.methodandstructure.com/ibis#> ;
+    rdfs:label "Entity"@en ;
+    rdfs:subClassOf skos:Concept .
+
+ibis:Invariant
+    a owl:Class ;
+    rdfs:comment "An ibis:Entity can be marked ibis:Invariant to denote that it has been deemed outside of the influence of the agents in the system, i.e., something to be steered around."@en ;
+    rdfs:isDefinedBy <https://vocab.methodandstructure.com/ibis#> ;
+    rdfs:label "Invariant"@en ;
+    rdfs:subClassOf ibis:Entity .
+
+ibis:Issue
+    a owl:Class ;
+    rdfs:comment "An Issue is a state of affairs, claimed by one or more Agents to either be a misfit itself, or affecting some other Issue or Position."@en ;
+    rdfs:isDefinedBy <https://vocab.methodandstructure.com/ibis#> ;
+    rdfs:label "Issue"@en ;
+    rdfs:subClassOf ibis:State, [
+        a owl:Restriction ;
+        owl:allValuesFrom ibis:Issue ;
+        owl:onProperty skos:narrowerTransitive
+    ], [
+        a owl:Restriction ;
+        owl:allValuesFrom ibis:Issue ;
+        owl:onProperty skos:broaderTransitive
+    ], [
+        a owl:Restriction ;
+        owl:allValuesFrom ibis:Issue ;
+        owl:onProperty ibis:replaces
+    ], [
+        a owl:Restriction ;
+        owl:allValuesFrom ibis:Issue ;
+        owl:onProperty ibis:replaced-by
+    ] ;
+    owl:disjointWith ibis:Position .
+
+ibis:Network
+    a owl:Class ;
+    rdfs:comment "A network of issues, positions, and arguments."@en ;
+    rdfs:isDefinedBy <https://vocab.methodandstructure.com/ibis#> ;
+    rdfs:label "Network"@en ;
+    rdfs:subClassOf skos:ConceptScheme .
+
+ibis:Position
+    a owl:Class ;
+    rdfs:comment "A Position asserts a moral, ethical, pragmatic, or similar kind of assertion, typically identifying what, if anything, should be done about an Issue."@en ;
+    rdfs:isDefinedBy <https://vocab.methodandstructure.com/ibis#> ;
+    rdfs:label "Position"@en ;
+    rdfs:subClassOf ibis:Entity, [
+        a owl:Restriction ;
+        owl:allValuesFrom ibis:Position ;
+        owl:onProperty ibis:replaced-by
+    ], [
+        a owl:Restriction ;
+        owl:allValuesFrom ibis:Position ;
+        owl:onProperty skos:narrowerTransitive
+    ], [
+        a owl:Restriction ;
+        owl:allValuesFrom ibis:Position ;
+        owl:onProperty skos:broaderTransitive
+    ], [
+        a owl:Restriction ;
+        owl:allValuesFrom ibis:Position ;
+        owl:onProperty ibis:replaces
+    ] ;
+    owl:disjointWith ibis:Argument, ibis:Issue .
+
+ibis:State
+    a owl:Class ;
+    rdfs:comment "A State can be understood as a snapshot of a system at a given time, such as before or after an event."@en ;
+    rdfs:isDefinedBy <https://vocab.methodandstructure.com/ibis#> ;
+    rdfs:label "State"^^xsd:token ;
+    rdfs:subClassOf ibis:Entity ;
+    skos:note "A State is distinct from a particular instant, but it is analogous to it. At the time of observation, a State is either true or false."@en .
+
+ibis:concern-of
+    a owl:ObjectProperty ;
+    rdfs:comment "The subject is an issue concerning the object, which can be any resource."@en ;
+    rdfs:isDefinedBy <https://vocab.methodandstructure.com/ibis#> ;
+    rdfs:label "concern-of"@en ;
+    rdfs:range ibis:Entity ;
+    owl:inverseOf ibis:concerns .
+
+ibis:concerns
+    a owl:ObjectProperty ;
+    rdfs:comment "The subject is an issue concerning the object, which can be any resource."@en ;
+    rdfs:domain ibis:Entity ;
+    rdfs:isDefinedBy <https://vocab.methodandstructure.com/ibis#> ;
+    rdfs:label "concerns"@en ;
+    owl:inverseOf ibis:concern-of .
+
+ibis:endorsed-by
+    a owl:ObjectProperty ;
+    rdfs:comment "A concept can be endorsed by an Agent without said Agent having mentioned or advanced it initially, and without any additional comment."@en ;
+    rdfs:domain ibis:Entity ;
+    rdfs:isDefinedBy <https://vocab.methodandstructure.com/ibis#> ;
+    rdfs:label "endorsed by"@en ;
+    rdfs:range foaf:Agent ;
+    owl:inverseOf ibis:endorses ;
+    skos:note "This term, along with ibis:endorses, enables an Agent to signal its agreement with a concept. To signal disagreement, explain why with an ibis:Argument that ibis:opposes the concept."@en .
+
+ibis:endorses
+    a owl:ObjectProperty ;
+    rdfs:comment "An Agent can endorse a concept without having initially mentioned or advanced it, and without any additional comment."@en ;
+    rdfs:domain foaf:Agent ;
+    rdfs:isDefinedBy <https://vocab.methodandstructure.com/ibis#> ;
+    rdfs:label "endorses"@en ;
+    rdfs:range ibis:Entity ;
+    owl:inverseOf ibis:endorsed-by ;
+    skos:note "This term, along with ibis:endorsed-by, enables an Agent to signal its agreement with a concept. To signal disagreement, explain why with an ibis:Argument that ibis:opposes the concept."@en .
+
+ibis:generalizes
+    a owl:ObjectProperty ;
+    rdfs:comment "The subject is a more generic form of the object."@en ;
+    rdfs:domain ibis:Entity ;
+    rdfs:isDefinedBy <https://vocab.methodandstructure.com/ibis#> ;
+    rdfs:label "generalizes"@en ;
+    rdfs:range ibis:Entity ;
+    rdfs:subPropertyOf skos:narrower ;
+    owl:inverseOf ibis:specializes ;
+    skos:note "The equivalent property skos:narrower asserts that the object is narrower than the subject, while the subject of ibis:generalizes is more general than the object."@en .
+
+ibis:implied-by
+    a owl:ObjectProperty ;
+    rdfs:comment "An ibis:State may be implied by an ibis:Entity."@en ;
+    rdfs:domain ibis:State ;
+    rdfs:isDefinedBy <https://vocab.methodandstructure.com/ibis#> ;
+    rdfs:label "implied-by"@en ;
+    rdfs:range ibis:Entity ;
+    rdfs:subPropertyOf skos:semanticRelation ;
+    owl:inverseOf ibis:implies .
+
+ibis:implies
+    a owl:ObjectProperty ;
+    rdfs:comment "The existence of an ibis:Entity implies an ibis:State."@en ;
+    rdfs:domain ibis:Entity ;
+    rdfs:isDefinedBy <https://vocab.methodandstructure.com/ibis#> ;
+    rdfs:label "implies"@en ;
+    rdfs:range ibis:State ;
+    rdfs:subPropertyOf skos:semanticRelation ;
+    owl:inverseOf ibis:implied-by .
+
+ibis:opposed-by
+    a owl:ObjectProperty ;
+    rdfs:comment "Indicates a subject position opposed by an object argument."@en ;
+    rdfs:domain ibis:Position ;
+    rdfs:isDefinedBy <https://vocab.methodandstructure.com/ibis#> ;
+    rdfs:label "opposed-by"@en ;
+    rdfs:range ibis:Argument ;
+    rdfs:subPropertyOf ibis:suggests ;
+    owl:inverseOf ibis:opposes .
+
+ibis:opposes
+    a owl:ObjectProperty ;
+    rdfs:comment "Indicates a subject argument that opposes an object position."@en ;
+    rdfs:domain ibis:Argument ;
+    rdfs:isDefinedBy <https://vocab.methodandstructure.com/ibis#> ;
+    rdfs:label "opposes"@en ;
+    rdfs:range ibis:Position ;
+    rdfs:subPropertyOf ibis:suggested-by ;
+    owl:inverseOf ibis:opposed-by .
+
+ibis:questioned-by
+    a owl:ObjectProperty ;
+    rdfs:comment "Indicates a belief called into question by an issue."@en ;
+    rdfs:domain ibis:Entity ;
+    rdfs:isDefinedBy <https://vocab.methodandstructure.com/ibis#> ;
+    rdfs:label "questioned-by"@en ;
+    rdfs:range ibis:Issue ;
+    rdfs:subPropertyOf ibis:suggests ;
+    owl:inverseOf ibis:questions .
+
+ibis:questions
+    a owl:ObjectProperty ;
+    rdfs:comment "Indicates an issue that raises doubt on a belief."@en ;
+    rdfs:domain ibis:Issue ;
+    rdfs:isDefinedBy <https://vocab.methodandstructure.com/ibis#> ;
+    rdfs:label "questions"@en ;
+    rdfs:range ibis:Entity ;
+    rdfs:subPropertyOf ibis:suggested-by ;
+    owl:inverseOf ibis:questioned-by .
+
+ibis:replaced-by
+    a owl:ObjectProperty ;
+    rdfs:comment "Indicates when a concept is replaced by another concept of the same type."@en ;
+    rdfs:domain ibis:Entity ;
+    rdfs:isDefinedBy <https://vocab.methodandstructure.com/ibis#> ;
+    rdfs:label "replaced-by"@en ;
+    rdfs:range ibis:Entity ;
+    rdfs:subPropertyOf dct:isReplacedBy, skos:semanticRelation ;
+    owl:inverseOf ibis:replaces .
+
+ibis:replaces
+    a owl:ObjectProperty ;
+    rdfs:comment "Indicates when a concept replaces another concept of the same type."@en ;
+    rdfs:domain ibis:Entity ;
+    rdfs:isDefinedBy <https://vocab.methodandstructure.com/ibis#> ;
+    rdfs:label "replaces"@en ;
+    rdfs:range ibis:Entity ;
+    rdfs:subPropertyOf dct:replaces, skos:semanticRelation ;
+    owl:inverseOf ibis:replaced-by .
+
+ibis:responds-to
+    a owl:ObjectProperty ;
+    rdfs:comment "Indicates an issue to which the subject position responds."@en ;
+    rdfs:domain ibis:Position ;
+    rdfs:isDefinedBy <https://vocab.methodandstructure.com/ibis#> ;
+    rdfs:label "responds-to"@en ;
+    rdfs:range ibis:Issue ;
+    rdfs:subPropertyOf skos:semanticRelation ;
+    owl:inverseOf ibis:response .
+
+ibis:response
+    a owl:ObjectProperty ;
+    rdfs:comment "Indicates a position that responds to the subject issue."@en ;
+    rdfs:domain ibis:Issue ;
+    rdfs:isDefinedBy <https://vocab.methodandstructure.com/ibis#> ;
+    rdfs:label "response"@en ;
+    rdfs:range ibis:Position ;
+    rdfs:subPropertyOf skos:semanticRelation ;
+    owl:inverseOf ibis:responds-to .
+
+ibis:specializes
+    a owl:ObjectProperty ;
+    rdfs:comment "The subject is a more specific form of the object."@en ;
+    rdfs:domain ibis:Entity ;
+    rdfs:isDefinedBy <https://vocab.methodandstructure.com/ibis#> ;
+    rdfs:label "specializes"@en ;
+    rdfs:range ibis:Entity ;
+    rdfs:subPropertyOf skos:broader ;
+    owl:inverseOf ibis:generalizes ;
+    skos:note "The equivalent property skos:broader asserts that the object is broader than the subject, while the subject of ibis:specializes is more specific than the object."@en .
+
+ibis:suggested-by
+    a owl:ObjectProperty ;
+    rdfs:comment "An ibis:Issue may be suggested by an ibis:Entity."@en ;
+    rdfs:domain ibis:Issue ;
+    rdfs:isDefinedBy <https://vocab.methodandstructure.com/ibis#> ;
+    rdfs:label "suggested-by"@en ;
+    rdfs:range ibis:Entity ;
+    rdfs:subPropertyOf <ibis:implied-by> ;
+    owl:inverseOf ibis:suggests .
+
+ibis:suggests
+    a owl:ObjectProperty ;
+    rdfs:comment "An ibis:Entity may suggest an ibis:Issue."@en ;
+    rdfs:domain ibis:Entity ;
+    rdfs:isDefinedBy <https://vocab.methodandstructure.com/ibis#> ;
+    rdfs:label "suggests"@en ;
+    rdfs:range ibis:Issue ;
+    rdfs:subPropertyOf ibis:implies ;
+    owl:inverseOf ibis:suggested-by .
+
+ibis:supported-by
+    a owl:ObjectProperty ;
+    rdfs:comment "Indicates a subject position supported by an object argument."@en ;
+    rdfs:domain ibis:Position ;
+    rdfs:isDefinedBy <https://vocab.methodandstructure.com/ibis#> ;
+    rdfs:label "supported-by"@en ;
+    rdfs:range ibis:Argument ;
+    rdfs:subPropertyOf ibis:suggests ;
+    owl:inverseOf ibis:supports .
+
+ibis:supports
+    a owl:ObjectProperty ;
+    rdfs:comment "Indicates a subject argument that supports an object position."@en ;
+    rdfs:domain ibis:Argument ;
+    rdfs:isDefinedBy <https://vocab.methodandstructure.com/ibis#> ;
+    rdfs:label "supports"@en ;
+    rdfs:range ibis:Position ;
+    rdfs:subPropertyOf ibis:suggested-by ;
+    owl:inverseOf ibis:supported-by .
+
+<https://web.archive.org/web/20120606063823/http://hyperdata.org/xmlns/ibis/>
+    dct:creator <https://web.archive.org/web/20130113103138/http://danny.ayers.name/index.rdf#me> .
+
+<https://web.archive.org/web/20130113103138/http://danny.ayers.name/index.rdf#me>
+    foaf:name "Danny Ayers"@en .
+
+[]
+    xhv:role xhv:note .
+
+[]
+    xhv:role xhv:note .
+
+[]
+    xhv:role xhv:note .
+
+[]
+    xhv:role xhv:note .
+
+[]
+    xhv:role xhv:note .
+
+[]
+    xhv:role xhv:note .
+

@@ -1,4 +1,5 @@
 import { client, xml } from "@xmpp/client";
+import { LINGUE_NS } from "./lingue/constants.js";
 
 export class XmppRoomAgent {
   constructor({
@@ -72,8 +73,12 @@ export class XmppRoomAgent {
 
       if (!stanza.is("message")) return;
       const type = stanza.attrs.type;
-      const body = stanza.getChildText("body");
-      if (!body) return;
+      const body = stanza.getChildText("body") || "";
+      const hasLingue =
+        stanza.getChild("offer", LINGUE_NS) ||
+        stanza.getChild("accept", LINGUE_NS) ||
+        stanza.getChild("payload", LINGUE_NS);
+      if (!body && !hasLingue) return;
 
       if (type === "groupchat") {
         const from = stanza.attrs.from;
@@ -107,7 +112,8 @@ export class XmppRoomAgent {
             from,
             roomJid: this.roomJid,
             type: "groupchat",
-            reply: (text) => this.sendGroupMessage(text)
+            reply: (text) => this.sendGroupMessage(text),
+            stanza
           });
         }
       }
@@ -123,7 +129,8 @@ export class XmppRoomAgent {
             from,
             roomJid: null,
             type: "chat",
-            reply: (text) => this.sendDirectMessage(from, text)
+            reply: (text) => this.sendDirectMessage(from, text),
+            stanza
           });
         }
       }

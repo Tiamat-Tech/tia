@@ -4,11 +4,17 @@
 @prefix xmpp: <https://tensegrity.it/vocab/xmpp#> .
 @prefix dcterms: <http://purl.org/dc/terms/> .
 @prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+@prefix lng: <http://purl.org/stuff/lingue/> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
 
-<#demo> a agent:ConversationalAgent ;
+<#demo> a agent:ConversationalAgent, lng:Agent ;
   foaf:nick "Demo" ;
   schema:identifier "demo" ;
   dcterms:created "2024-12-01T00:00:00Z"^^xsd:dateTime ;
+
+  lng:supports lng:HumanChat ;
+  lng:prefers lng:HumanChat ;
+  lng:profile <#demo-lingue-profile> ;
 
   agent:xmppAccount [
     a xmpp:Account ;
@@ -20,3 +26,10 @@
   ] ;
 
   agent:roomJid "general@conference.tensegrity.it" .
+
+<#demo-lingue-profile> a lng:Profile ;
+  lng:availability lng:Process ;
+  lng:in [ a lng:Interface ; rdfs:label "XMPP MUC text" ] ;
+  lng:out [ a lng:Interface ; rdfs:label "XMPP MUC text" ] ;
+  lng:dependsOn [ a lng:Environment ; rdfs:label "XMPP/Prosody" ] ;
+  lng:alang "JavaScript" .

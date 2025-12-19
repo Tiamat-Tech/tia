@@ -1,0 +1,129 @@
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix rpp: <http://www.citnames.com/2001/04/rpp#> .
+
+rpp:Algorithm
+    a rdfs:Class ;
+    rdfs:comment "Abstract algorithm" ;
+    rdfs:subClassOf rpp:Component .
+
+rpp:Availability
+    a rdfs:Class ;
+    rdfs:comment "machine-readability" ;
+    rdfs:subClassOf rpp:Component .
+
+rpp:Component
+    a rdfs:Class ;
+    rdfs:comment "Base class for groups of profile attribute values." ;
+    rdfs:label "RPP profile component" ;
+    rdfs:subClassOf rpp:Resource .
+
+rpp:DataFormat
+    a rdfs:Class ;
+    rdfs:comment "Data format" ;
+    rdfs:subClassOf rpp:Interface .
+
+rpp:Definition
+    a rpp:Availability .
+
+rpp:Dependency
+    a rdfs:Class ;
+    rdfs:comment "needed to run" ;
+    rdfs:subClassOf rpp:Component .
+
+rpp:Encoding
+    a rdfs:Class ;
+    rdfs:comment "low-level data encoding" ;
+    rdfs:subClassOf rpp:Interface .
+
+rpp:Environment
+    a rdfs:Class ;
+    rdfs:comment "needed to run" ;
+    rdfs:subClassOf rpp:Dependency .
+
+rpp:Executable
+    a rpp:Availability .
+
+rpp:Interface
+    a rdfs:Class ;
+    rdfs:comment "I/O of processor" ;
+    rdfs:subClassOf rpp:Component .
+
+rpp:Library
+    a rdfs:Class ;
+    rdfs:comment "needed to run" ;
+    rdfs:subClassOf rpp:Dependency .
+
+rpp:Process
+    a rpp:Availability .
+
+rpp:Profile
+    a rdfs:Class ;
+    rdfs:comment "The Profile itself." ;
+    rdfs:label "RPP Resource" ;
+    rdfs:subClassOf rpp:Resource .
+
+rpp:Resource
+    a rdfs:Class ;
+    rdfs:comment "This is a common base class for all resources whose properties may be asserted in a RDF Process Profile." ;
+    rdfs:label "RPP Resource" ;
+    rdfs:subClassOf rdfs:Resource .
+
+rpp:Source
+    a rpp:Availability .
+
+rpp:alang
+    a rdf:Property ;
+    rdfs:comment "(programming) language" ;
+    rdfs:domain rpp:Algorithm ;
+    rdfs:range rdf:Literal .
+
+rpp:availability
+    a rdf:Property ;
+    rdfs:comment "how machine readable is the algorithm" ;
+    rdfs:domain rpp:Profile ;
+    rdfs:range rpp:Availability .
+
+rpp:component
+    a rdf:Property ;
+    rdfs:comment "Indicates a component profile." ;
+    rdfs:domain rpp:Profile ;
+    rdfs:label "RPP component property" ;
+    rdfs:range rpp:Component .
+
+rpp:equivalentTo
+    a rdf:Property ;
+    rdfs:comment "another algorithm that does the same" ;
+    rdfs:domain rpp:Profile ;
+    rdfs:range rpp:Resource .
+
+rpp:hasDependency
+    a rdf:Property ;
+    rdfs:comment "anything that's needed" ;
+    rdfs:domain rpp:Profile ;
+    rdfs:range rpp:Dependency .
+
+rpp:implementationOf
+    a rdf:Property ;
+    rdfs:comment "another algorithm that does the same" ;
+    rdfs:domain rpp:Profile ;
+    rdfs:range rpp:Resource .
+
+rpp:in
+    a rdf:Property ;
+    rdfs:comment "details of data input" ;
+    rdfs:domain rpp:Profile ;
+    rdfs:range rpp:Interface .
+
+rpp:location
+    a rdf:Property ;
+    rdfs:comment "location of the algorithm resource" ;
+    rdfs:domain rpp:Profile ;
+    rdfs:range rpp:Resource .
+
+rpp:out
+    a rdf:Property ;
+    rdfs:comment "details of data output" ;
+    rdfs:domain rpp:Profile ;
+    rdfs:range rpp:Interface .
+

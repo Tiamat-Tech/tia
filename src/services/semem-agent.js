@@ -1,10 +1,13 @@
 import dotenv from "dotenv";
 import { loadAgentProfile } from "./agent-registry.js";
+import { loadAgentProfile as loadLingueProfile } from "../agents/profile-loader.js";
 import { AgentRunner } from "../agents/core/agent-runner.js";
 import { createMentionDetector } from "../agents/core/mention-detector.js";
 import { defaultCommandParser } from "../agents/core/command-parser.js";
 import { SememProvider } from "../agents/providers/semem-provider.js";
 import logger from "../lib/logger-lite.js";
+import { LingueNegotiator, LANGUAGE_MODES } from "../lib/lingue/index.js";
+import { HumanChatHandler, IBISTextHandler, ProfileExchangeHandler } from "../lib/lingue/handlers/index.js";
 
 dotenv.config();
 
@@ -30,6 +33,8 @@ const MUC_ROOM = profile.roomJid;
 const BOT_NICKNAME = profile.nickname;
 const CHAT_FEATURES = profile.features || {};
 const ACTIVE_PROFILE = profile.profileName;
+const lingueProfile = await loadLingueProfile(requestedProfile)
+  || await loadLingueProfile("semem");
 
 const sememProvider = new SememProvider({
   sememConfig: profile.sememConfig,
@@ -38,11 +43,31 @@ const sememProvider = new SememProvider({
   logger
 });
 
+const handlers = {};
+if (lingueProfile?.supportsLingueMode(LANGUAGE_MODES.HUMAN_CHAT)) {
+  handlers[LANGUAGE_MODES.HUMAN_CHAT] = new HumanChatHandler({ logger });
+}
+if (lingueProfile?.supportsLingueMode(LANGUAGE_MODES.IBIS_TEXT)) {
+  handlers[LANGUAGE_MODES.IBIS_TEXT] = new IBISTextHandler({ logger });
+}
+if (lingueProfile?.supportsLingueMode(LANGUAGE_MODES.PROFILE_EXCHANGE)) {
+  handlers[LANGUAGE_MODES.PROFILE_EXCHANGE] = new ProfileExchangeHandler({ logger });
+}
+
+const negotiator = lingueProfile
+  ? new LingueNegotiator({
+      profile: lingueProfile,
+      handlers,
+      logger
+    })
+  : null;
+
 const runner = new AgentRunner({
   xmppConfig: XMPP_CONFIG,
   roomJid: MUC_ROOM,
   nickname: BOT_NICKNAME,
   provider: sememProvider,
+  negotiator,
   mentionDetector: createMentionDetector(BOT_NICKNAME, [BOT_NICKNAME]),
   commandParser: defaultCommandParser,
   allowSelfMessages: false,

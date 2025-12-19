@@ -11,6 +11,8 @@ export class AgentProfile {
     roomJid,
     provider,
     capabilities = [],
+    lingue = {},
+    mcp = {},
     metadata = {},
     customProperties = {}
   }) {
@@ -23,6 +25,30 @@ export class AgentProfile {
     this.capabilities = new Map();
 
     capabilities.forEach(cap => this.addCapability(cap));
+
+    const supports = lingue.supports instanceof Set
+      ? lingue.supports
+      : new Set(lingue.supports || []);
+
+    const understands = lingue.understands instanceof Set
+      ? lingue.understands
+      : new Set(lingue.understands || []);
+
+    this.lingue = {
+      supports,
+      prefers: lingue.prefers || null,
+      understands,
+      profile: lingue.profile || null
+    };
+
+    this.mcp = {
+      role: mcp.role || null,
+      servers: Array.isArray(mcp.servers) ? mcp.servers : [],
+      tools: Array.isArray(mcp.tools) ? mcp.tools : [],
+      resources: Array.isArray(mcp.resources) ? mcp.resources : [],
+      prompts: Array.isArray(mcp.prompts) ? mcp.prompts : [],
+      endpoints: Array.isArray(mcp.endpoints) ? mcp.endpoints : []
+    };
 
     this.metadata = {
       created: metadata.created,
@@ -57,6 +83,27 @@ export class AgentProfile {
    */
   getCapability(capabilityName) {
     return this.capabilities.get(capabilityName);
+  }
+
+  /**
+   * Check if profile supports a Lingue language mode URI
+   */
+  supportsLingueMode(modeUri) {
+    return this.lingue.supports.has(modeUri);
+  }
+
+  /**
+   * Get Lingue profile details (if present)
+   */
+  getLingueProfile() {
+    return this.lingue.profile;
+  }
+
+  /**
+   * Return MCP tool metadata (if present)
+   */
+  getMcpTools() {
+    return this.mcp.tools;
   }
 
   /**

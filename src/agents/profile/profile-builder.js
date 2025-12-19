@@ -17,6 +17,8 @@ export class ProfileBuilder {
       roomJid: null,
       provider: null,
       capabilities: [],
+      lingue: {},
+      mcp: {},
       metadata: {},
       customProperties: {}
     };
@@ -85,6 +87,28 @@ export class ProfileBuilder {
       handler,
       metadata
     }));
+    return this;
+  }
+
+  lingue({ supports, prefers, understands, profile }) {
+    this.data.lingue = {
+      supports: supports || [],
+      prefers: prefers || null,
+      understands: understands || [],
+      profile: profile || null
+    };
+    return this;
+  }
+
+  mcp({ role, servers, tools, resources, prompts, endpoints }) {
+    this.data.mcp = {
+      role: role || null,
+      servers: servers || [],
+      tools: tools || [],
+      resources: resources || [],
+      prompts: prompts || [],
+      endpoints: endpoints || []
+    };
     return this;
   }
 

@@ -5,6 +5,8 @@ import { defaultCommandParser } from "../agents/core/command-parser.js";
 import { DemoProvider } from "../agents/providers/demo-provider.js";
 import logger from "../lib/logger-lite.js";
 import { loadAgentProfile } from "../agents/profile-loader.js";
+import { LingueNegotiator, LANGUAGE_MODES } from "../lib/lingue/index.js";
+import { HumanChatHandler } from "../lib/lingue/handlers/index.js";
 
 dotenv.config();
 
@@ -39,11 +41,23 @@ const MUC_ROOM = fileConfig.roomJid || "general@conference.tensegrity.it";
 
 const provider = new DemoProvider({ nickname: DEMO_BOT_NICKNAME, logger });
 
+const handlers = {};
+if (profile.supportsLingueMode(LANGUAGE_MODES.HUMAN_CHAT)) {
+  handlers[LANGUAGE_MODES.HUMAN_CHAT] = new HumanChatHandler({ logger });
+}
+
+const negotiator = new LingueNegotiator({
+  profile,
+  handlers,
+  logger
+});
+
 const runner = new AgentRunner({
   xmppConfig: XMPP_CONFIG,
   roomJid: MUC_ROOM,
   nickname: DEMO_BOT_NICKNAME,
   provider,
+  negotiator,
   mentionDetector: createMentionDetector(DEMO_BOT_NICKNAME, [DEMO_BOT_NICKNAME]),
   commandParser: defaultCommandParser,
   allowSelfMessages: false,

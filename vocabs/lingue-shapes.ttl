@@ -1,0 +1,147 @@
+@prefix : <http://purl.org/stuff/lingue/> .
+@prefix lng: <http://purl.org/stuff/lingue/> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix sh: <http://www.w3.org/ns/shacl#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+@prefix dct: <http://purl.org/dc/terms/> .
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+
+lng:shapes
+    a owl:Ontology ;
+    dct:title "Lingue SHACL Shapes" ;
+    dct:description "Validation shapes for Lingue agents, profiles, and capability declarations. Version 0.1.0." ;
+    dct:creator "Lingue project" ;
+    owl:versionInfo "0.1.0" .
+
+# Validate that agents advertise usable capabilities and profiles
+
+lng:AgentShape
+    a sh:NodeShape ;
+    sh:targetClass lng:Agent ;
+    sh:property [
+        sh:path lng:supports ;
+        sh:minCount 1 ;
+        sh:message "Agent should advertise at least one capability (channel or language mode)." ;
+    ] ;
+    sh:property [
+        sh:path lng:supports ;
+        sh:qualifiedValueShape [ sh:class lng:Channel ] ;
+        sh:qualifiedMinCount 1 ;
+        sh:message "Agent should advertise at least one channel capability (e.g., XMPP MUC)." ;
+    ] ;
+    sh:property [
+        sh:path lng:supports ;
+        sh:qualifiedValueShape [ sh:class lng:LanguageMode ] ;
+        sh:qualifiedMinCount 1 ;
+        sh:message "Agent should advertise at least one language mode (e.g., HumanChat, IBISText, Prolog)." ;
+    ] ;
+    sh:property [
+        sh:path lng:prefers ;
+        sh:maxCount 1 ;
+        sh:class lng:LanguageMode ;
+        sh:message "Preferred mode must be a single LanguageMode." ;
+    ] ;
+    sh:property [
+        sh:path lng:profile ;
+        sh:maxCount 1 ;
+        sh:class lng:Profile ;
+        sh:message "Profile, if present, must point to a Lingue Profile." ;
+    ] ;
+    sh:property [
+        sh:path lng:understands ;
+        sh:nodeKind sh:IRI ;
+        sh:message "understands values should be IRIs for vocabularies or MIME identifiers." ;
+    ] .
+
+# Validate RPP-derived profile structure
+
+lng:ProfileShape
+    a sh:NodeShape ;
+    sh:targetClass lng:Profile ;
+    sh:property [
+        sh:path lng:availability ;
+        sh:minCount 1 ;
+        sh:class lng:Availability ;
+        sh:message "Profiles must declare availability (Definition/Source/Executable/Process)." ;
+    ] ;
+    sh:property [
+        sh:path lng:dependsOn ;
+        sh:class lng:Dependency ;
+        sh:message "Dependencies must be typed as Dependency/Environment/Library." ;
+    ] ;
+    sh:property [
+        sh:path lng:hasDependency ;
+        sh:class lng:Dependency ;
+        sh:message "hasDependency, if used, must target Dependency/Environment/Library." ;
+    ] ;
+    sh:property [
+        sh:path lng:in ;
+        sh:class lng:Interface ;
+        sh:message "Inputs must be Interface nodes." ;
+    ] ;
+    sh:property [
+        sh:path lng:out ;
+        sh:class lng:Interface ;
+        sh:message "Outputs must be Interface nodes." ;
+    ] ;
+    sh:property [
+        sh:path lng:alang ;
+        sh:datatype xsd:string ;
+        sh:message "alang should be a literal naming the programming/specification language." ;
+    ] ;
+    sh:property [
+        sh:path lng:location ;
+        sh:nodeKind sh:IRI ;
+        sh:message "location should be an IRI for executable or endpoint discovery." ;
+    ] .
+
+# Check that an agent's declared supports include only recognized capability classes
+
+lng:CapabilityTypeShape
+    a sh:NodeShape ;
+    sh:targetSubjectsOf lng:supports ;
+    sh:property [
+        sh:path lng:supports ;
+        sh:or (
+            [ sh:class lng:Capability ]
+            [ sh:class lng:Channel ]
+            [ sh:class lng:LanguageMode ]
+        ) ;
+        sh:message "supports values should be capabilities (Channel or LanguageMode)." ;
+    ] .
+
+# Intersection helper: agent must support the chosen channel and language mode for any Exchange it offers/asks/tells
+
+lng:ExchangeShape
+    a sh:NodeShape ;
+    sh:targetClass lng:Exchange ;
+    sh:sparql [
+        sh:message "Exchange language/channel must be supported by the initiating agent." ;
+        sh:select """
+            PREFIX lng: <http://purl.org/stuff/lingue/>
+            SELECT ?this
+            WHERE {
+              # The exchange is linked from an agent via offers/asks/tells
+              ?agent (lng:offers|lng:asks|lng:tells) ?this .
+              # The exchange declares a language and channel it intends to use
+              OPTIONAL { ?this lng:usesLanguageMode ?langMode . }
+              OPTIONAL { ?this lng:usesChannel ?chan . }
+              FILTER (!BOUND(?langMode) || NOT EXISTS { ?agent lng:supports ?langMode . })
+              UNION
+              FILTER (!BOUND(?chan) || NOT EXISTS { ?agent lng:supports ?chan . })
+            }
+        """ ;
+    ] .
+
+# Recommended exchange properties (minted here) to describe negotiated channel/mode
+
+lng:usesLanguageMode a owl:ObjectProperty ;
+    rdfs:domain lng:Exchange ;
+    rdfs:range lng:LanguageMode ;
+    rdfs:comment "Language mode selected for this exchange." .
+
+lng:usesChannel a owl:ObjectProperty ;
+    rdfs:domain lng:Exchange ;
+    rdfs:range lng:Channel ;
+    rdfs:comment "Channel selected for this exchange (e.g., XMPP MUC)." .

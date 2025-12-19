@@ -4,10 +4,12 @@ import { defaultCommandParser } from "./command-parser.js";
 
 export class AgentRunner {
   constructor({
+    profile,
     xmppConfig,
     roomJid,
     nickname,
     provider,
+    negotiator = null,
     mentionDetector,
     commandParser,
     allowSelfMessages = false,
@@ -18,25 +20,47 @@ export class AgentRunner {
       throw new Error("AgentRunner requires a provider with a handle() method");
     }
 
-    this.nickname = nickname;
+    const profileConfig = profile?.toConfig ? profile.toConfig() : {};
+    const resolvedXmppConfig = profileConfig.xmpp || xmppConfig;
+    const resolvedRoomJid = profileConfig.roomJid || roomJid;
+    const resolvedNickname = profileConfig.nickname || nickname;
+
+    this.nickname = resolvedNickname;
     this.provider = provider;
+    this.negotiator = negotiator;
     this.mentionDetector =
-      mentionDetector || createMentionDetector(nickname, [nickname?.toLowerCase()]);
+      mentionDetector || createMentionDetector(resolvedNickname, [resolvedNickname?.toLowerCase()]);
     this.commandParser = commandParser || defaultCommandParser;
     this.logger = logger;
     this.respondToAll = respondToAll;
 
     this.agent = new XmppRoomAgent({
-      xmppConfig,
-      roomJid,
-      nickname,
+      xmppConfig: resolvedXmppConfig,
+      roomJid: resolvedRoomJid,
+      nickname: resolvedNickname,
       onMessage: this.handleMessage.bind(this),
       allowSelfMessages,
       logger
     });
+
+    if (this.negotiator?.setXmppClient) {
+      this.negotiator.setXmppClient(this.agent.xmpp);
+    } else if (this.negotiator) {
+      this.negotiator.xmppClient = this.agent.xmpp;
+    }
   }
 
-  async handleMessage({ body, sender, type, roomJid, reply }) {
+  async handleMessage({ body, sender, type, roomJid, reply, stanza }) {
+    if (this.negotiator && stanza) {
+      const handled = await this.negotiator.handleStanza(stanza, {
+        sender,
+        type,
+        roomJid,
+        reply
+      });
+      if (handled) return;
+    }
+
     const addressed = this.respondToAll || type === "chat" || this.mentionDetector(body);
     if (!addressed) {
       this.logger.debug?.(`[AgentRunner] Ignoring message (not addressed): ${body}`);

@@ -28,4 +28,4 @@ journalctl -u tia-agents.service -f
 ## Prereqs
 - Populate `/home/danny/hyperdata/tia/.env` (or per-agent configs in `config/agents/`) with XMPP credentials/resources and any API keys/tokens.
 - Ensure `start-all-agents.sh` is executable.
-- If your XMPP server doesn’t support multiple resources on one account, use distinct accounts per agent in `config/agents/{mistral,semem,demo}.json` and restart the service.
+- If your XMPP server doesn’t support multiple resources on one account, use distinct accounts per agent in `config/agents/{mistral,semem,demo}.ttl` and restart the service.

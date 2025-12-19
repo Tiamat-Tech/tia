@@ -62,7 +62,7 @@ await runner.start();
 ```
 
 ### 3. Standards Compliance
-- Use exact Lingue ontology URIs from `http://purl.org/stuff/lingue/`
+- Use exact Lingue ontology URIs from `http://purl.org/stuff/lingue/` - local copies of vocabs are in /home/danny/hyperdata/tia/vocabs
 - Follow XEP-0030 (disco#info) and XEP-0045 (MUC) standards
 - Support all defined language modes per Lingue spec
 - Implement ASK/TELL semantics correctly
@@ -465,54 +465,54 @@ await runner.start();
 - XMPP room agent infrastructure
 
 ### Phase 1: Profile Extension ⬜
-- [ ] Update profile-loader.js with lng: prefix
-- [ ] Add Lingue property extraction functions
-- [ ] Extend AgentProfile class with lingue properties
-- [ ] Convert all 5 .ttl profiles with Lingue metadata
-- [ ] Write and pass profile loading tests
+- [x] Update profile-loader.js with lng: prefix
+- [x] Add Lingue property extraction functions
+- [x] Extend AgentProfile class with lingue properties
+- [x] Convert all 5 .ttl profiles with Lingue metadata
+- [x] Write and pass profile loading tests
 
 ### Phase 2: Negotiation Module ⬜
-- [ ] Create src/lib/lingue/ directory structure
-- [ ] Implement constants.js
-- [ ] Implement negotiator.js core class
-- [ ] Implement discovery.js (disco#info)
-- [ ] Implement offer-accept.js (state machine)
-- [ ] Write and pass unit tests
+- [x] Create src/lib/lingue/ directory structure
+- [x] Implement constants.js
+- [x] Implement negotiator.js core class
+- [x] Implement discovery.js (disco#info)
+- [x] Implement offer-accept.js (state machine)
+- [x] Write and pass unit tests
 
 ### Phase 3: Payload Handlers ⬜
-- [ ] Implement HumanChatHandler
-- [ ] Implement IBISTextHandler
-- [ ] Implement PrologProgramHandler
-- [ ] Implement ProfileExchangeHandler
-- [ ] Write and pass handler tests
+- [x] Implement HumanChatHandler
+- [x] Implement IBISTextHandler
+- [x] Implement PrologProgramHandler
+- [x] Implement ProfileExchangeHandler
+- [x] Write and pass handler tests
 
 ### Phase 4: AgentRunner Integration ⬜
-- [ ] Update AgentRunner constructor signature
-- [ ] Add negotiation message routing
-- [ ] Update handleMessage flow
-- [ ] Write integration tests
+- [x] Update AgentRunner constructor signature
+- [x] Add negotiation message routing
+- [x] Update handleMessage flow
+- [x] Write integration tests
 
 ### Phase 5: Service Updates ⬜
-- [ ] Update mistral-bot.js
-- [ ] Update semem-agent.js
-- [ ] Update chair-agent.js
-- [ ] Update recorder-agent.js
-- [ ] Update demo-bot.js
+- [x] Update mistral-bot.js
+- [x] Update semem-agent.js
+- [x] Update chair-agent.js
+- [x] Update recorder-agent.js
+- [x] Update demo-bot.js
 - [ ] Test disco#info for all agents
 
 ### Phase 6: NPM Library Prep ⬜
-- [ ] Create src/index.js main exports
-- [ ] Document BaseProvider interface
-- [ ] Create examples/ directory with working examples
-- [ ] Update package.json for library mode
-- [ ] Test all exports
+- [x] Create src/index.js main exports
+- [x] Document BaseProvider interface
+- [x] Create examples/ directory with working examples
+- [x] Update package.json for library mode
+- [x] Test all exports
 
 ### Phase 7: Documentation ⬜
-- [ ] Update agent-dev-prompt.md
-- [ ] Update README.md
-- [ ] Create lingue-integration.md
-- [ ] Create api-reference.md
-- [ ] Update CHANGELOG.md
+- [x] Update agent-dev-prompt.md
+- [x] Update README.md
+- [x] Create lingue-integration.md
+- [x] Create api-reference.md
+- [x] Update CHANGELOG.md
 
 ---
 
@@ -586,3 +586,166 @@ await runner.start();
 - [Lingue Vocabulary](../../lingue/vocabs/lingue.ttl)
 - [Agent Dev Prompt](./agent-dev-prompt.md)
 - [RDF Profile Migration](../.claude/plans/woolly-tickling-whisper.md) - COMPLETED ✅
+
+---
+
+## Protocol Details (Draft)
+
+### Capability Advertisement (Disco#Info)
+**Goal**: Share Lingue support so peers can negotiate mode.
+
+**Disco features**:
+- `http://purl.org/stuff/lingue/feature/lang/human-chat`
+- `http://purl.org/stuff/lingue/feature/lang/ibis-text`
+- `http://purl.org/stuff/lingue/feature/lang/prolog-program`
+- `http://purl.org/stuff/lingue/feature/lang/profile-exchange`
+
+**Identity**:
+- category: `client` or `component` (per agent role)
+- type: `bot`
+- name: agent nick or configured display name
+
+**Notes**:
+- Feature URIs must align with the Lingue ontology.
+- Avoid adding Lingue features unless the handler is active.
+
+### Negotiation Flow (Offer/Accept)
+**Goal**: Establish a language mode between two agents.
+
+**Proposed flow**:
+1. Sender `offerExchange(peer, [modes])`
+2. Receiver checks supported modes and replies with acceptance
+3. Both sides store `activeMode[peerJid] = mode`
+4. Sender sends structured payloads using the accepted mode
+
+**State machine**:
+- `idle` -> `offered` -> `accepted`
+- `offered` -> `rejected` (fallback to HumanChat)
+- `accepted` -> `idle` (timeout or explicit end)
+
+**Timeouts**:
+- 30s for offer acceptance (configurable)
+- 10m inactivity for mode expiration (configurable)
+
+### ASK/TELL Semantics (IBIS + Lingue)
+**Goal**: Standardize question/answer and assertion flow.
+
+**Concepts**:
+- `ASK`: A request for information or decision
+- `TELL`: An assertion or conclusion
+
+**Mapping**:
+- `ASK` -> IBIS `Issue` or `Question`
+- `TELL` -> IBIS `Position` or `Argument`
+
+**Rules**:
+- Each `ASK` should have `summary` (short human text)
+- `TELL` should include a stable identifier and a link to the related `ASK`
+- Handlers should validate RDF shape minimally (presence of type and label)
+
+---
+
+## Message Formats (Draft)
+
+### HumanChat (text/plain)
+```
+<message to="room@conference" type="groupchat">
+  <body>Hello everyone.</body>
+</message>
+```
+
+### IBISText (text/plain + text/turtle)
+```
+<message to="room@conference" type="groupchat">
+  <body>[summary] I suggest option A because...</body>
+  <lingue:payload mime="text/turtle"><![CDATA[
+    @prefix ibis: <https://vocab.methodandstructure.com/ibis#> .
+    _:issue a ibis:Issue ; rdfs:label "Which option?" .
+  ]]></lingue:payload>
+</message>
+```
+
+### PrologProgram (text/x-prolog)
+```
+<message to="room@conference" type="groupchat">
+  <body>[summary] Proposed ruleset.</body>
+  <lingue:payload mime="text/x-prolog"><![CDATA[
+    rule(a) :- fact(b).
+  ]]></lingue:payload>
+</message>
+```
+
+### ProfileExchange (text/turtle)
+```
+<message to="peer@server" type="chat">
+  <body>[summary] Agent profile.</body>
+  <lingue:payload mime="text/turtle"><![CDATA[
+    @prefix lng: <http://purl.org/stuff/lingue/> .
+    <#agent> a lng:Agent ; lng:supports lng:HumanChat .
+  ]]></lingue:payload>
+</message>
+```
+
+**Notes**:
+- Use `<lingue:payload>` as a single child element (custom stanza extension).
+- `summary` always included for MUC readability.
+- Payload CDATA is optional for HumanChat and required for other modes.
+
+---
+
+## Implementation Notes
+
+### Routing Rules
+- If a stanza includes a Lingue payload, route by payload MIME.
+- If no payload, route to HumanChat handler by default.
+- Allow handlers to short-circuit and mark a stanza as handled.
+
+### Interop Guarantees
+- Maintain backwards compatibility with non-Lingue agents.
+- For MUC rooms, preserve normal message bodies for human readability.
+- ProfileExchange should use direct chat by default (not groupchat).
+
+### Logging
+- Use `src/lib/logger.js` at info level for negotiation events.
+- Log mode switches and rejections once per peer.
+
+---
+
+## Risks and Mitigations
+
+- **Spec mismatch**: Validate URIs against `/vocabs/lingue.ttl` before coding.
+- **State leaks**: Store negotiation sessions with TTL and cleanup.
+- **Handler drift**: Keep handler interfaces stable; add adapters if needed.
+- **MUC noise**: Keep summaries short; avoid posting large Turtle in body.
+
+---
+
+## Milestones (Suggested)
+
+1. **RDF Profile Extension** (Phase 1)
+2. **Negotiation Core** (Phase 2)
+3. **Handlers + Tests** (Phase 3)
+4. **AgentRunner Integration** (Phase 4)
+5. **Service Updates** (Phase 5)
+6. **Library Exports** (Phase 6)
+7. **Documentation** (Phase 7)
+
+---
+
+## Checklist for Each Phase
+
+**Design**
+- [ ] Finalize interface and MIME choices
+- [ ] Confirm vocab URIs
+
+**Build**
+- [ ] Implement core module
+- [ ] Add tests
+
+**Verify**
+- [ ] Run example scripts
+- [ ] Validate disco#info output
+
+**Document**
+- [ ] Update README
+- [ ] Update docs/lingue-integration.md

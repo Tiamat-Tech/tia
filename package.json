@@ -1,13 +1,21 @@
 {
   "name": "tia-agents",
-  "version": "0.1.2",
+  "version": "0.2.0",
   "description": "TIA Intelligence Agency",
   "type": "module",
+  "main": "./src/index.js",
+  "exports": {
+    ".": "./src/index.js",
+    "./core": "./src/agents/core/index.js",
+    "./lingue": "./src/lib/lingue/index.js",
+    "./providers": "./src/agents/providers/index.js",
+    "./mcp": "./src/mcp/index.js"
+  },
   "directories": {
     "doc": "docs"
   },
   "scripts": {
-    "test": "node --test test/ibis.test.js test/lingue-exchange.test.js test/lingue-store.test.js && vitest run test/profile-loading.test.js",
+    "test": "node --test test/ibis.test.js test/lingue-exchange.test.js test/lingue-store.test.js && vitest run test/profile-loading.test.js test/lingue-profile-loading.test.js test/lingue-discovery.test.js test/lingue-negotiation.test.js test/lingue-handlers/*.test.js test/agent-runner-lingue.test.js test/npm-exports.test.js test/prolog-provider.test.js test/prolog-lingue-payload.test.js test/mcp-profile-mapper.test.js test/mcp-loopback-provider.test.js",
     "test:integration": "vitest run test/xmpp.integration.test.js test/xmpp.bots.integration.test.js test/xmpp.semem.integration.test.js"
   },
   "keywords": [],
@@ -15,7 +23,7 @@
   "license": "MIT",
   "dependencies": {
     "@anthropic-ai/sdk": "^0.63.0",
-    "@modelcontextprotocol/sdk": "^1.18.1",
+    "@modelcontextprotocol/sdk": "^1.25.1",
     "@rdfjs/dataset": "^2.0.2",
     "@xmpp/client": "^0.13.4",
     "@xmpp/debug": "^0.13.3",
@@ -24,7 +32,8 @@
     "loglevel": "^1.9.2",
     "n3": "^1.26.0",
     "rdf-ext": "^2.6.0",
-    "zod": "^4.1.9"
+    "tau-prolog": "^0.3.4",
+    "zod": "^4.2.1"
   },
   "devDependencies": {
     "vitest": "^4.0.16"

@@ -1,6 +1,19 @@
 import { Mistral } from "@mistralai/mistralai";
 import { detectIBISStructure, summarizeIBIS } from "../../lib/ibis-detect.js";
-import { attachDiscoInfoResponder } from "../../lib/lingue-capabilities.js";
+import { attachDiscoInfoResponder } from "../../lib/lingue/discovery.js";
+import { FEATURES } from "../../lib/lingue/constants.js";
+
+const LEGACY_LINGUE_FEATURES = [
+  "http://purl.org/stuff/lingue/ibis-rdf",
+  "http://purl.org/stuff/lingue/ask-tell",
+  "http://purl.org/stuff/lingue/meta-transparent"
+];
+
+const DEFAULT_LINGUE_FEATURES = [
+  FEATURES.LANG_HUMAN_CHAT,
+  FEATURES.LANG_IBIS_TEXT,
+  ...LEGACY_LINGUE_FEATURES
+];
 
 export class MistralProvider {
   constructor({
@@ -9,6 +22,7 @@ export class MistralProvider {
     nickname = "MistralBot",
     lingueEnabled = true,
     lingueConfidenceMin = 0.5,
+    discoFeatures = DEFAULT_LINGUE_FEATURES,
     xmppClient = null,
     logger = console
   }) {
@@ -23,7 +37,9 @@ export class MistralProvider {
 
     // Advertise Lingue capabilities when possible
     if (lingueEnabled && xmppClient) {
-      attachDiscoInfoResponder(xmppClient);
+      attachDiscoInfoResponder(xmppClient, {
+        features: discoFeatures
+      });
     }
   }
 
