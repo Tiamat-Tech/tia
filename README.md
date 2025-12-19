@@ -39,6 +39,16 @@ The design goal is a clean, library-ready architecture that supports both deploy
 - `config/agents/*.ttl` — RDF profiles describing each agent.
 - `docs/` — integration guides and operational docs.
 
+## Implemented Agents
+
+- **Mistral** — AI chat agent backed by Mistral API with Lingue/IBIS summaries.
+- **Semem** — MCP-backed knowledge agent for `tell/ask/augment` flows.
+- **Demo** — Minimal chat bot for quick XMPP smoke checks.
+- **Chair** — Debate facilitator/Moderator agent.
+- **Recorder** — Meeting logger/recorder agent that listens broadly.
+- **Prolog** — Logic agent using tau-prolog for queries.
+- **MCP Loopback** — MCP client/server echo agent for integration tests.
+
 ## Library Usage
 
 ```javascript
