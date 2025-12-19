@@ -4,12 +4,17 @@ import { createMentionDetector } from "../agents/core/mention-detector.js";
 import { defaultCommandParser } from "../agents/core/command-parser.js";
 import { RecorderProvider } from "../agents/providers/recorder-provider.js";
 import logger from "../lib/logger-lite.js";
-import loadAgentConfig from "../agents/config-loader.js";
+import { loadAgentProfile } from "../agents/profile-loader.js";
 
 dotenv.config();
 
 const profileName = process.env.AGENT_PROFILE || "recorder";
-const fileConfig = loadAgentConfig(profileName) || {};
+const profile = await loadAgentProfile(profileName);
+if (!profile) {
+  throw new Error(`Recorder agent profile not found: ${profileName}.ttl`);
+}
+
+const fileConfig = profile.toConfig();
 if (!fileConfig?.nickname || !fileConfig?.xmpp?.username) {
   throw new Error("Recorder agent profile is missing nickname or XMPP username");
 }

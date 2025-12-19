@@ -9,7 +9,7 @@ import logger from "../lib/logger-lite.js";
 dotenv.config();
 
 const requestedProfile = process.env.AGENT_PROFILE || "semem";
-const profile = loadAgentProfile(requestedProfile);
+const profile = await loadAgentProfile(requestedProfile);
 if (!profile?.nickname || !profile?.xmppConfig?.username) {
   throw new Error("Semem agent profile is missing nickname or XMPP username");
 }

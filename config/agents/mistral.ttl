@@ -1,0 +1,29 @@
+@prefix agent: <https://tensegrity.it/vocab/agent#> .
+@prefix foaf: <http://xmlns.com/foaf/0.1/> .
+@prefix schema: <https://schema.org/> .
+@prefix xmpp: <https://tensegrity.it/vocab/xmpp#> .
+@prefix ai: <https://tensegrity.it/vocab/ai-provider#> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+
+<#mistral> a agent:ConversationalAgent, agent:AIAgent ;
+  foaf:nick "Mistral" ;
+  schema:identifier "mistral" ;
+  dcterms:created "2024-12-01T00:00:00Z"^^xsd:dateTime ;
+
+  agent:xmppAccount [
+    a xmpp:Account ;
+    xmpp:service "xmpp://tensegrity.it:5222" ;
+    xmpp:domain "tensegrity.it" ;
+    xmpp:username "mistral" ;
+    xmpp:password "mistralpass" ;
+    xmpp:resource "Mistral"
+  ] ;
+
+  agent:roomJid "general@conference.tensegrity.it" ;
+
+  agent:aiProvider [
+    a ai:MistralProvider ;
+    ai:model "mistral-small-latest" ;
+    ai:apiKeyEnv "MISTRAL_API_KEY"
+  ] .

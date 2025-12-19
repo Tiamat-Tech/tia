@@ -1,0 +1,35 @@
+@prefix agent: <https://tensegrity.it/vocab/agent#> .
+@prefix foaf: <http://xmlns.com/foaf/0.1/> .
+@prefix schema: <https://schema.org/> .
+@prefix xmpp: <https://tensegrity.it/vocab/xmpp#> .
+@prefix ai: <https://tensegrity.it/vocab/ai-provider#> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+
+<#semem> a agent:ConversationalAgent, agent:KnowledgeAgent ;
+  foaf:nick "Semem" ;
+  schema:identifier "semem" ;
+  dcterms:created "2024-12-01T00:00:00Z"^^xsd:dateTime ;
+
+  agent:xmppAccount [
+    a xmpp:Account ;
+    xmpp:service "xmpp://tensegrity.it:5222" ;
+    xmpp:domain "tensegrity.it" ;
+    xmpp:username "semem" ;
+    xmpp:password "semempass" ;
+    xmpp:resource "Semem"
+  ] ;
+
+  agent:roomJid "general@conference.tensegrity.it" ;
+
+  agent:mcpProvider [
+    a ai:SememProvider ;
+    ai:baseUrl "https://mcp.tensegrity.it" ;
+    ai:authTokenEnv "SEMEM_AUTH_TOKEN" ;
+    ai:timeoutMs "8000" ;
+    ai:features [
+      ai:useWikipedia true ;
+      ai:useWikidata true ;
+      ai:useWebSearch false
+    ]
+  ] .

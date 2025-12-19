@@ -1,0 +1,30 @@
+@prefix agent: <https://tensegrity.it/vocab/agent#> .
+@prefix foaf: <http://xmlns.com/foaf/0.1/> .
+@prefix schema: <https://schema.org/> .
+@prefix xmpp: <https://tensegrity.it/vocab/xmpp#> .
+@prefix ai: <https://tensegrity.it/vocab/ai-provider#> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+
+<#recorder> a agent:ConversationalAgent, agent:RecorderAgent ;
+  foaf:nick "Recorder" ;
+  schema:identifier "recorder" ;
+  dcterms:created "2024-12-01T00:00:00Z"^^xsd:dateTime ;
+
+  agent:xmppAccount [
+    a xmpp:Account ;
+    xmpp:service "xmpp://tensegrity.it:5222" ;
+    xmpp:domain "tensegrity.it" ;
+    xmpp:username "recorder" ;
+    xmpp:password "recorderpass" ;
+    xmpp:resource "Recorder"
+  ] ;
+
+  agent:roomJid "general@conference.tensegrity.it" ;
+
+  agent:mcpProvider [
+    a ai:SememProvider ;
+    ai:baseUrl "https://mcp.tensegrity.it" ;
+    ai:authTokenEnv "SEMEM_AUTH_TOKEN" ;
+    ai:timeoutMs "8000"
+  ] .

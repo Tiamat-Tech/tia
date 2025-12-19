@@ -1,7 +1,5 @@
 import dotenv from "dotenv";
-import fs from "fs";
-import path from "path";
-import { loadAgentConfig as loadFileConfig } from "../agents/config-loader.js";
+import { loadAgentProfile as loadRdfProfile } from "../agents/profile-loader.js";
 
 dotenv.config();
 
@@ -66,8 +64,9 @@ export function listProfiles() {
   return Object.keys(profiles);
 }
 
-export function loadAgentProfile(name = "default") {
-  const fileProfile = loadFileConfig(name);
+export async function loadAgentProfile(name = "default") {
+  const rdfProfile = await loadRdfProfile(name);
+  const fileProfile = rdfProfile?.toConfig();
   const profile = profiles[name] || profiles.default;
   const resolvedName = profiles[name] || fileProfile ? name : "default";
   const nicknameOverride = process.env.AGENT_NICKNAME?.trim();
