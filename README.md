@@ -22,15 +22,15 @@ The design goal is a clean, library-ready architecture that supports both deploy
 
 ## Start Here (Docs)
 
-- [Agent capabilities & commands](docs/agents.md): `docs/agents.md`
-- Lingue integration: `docs/lingue-integration.md`
-- MCP client guide: `docs/mcp-client.md`
-- MCP server guide: `docs/mcp-server.md`
-- API reference: `docs/api-reference.md`
-- Testing & env: `docs/testing.md`
-- Server deployment: `docs/server.md`
-- Debate/Chair/Recorder notes: `docs/debating-society.md`
-- Lingue docs index (ontology/protocol): https://danja.github.io/lingue/ or `../lingue/docs/index.md`
+- [Agent capabilities & commands](docs/agents.md)
+- [Lingue integration](docs/lingue-integration.md)
+- [MCP client guide](docs/mcp-client.md)
+- [MCP server guide](docs/mcp-server.md)
+- [API reference](docs/api-reference.md)
+- [Testing & env](docs/testing.md)
+- [Server deployment](docs/server.md)
+- [Debate/Chair/Recorder notes](docs/debating-society.md)
+- [Lingue ontology & protocol specs](https://danja.github.io/lingue/)
 
 ## Architecture At A Glance
 
@@ -66,11 +66,11 @@ const runner = new AgentRunner({ profile, provider, negotiator });
 await runner.start();
 ```
 
-See `examples/minimal-agent.js` for a runnable local example.
+See [examples/minimal-agent.js](examples/minimal-agent.js) for a runnable local example.
 
 ## Installation & Running
 
 Installation, configuration, and run scripts are documented in:
-- `docs/testing.md`
-- `docs/server.md`
-- `docs/mcp-server.md`
+- [Testing](docs/testing.md)
+- [Server](docs/server.md)
+- [MCP Server](docs/mcp-server.md)
