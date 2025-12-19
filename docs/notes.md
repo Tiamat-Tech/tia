@@ -5,6 +5,8 @@ node src/examples/semem-direct-test.js "Glitch is a canary" "What is Glitch?"
 prosodyctl adduser semem@tensegrity.it
 prosodyctl adduser mistral@tensegrity.it
 prosodyctl adduser demo@tensegrity.it
+
+prosodyctl adduser prolog@tensegrity.it
 ---
 
 npm install @xmpp/client @xmpp/debug

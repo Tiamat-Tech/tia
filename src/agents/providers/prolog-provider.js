@@ -57,7 +57,7 @@ export class PrologProvider {
   }
 
   parseInput(text) {
-    const trimmed = (text || "").trim();
+    const trimmed = this.normalizeContent(text);
     const marker = trimmed.indexOf("?-");
     if (marker === -1) {
       return { program: "", query: trimmed };
@@ -67,20 +67,39 @@ export class PrologProvider {
     return { program, query };
   }
 
+  normalizeContent(text) {
+    const trimmed = (text || "").trim();
+    if (!trimmed) return "";
+    const nick = (this.nickname || "").toLowerCase();
+    if (!nick) return trimmed;
+
+    const lines = trimmed.split("\n").map((line) => {
+      let current = line.trimStart();
+      if (current.toLowerCase().startsWith(nick)) {
+        current = current.slice(nick.length);
+        current = current.replace(/^[\\s,:]+/, "");
+      }
+      return current;
+    });
+
+    return lines.join("\n").trim();
+  }
+
   async handle({ command, content, reply }) {
-    if (!content) return "No input provided.";
+    const cleaned = this.normalizeContent(content);
+    if (!cleaned) return "No input provided.";
 
     if (command === "tell") {
-      await this.consult(content);
+      await this.consult(cleaned);
       return "Prolog program loaded.";
     }
 
     if (command === "ask") {
-      const answers = await this.query(content);
+      const answers = await this.query(cleaned);
       return answers.length ? answers.join("\n") : "No.";
     }
 
-    const { program, query } = this.parseInput(content);
+    const { program, query } = this.parseInput(cleaned);
     if (program) {
       await this.consult(program);
     }

@@ -1,7 +1,7 @@
 import dotenv from "dotenv";
 import { AgentRunner } from "../agents/core/agent-runner.js";
 import { createMentionDetector } from "../agents/core/mention-detector.js";
-import { defaultCommandParser } from "../agents/core/command-parser.js";
+import { createPrefixedCommandParser, defaultCommandParser } from "../agents/core/command-parser.js";
 import { PrologProvider } from "../agents/providers/prolog-provider.js";
 import logger from "../lib/logger-lite.js";
 import { loadAgentProfile } from "../agents/profile-loader.js";
@@ -68,7 +68,10 @@ const runner = new AgentRunner({
   provider,
   negotiator,
   mentionDetector: createMentionDetector(BOT_NICKNAME, [BOT_NICKNAME]),
-  commandParser: defaultCommandParser,
+  commandParser: createPrefixedCommandParser([
+    `${BOT_NICKNAME.toLowerCase()},`,
+    `${BOT_NICKNAME.toLowerCase()}:`
+  ]),
   allowSelfMessages: false,
   logger
 });
