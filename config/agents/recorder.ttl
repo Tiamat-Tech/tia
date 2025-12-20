@@ -24,7 +24,7 @@
     xmpp:service "xmpp://tensegrity.it:5222" ;
     xmpp:domain "tensegrity.it" ;
     xmpp:username "recorder" ;
-    xmpp:password "recorderpass" ;
+    xmpp:passwordKey "recorder" ;
     xmpp:resource "Recorder"
   ] ;
 

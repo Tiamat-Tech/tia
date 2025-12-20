@@ -16,14 +16,25 @@ export class ProviderConfig {
  * Mistral-specific provider
  */
 export class MistralProviderConfig extends ProviderConfig {
-  constructor({ model, apiKeyEnv, maxTokens, temperature, lingueEnabled, lingueConfidenceMin }) {
+  constructor({
+    model,
+    apiKeyEnv,
+    maxTokens,
+    temperature,
+    lingueEnabled,
+    lingueConfidenceMin,
+    systemPrompt,
+    systemTemplate
+  }) {
     super('mistral', {
       model,
       apiKeyEnv,
       maxTokens,
       temperature,
       lingueEnabled,
-      lingueConfidenceMin
+      lingueConfidenceMin,
+      systemPrompt,
+      systemTemplate
     });
   }
 
@@ -35,6 +46,8 @@ export class MistralProviderConfig extends ProviderConfig {
     if (this.config.temperature !== undefined) config.temperature = this.config.temperature;
     if (this.config.lingueEnabled !== undefined) config.lingueEnabled = this.config.lingueEnabled;
     if (this.config.lingueConfidenceMin !== undefined) config.lingueConfidenceMin = this.config.lingueConfidenceMin;
+    if (this.config.systemPrompt !== undefined) config.systemPrompt = this.config.systemPrompt;
+    if (this.config.systemTemplate !== undefined) config.systemTemplate = this.config.systemTemplate;
     return config;
   }
 }

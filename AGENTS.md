@@ -37,5 +37,5 @@
 
 ## Security & Configuration Tips
 - Local Prosody uses self-signed TLS; prepend commands with `NODE_TLS_REJECT_UNAUTHORIZED=0` when connecting locally only.
-- Keep secrets in `.env` (keys: `MISTRAL_API_KEY`, `XMPP_*`, `MUC_ROOM`, `BOT_NICKNAME`); never commit `.env`.
+- Keep API keys/tokens in `.env` (e.g., `MISTRAL_API_KEY`, `MUC_ROOM`, `BOT_NICKNAME`); keep XMPP passwords in `config/agents/secrets.json` (gitignored).
 - When adding new services, thread configuration through env vars and document defaults in `README.md` and the relevant module header.

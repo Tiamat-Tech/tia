@@ -8,6 +8,7 @@ This page is for users first, then operators. It covers what each bot can do in 
 - Mention it: `MistralBot, how do I ...?`, `bot: ...`, or `@mistralbot`.
 - Replies with LLM answers (1–3 sentences, friendly).
 - Lingue/IBIS: when Lingue is enabled (default), it detects Issues/Positions/Arguments and posts short IBIS summaries if confidence is high.
+- Profiles: `mistral` (default), `mistral-analyst`, `mistral-creative` via `AGENT_PROFILE`.
 
 ### Semem Agent
 - Mention it: `Semem, ...` (comma/colon supported) or DM.
@@ -31,11 +32,12 @@ Common XMPP env (put in `.env`):
 ```
 XMPP_SERVICE=xmpp://your-host:5222     # or xmpps://... with NODE_TLS_REJECT_UNAUTHORIZED=0
 XMPP_DOMAIN=your-domain
-XMPP_USERNAME=your-user
-XMPP_PASSWORD=your-pass
 MUC_ROOM=general@conference.your-domain
 XMPP_RESOURCE=...                      # optional; defaults to bot nickname
 ```
+
+XMPP passwords live in `config/agents/secrets.json` (ignored by git). Override the path
+with `AGENT_SECRETS_PATH` if needed.
 
 ### Mistral Bot
 - Start: `./start-mistral-bot.sh`

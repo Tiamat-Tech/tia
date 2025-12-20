@@ -1,3 +1,4 @@
+import "./helpers/agent-secrets.js";
 import { describe, it, expect } from "vitest";
 import { loadAgentProfile, profileToTurtle, parseAgentProfile } from "../src/agents/profile-loader.js";
 import { createProfileBuilder } from "../src/agents/profile/profile-builder.js";
@@ -59,6 +60,7 @@ describe("Profile roundtrip serialization", () => {
         domain: "test",
         username: "test",
         password: "testpass",
+        passwordKey: "test",
         resource: "TestBot"
       })
       .mistralProvider({

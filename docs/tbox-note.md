@@ -30,12 +30,13 @@ docker exec tbox-xmpp-1 prosodyctl register danbri xmpp canary
   cat > .env <<'EOF'
   XMPP_SERVICE=xmpp://tensegrity.it:5222
   XMPP_DOMAIN=xmpp
-  XMPP_USERNAME=bot          # from step 2
-  XMPP_PASSWORD=yourpass
   MUC_ROOM=general@conference.xmpp
   NODE_TLS_REJECT_UNAUTHORIZED=0
   LINGUE_ENABLED=true
   EOF
+
+  # Set the XMPP username/password in config/agents/mistral.ttl and
+  # config/agents/secrets.json (gitignored).
 
   ./start-mistral-bot.sh
 

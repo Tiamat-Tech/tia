@@ -14,8 +14,6 @@ Example `.env` (self-signed TLS example):
 NODE_TLS_REJECT_UNAUTHORIZED=0          # only if your XMPP TLS is self-signed
 XMPP_SERVICE=xmpp://tensegrity.it:5222  # or xmpps://... if TLS-only
 XMPP_DOMAIN=tensegrity.it
-XMPP_USERNAME=dogbot
-XMPP_PASSWORD=woofwoof
 MUC_ROOM=general@conference.tensegrity.it
 XMPP_RESOURCE=SememTest               # optional: set XMPP resource; defaults to bot nickname
 
@@ -26,6 +24,9 @@ SEMEM_AUTH_TOKEN=...                    # if your Semem endpoint needs auth
 SEMEM_NICKNAME=SememTest                # optional nickname for Semem agent
 MCP_BOT_NICKNAME=McpDebug               # nickname for MCP debug agent (if using)
 ```
+
+XMPP passwords are read from `config/agents/secrets.json` (ignored by git). Set
+`AGENT_SECRETS_PATH` to use a different secrets file.
 
 > Tip: If your `.env` lives elsewhere, set `TIA_ENV_PATH=/path/to/.env` before running tests.
 

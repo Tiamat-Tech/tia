@@ -24,7 +24,7 @@
     xmpp:service "xmpp://tensegrity.it:5222" ;
     xmpp:domain "tensegrity.it" ;
     xmpp:username "chair" ;
-    xmpp:password "chairpass" ;
+    xmpp:passwordKey "chair" ;
     xmpp:resource "Chair"
   ] ;
 

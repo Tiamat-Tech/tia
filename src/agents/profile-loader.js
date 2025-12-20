@@ -10,6 +10,9 @@ import { Capability } from "./profile/capability.js";
 
 const AGENT_PROFILE_DIR = process.env.AGENT_PROFILE_DIR ||
   path.join(process.cwd(), "config", "agents");
+const defaultSecretsPath = () =>
+  process.env.AGENT_SECRETS_PATH || path.join(AGENT_PROFILE_DIR, "secrets.json");
+const secretsCache = new Map();
 
 const PREFIXES = {
   agent: "https://tensegrity.it/vocab/agent#",
@@ -37,7 +40,43 @@ export async function loadAgentProfile(name, options = {}) {
   try {
     const turtle = await fs.readFile(filePath, "utf8");
     const subjectUri = options.subjectUri || `#${name}`;
-    return await parseAgentProfile(turtle, subjectUri);
+    const secrets = await loadSecrets(options.secretsPath);
+    const dataset = await turtleToDataset(turtle);
+    const subject = rdf.namedNode(subjectUri);
+    const profile = datasetToProfile(dataset, subject, {
+      secrets,
+      allowMissingPasswordKey: options.allowMissingPasswordKey
+    });
+    const baseProfiles = extractBaseProfileNames(dataset, subject);
+
+    if (!baseProfiles.length) {
+      if (!options.allowMissingPasswordKey) {
+        assertXmppPassword(profile);
+      }
+      return profile;
+    }
+
+    const stack = new Set(options._stack || []);
+    if (stack.has(name)) {
+      throw new Error(`Circular profile inheritance detected: ${Array.from(stack).join(" -> ")} -> ${name}`);
+    }
+    stack.add(name);
+
+    let mergedProfile = profile;
+    for (const baseName of baseProfiles) {
+      const baseProfile = await loadAgentProfile(baseName, {
+        ...options,
+        secretsPath: options.secretsPath,
+        _stack: Array.from(stack),
+        allowMissingPasswordKey: true
+      });
+      mergedProfile = mergeAgentProfiles(baseProfile, mergedProfile);
+    }
+
+    if (!options.allowMissingPasswordKey) {
+      assertXmppPassword(mergedProfile);
+    }
+    return mergedProfile;
   } catch (err) {
     if (err.code === 'ENOENT') {
       return null;
@@ -50,16 +89,24 @@ export async function loadAgentProfile(name, options = {}) {
 /**
  * Parse Turtle string to AgentProfile
  */
-export async function parseAgentProfile(turtle, subjectUri) {
+export async function parseAgentProfile(turtle, subjectUri, options = {}) {
   const dataset = await turtleToDataset(turtle);
   const subject = rdf.namedNode(subjectUri);
-  return datasetToProfile(dataset, subject);
+  const secrets = await loadSecrets(options.secretsPath);
+  const profile = datasetToProfile(dataset, subject, {
+    secrets,
+    allowMissingPasswordKey: options.allowMissingPasswordKey
+  });
+  if (!options.allowMissingPasswordKey) {
+    assertXmppPassword(profile);
+  }
+  return profile;
 }
 
 /**
  * Extract AgentProfile from RDF dataset
  */
-export function datasetToProfile(dataset, subject) {
+export function datasetToProfile(dataset, subject, options = {}) {
   const identifier = extractLiteral(dataset, subject, PREFIXES.schema + "identifier");
   const nickname = extractLiteral(dataset, subject, PREFIXES.foaf + "nick");
   const roomJid = extractLiteral(dataset, subject, PREFIXES.agent + "roomJid");
@@ -68,7 +115,7 @@ export function datasetToProfile(dataset, subject) {
     dataset.match(subject, rdf.namedNode(PREFIXES.rdf + "type"), null)
   ).map(quad => stripPrefix(quad.object.value));
 
-  const xmppAccount = extractXmppConfig(dataset, subject);
+  const xmppAccount = extractXmppConfig(dataset, subject, options);
   const provider = extractProviderConfig(dataset, subject);
   const capabilities = extractCapabilities(dataset, subject);
   const lingue = extractLingueCapabilities(dataset, subject);
@@ -97,15 +144,24 @@ export function datasetToProfile(dataset, subject) {
 /**
  * Extract XMPP configuration from blank node
  */
-function extractXmppConfig(dataset, subject) {
+function extractXmppConfig(dataset, subject, options = {}) {
   const xmppAccountNode = extractObject(dataset, subject, PREFIXES.agent + "xmppAccount");
   if (!xmppAccountNode) return null;
+
+  const passwordKey = extractLiteral(dataset, xmppAccountNode, PREFIXES.xmpp + "passwordKey");
+  const password = passwordKey
+    ? resolveXmppPassword(passwordKey, options.secrets)
+    : null;
+  if (!passwordKey && !options.allowMissingPasswordKey) {
+    throw new Error("Missing xmpp:passwordKey in agent profile.");
+  }
 
   return new XmppConfig({
     service: extractLiteral(dataset, xmppAccountNode, PREFIXES.xmpp + "service"),
     domain: extractLiteral(dataset, xmppAccountNode, PREFIXES.xmpp + "domain"),
     username: extractLiteral(dataset, xmppAccountNode, PREFIXES.xmpp + "username"),
-    password: extractLiteral(dataset, xmppAccountNode, PREFIXES.xmpp + "password"),
+    password,
+    passwordKey,
     resource: extractLiteral(dataset, xmppAccountNode, PREFIXES.xmpp + "resource"),
     tlsRejectUnauthorized: extractBoolean(dataset, xmppAccountNode,
       PREFIXES.xmpp + "tlsRejectUnauthorized", false)
@@ -141,7 +197,9 @@ function extractMistralProvider(dataset, providerNode) {
     lingueEnabled: extractBoolean(dataset, providerNode,
       PREFIXES.agent + "lingueEnabled"),
     lingueConfidenceMin: extractFloat(dataset, providerNode,
-      PREFIXES.agent + "lingueConfidenceMin")
+      PREFIXES.agent + "lingueConfidenceMin"),
+    systemPrompt: extractLiteral(dataset, providerNode, PREFIXES.ai + "systemPrompt"),
+    systemTemplate: extractLiteral(dataset, providerNode, PREFIXES.ai + "systemTemplate")
   });
 }
 
@@ -314,7 +372,13 @@ export function profileToDataset(profile) {
     dataset.add(rdf.quad(xmppNode, rdf.namedNode(PREFIXES.xmpp + "service"), rdf.literal(xmpp.service)));
     dataset.add(rdf.quad(xmppNode, rdf.namedNode(PREFIXES.xmpp + "domain"), rdf.literal(xmpp.domain)));
     dataset.add(rdf.quad(xmppNode, rdf.namedNode(PREFIXES.xmpp + "username"), rdf.literal(xmpp.username)));
-    dataset.add(rdf.quad(xmppNode, rdf.namedNode(PREFIXES.xmpp + "password"), rdf.literal(xmpp.password)));
+    if (xmpp.passwordKey) {
+      dataset.add(rdf.quad(
+        xmppNode,
+        rdf.namedNode(PREFIXES.xmpp + "passwordKey"),
+        rdf.literal(xmpp.passwordKey)
+      ));
+    }
     dataset.add(rdf.quad(xmppNode, rdf.namedNode(PREFIXES.xmpp + "resource"), rdf.literal(xmpp.resource)));
   }
 
@@ -451,6 +515,204 @@ export async function profileToTurtle(profile) {
       resolve(result.trim());
     });
   });
+}
+
+async function loadSecrets(secretsPath) {
+  const resolvedPath = secretsPath || defaultSecretsPath();
+  if (!resolvedPath) {
+    throw new Error("Agent secrets path is required to load XMPP credentials.");
+  }
+
+  if (secretsCache.has(resolvedPath)) {
+    return secretsCache.get(resolvedPath);
+  }
+
+  let raw;
+  try {
+    raw = await fs.readFile(resolvedPath, "utf8");
+  } catch (err) {
+    if (err.code === "ENOENT") {
+      throw new Error(`Agent secrets file not found: ${resolvedPath}`);
+    }
+    throw err;
+  }
+
+  let secrets;
+  try {
+    secrets = JSON.parse(raw);
+  } catch (err) {
+    throw new Error(`Agent secrets file is not valid JSON: ${resolvedPath}`);
+  }
+
+  secretsCache.set(resolvedPath, secrets);
+  return secrets;
+}
+
+function resolveXmppPassword(passwordKey, secrets) {
+  if (!passwordKey) {
+    throw new Error("Missing xmpp:passwordKey in agent profile.");
+  }
+  if (!secrets?.xmpp || typeof secrets.xmpp !== "object") {
+    throw new Error("Agent secrets file is missing the xmpp password map.");
+  }
+  const password = secrets.xmpp[passwordKey];
+  if (!password) {
+    throw new Error(`No XMPP password found for key "${passwordKey}" in secrets file.`);
+  }
+  return password;
+}
+
+function extractBaseProfileNames(dataset, subject) {
+  return extractObjects(dataset, subject, PREFIXES.dcterms + "isPartOf")
+    .map(nodeToProfileName)
+    .filter(Boolean);
+}
+
+function nodeToProfileName(node) {
+  if (!node) return null;
+  if (node.termType === "Literal") {
+    return normalizeProfileName(node.value);
+  }
+  if (node.termType !== "NamedNode") return null;
+  const value = node.value;
+  if (value.includes("#")) {
+    return normalizeProfileName(value.split("#").pop());
+  }
+  if (value.includes("/")) {
+    return normalizeProfileName(value.split("/").pop());
+  }
+  return normalizeProfileName(value);
+}
+
+function normalizeProfileName(value) {
+  if (!value) return null;
+  return value.endsWith(".ttl") ? value.slice(0, -4) : value;
+}
+
+function mergeAgentProfiles(baseProfile, derivedProfile) {
+  if (!baseProfile) return derivedProfile;
+  if (!derivedProfile) return baseProfile;
+
+  const mergedXmpp = mergeXmppAccounts(baseProfile.xmppAccount, derivedProfile.xmppAccount);
+  const mergedProvider = mergeProviderConfigs(baseProfile.provider, derivedProfile.provider);
+  const mergedCapabilities = mergeCapabilities(baseProfile, derivedProfile);
+  const mergedLingue = mergeLingue(baseProfile, derivedProfile);
+  const mergedMcp = mergeMcp(baseProfile, derivedProfile);
+  const mergedMetadata = mergeMetadata(baseProfile, derivedProfile);
+  const mergedTypes = dedupeArray([...(baseProfile.type || []), ...(derivedProfile.type || [])]);
+
+  return new AgentProfile({
+    identifier: derivedProfile.identifier || baseProfile.identifier,
+    nickname: derivedProfile.nickname || baseProfile.nickname,
+    type: mergedTypes,
+    xmppAccount: mergedXmpp,
+    roomJid: derivedProfile.roomJid || baseProfile.roomJid,
+    provider: mergedProvider,
+    capabilities: mergedCapabilities,
+    lingue: mergedLingue,
+    mcp: mergedMcp,
+    metadata: mergedMetadata,
+    customProperties: {
+      ...(baseProfile.custom || {}),
+      ...(derivedProfile.custom || {})
+    }
+  });
+}
+
+function assertXmppPassword(profile) {
+  if (!profile?.xmppAccount) return;
+  if (!profile.xmppAccount.password) {
+    const identifier = profile.identifier || profile.nickname || "unknown";
+    throw new Error(`XMPP password missing for profile "${identifier}".`);
+  }
+}
+
+function mergeXmppAccounts(baseXmpp, derivedXmpp) {
+  if (!baseXmpp && !derivedXmpp) return null;
+  if (!baseXmpp) return derivedXmpp;
+  if (!derivedXmpp) return baseXmpp;
+
+  return new XmppConfig({
+    service: derivedXmpp.service || baseXmpp.service,
+    domain: derivedXmpp.domain || baseXmpp.domain,
+    username: derivedXmpp.username || baseXmpp.username,
+    password: derivedXmpp.password || baseXmpp.password,
+    passwordKey: derivedXmpp.passwordKey || baseXmpp.passwordKey,
+    resource: derivedXmpp.resource || baseXmpp.resource,
+    tlsRejectUnauthorized: derivedXmpp.tls?.rejectUnauthorized ?? baseXmpp.tls?.rejectUnauthorized ?? false
+  });
+}
+
+function mergeProviderConfigs(baseProvider, derivedProvider) {
+  if (!baseProvider) return derivedProvider;
+  if (!derivedProvider) return baseProvider;
+  if (baseProvider.type !== derivedProvider.type) return derivedProvider;
+
+  const mergedConfig = { ...baseProvider.config, ...derivedProvider.config };
+  if (baseProvider.type === "mistral") {
+    return new MistralProviderConfig(mergedConfig);
+  }
+  if (baseProvider.type === "semem") {
+    return new SememProviderConfig(mergedConfig);
+  }
+  return derivedProvider;
+}
+
+function mergeCapabilities(baseProfile, derivedProfile) {
+  const merged = new Map();
+  baseProfile?.capabilities?.forEach((cap, key) => merged.set(key, cap));
+  derivedProfile?.capabilities?.forEach((cap, key) => merged.set(key, cap));
+  return Array.from(merged.values());
+}
+
+function mergeLingue(baseProfile, derivedProfile) {
+  const baseLingue = baseProfile?.lingue || {};
+  const derivedLingue = derivedProfile?.lingue || {};
+  const supports = new Set([...(baseLingue.supports || []), ...(derivedLingue.supports || [])]);
+  const understands = new Set([...(baseLingue.understands || []), ...(derivedLingue.understands || [])]);
+  return {
+    supports,
+    prefers: derivedLingue.prefers || baseLingue.prefers || null,
+    understands,
+    profile: derivedLingue.profile || baseLingue.profile || null
+  };
+}
+
+function mergeMcp(baseProfile, derivedProfile) {
+  const baseMcp = baseProfile?.mcp || {};
+  const derivedMcp = derivedProfile?.mcp || {};
+  return {
+    role: derivedMcp.role || baseMcp.role || null,
+    servers: mergeMcpList(baseMcp.servers, derivedMcp.servers, (item) => item?.uri || item?.name),
+    tools: mergeMcpList(baseMcp.tools, derivedMcp.tools, (item) => item?.name),
+    resources: mergeMcpList(baseMcp.resources, derivedMcp.resources, (item) => item?.uri || item?.name),
+    prompts: mergeMcpList(baseMcp.prompts, derivedMcp.prompts, (item) => item?.name),
+    endpoints: mergeMcpList(baseMcp.endpoints, derivedMcp.endpoints, (item) => item?.uri || item?.name)
+  };
+}
+
+function mergeMcpList(baseList = [], derivedList = [], keyFn) {
+  const merged = new Map();
+  [...baseList, ...derivedList].forEach((item) => {
+    if (!item) return;
+    const key = keyFn?.(item) || JSON.stringify(item);
+    merged.set(key, item);
+  });
+  return Array.from(merged.values());
+}
+
+function mergeMetadata(baseProfile, derivedProfile) {
+  const baseMeta = baseProfile?.metadata || {};
+  const derivedMeta = derivedProfile?.metadata || {};
+  return {
+    created: derivedMeta.created || baseMeta.created,
+    modified: derivedMeta.modified || baseMeta.modified,
+    description: derivedMeta.description || baseMeta.description
+  };
+}
+
+function dedupeArray(values) {
+  return Array.from(new Set(values.filter(Boolean)));
 }
 
 // Helper functions

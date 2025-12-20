@@ -15,6 +15,18 @@ const AGENT_DEFINITIONS = {
     requiredEnv: ["MISTRAL_API_KEY"],
     env: { AGENT_PROFILE: "mistral" }
   },
+  analyst: {
+    command: "node src/services/mistral-bot.js",
+    description: "Mistral analyst variant",
+    requiredEnv: ["MISTRAL_API_KEY"],
+    env: { AGENT_PROFILE: "mistral-analyst" }
+  },
+  creative: {
+    command: "node src/services/mistral-bot.js",
+    description: "Mistral creative variant",
+    requiredEnv: ["MISTRAL_API_KEY"],
+    env: { AGENT_PROFILE: "mistral-creative" }
+  },
   chair: {
     command: "node src/services/chair-agent.js",
     description: "Chair agent (debate orchestration)",

@@ -18,7 +18,7 @@ The design goal is a clean, library-ready architecture that supports both deploy
 - **XMPP room agents**: long-running bots anchored in MUC rooms.
 - **Lingue protocol**: language-mode negotiation + structured payloads (IBIS, Prolog, profiles).
 - **MCP bridges**: MCP client and server adapters for tool discovery and exposure.
-- **Profiles (RDF)**: agent capabilities live in RDF profiles with shared vocabularies.
+- **Profiles (RDF)**: agent capabilities live in RDF profiles with shared vocabularies (Mistral variants inherit from `mistral-base`).
 
 ## Start Here (Docs)
 
@@ -38,6 +38,7 @@ The design goal is a clean, library-ready architecture that supports both deploy
 - `src/lib` — XMPP helpers, Lingue utilities, logging, RDF tools.
 - `src/mcp` — MCP client/server bridges and test servers.
 - `config/agents/*.ttl` — RDF profiles describing each agent.
+- `config/agents/secrets.json` — local XMPP passwords keyed by profile (ignored in git).
 - `docs/` — integration guides and operational docs.
 
 ## Implemented Agents

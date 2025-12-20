@@ -15,11 +15,17 @@ const DEFAULT_LINGUE_FEATURES = [
   ...LEGACY_LINGUE_FEATURES
 ];
 
+const DEFAULT_SYSTEM_TEMPLATE =
+  "You are {{nickname}}, a helpful assistant in an XMPP chat room. Keep responses concise (1-3 sentences) and conversational.";
+
 export class MistralProvider {
   constructor({
     apiKey,
     model = "mistral-small-latest",
     nickname = "MistralBot",
+    systemPrompt = null,
+    systemTemplate = null,
+    historyStore = null,
     lingueEnabled = true,
     lingueConfidenceMin = 0.5,
     discoFeatures = DEFAULT_LINGUE_FEATURES,
@@ -30,6 +36,9 @@ export class MistralProvider {
     this.client = new Mistral({ apiKey });
     this.model = model;
     this.nickname = nickname;
+    this.systemPrompt = systemPrompt;
+    this.systemTemplate = systemTemplate;
+    this.historyStore = historyStore;
     this.lingueEnabled = lingueEnabled;
     this.lingueConfidenceMin = lingueConfidenceMin;
     this.xmppClient = xmppClient;
@@ -57,11 +66,13 @@ export class MistralProvider {
     }
 
     try {
-      const systemPrompt = `You are ${this.nickname}, a helpful assistant in an XMPP chat room. Keep responses concise (1-3 sentences) and conversational.`;
+      const systemPrompt = this.buildSystemPrompt();
+      const historyMessages = this.historyStore?.getMessages?.() || [];
       const response = await this.client.chat.complete({
         model: this.model,
         messages: [
           { role: "system", content: systemPrompt },
+          ...historyMessages,
           { role: "user", content }
         ],
         maxTokens: 150,
@@ -69,6 +80,10 @@ export class MistralProvider {
       });
 
       const replyText = response.choices[0]?.message?.content?.trim();
+      if (replyText && this.historyStore?.addTurn) {
+        this.historyStore.addTurn({ role: "user", content });
+        this.historyStore.addTurn({ role: "assistant", content: replyText });
+      }
       if (this.lingueEnabled && replyText) {
         // Best-effort IBIS summary of the incoming content
         await this.maybePostLingueSummary(content, reply);
@@ -79,6 +94,18 @@ export class MistralProvider {
       return "I'm having trouble generating a response right now.";
     }
   }
+
+  buildSystemPrompt() {
+    if (this.systemPrompt) return this.systemPrompt;
+    const template = this.systemTemplate || DEFAULT_SYSTEM_TEMPLATE;
+    return renderTemplate(template, { nickname: this.nickname });
+  }
 }
 
 export default MistralProvider;
+
+function renderTemplate(template, data) {
+  return template.replace(/\{\{\s*([a-zA-Z0-9_]+)\s*\}\}/g, (_, key) => {
+    return Object.prototype.hasOwnProperty.call(data, key) ? String(data[key]) : "";
+  });
+}

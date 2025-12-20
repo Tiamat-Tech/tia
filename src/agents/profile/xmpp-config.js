@@ -7,6 +7,7 @@ export class XmppConfig {
     domain,
     username,
     password,
+    passwordKey,
     resource,
     tlsRejectUnauthorized = false
   }) {
@@ -14,6 +15,7 @@ export class XmppConfig {
     this.domain = domain;
     this.username = username;
     this.password = password;
+    this.passwordKey = passwordKey;
     this.resource = resource;
     this.tls = { rejectUnauthorized: tlsRejectUnauthorized };
   }

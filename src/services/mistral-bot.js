@@ -7,6 +7,7 @@ import logger from "../lib/logger-lite.js";
 import { loadAgentProfile } from "../agents/profile-loader.js";
 import { LingueNegotiator, LANGUAGE_MODES, featuresForModes } from "../lib/lingue/index.js";
 import { HumanChatHandler, IBISTextHandler } from "../lib/lingue/handlers/index.js";
+import { InMemoryHistoryStore } from "../lib/history/index.js";
 
 dotenv.config();
 
@@ -25,7 +26,6 @@ const baseXmpp = {
   service: process.env.XMPP_SERVICE || "xmpp://localhost:5222",
   domain: process.env.XMPP_DOMAIN || "xmpp",
   username: process.env.XMPP_USERNAME,
-  password: process.env.XMPP_PASSWORD,
   resource: process.env.MISTRAL_RESOURCE
 };
 
@@ -45,6 +45,9 @@ const provider = new MistralProvider({
   apiKey: process.env.MISTRAL_API_KEY,
   model: (fileConfig.mistral && fileConfig.mistral.model) || process.env.MISTRAL_MODEL || "mistral-small-latest",
   nickname: BOT_NICKNAME,
+  systemPrompt: fileConfig.mistral?.systemPrompt,
+  systemTemplate: fileConfig.mistral?.systemTemplate,
+  historyStore: new InMemoryHistoryStore({ maxEntries: 40 }),
   lingueEnabled: LINGUE_ENABLED,
   lingueConfidenceMin: LINGUE_CONFIDENCE_MIN,
   discoFeatures: featuresForModes(profile.lingue.supports),

@@ -166,11 +166,11 @@ The MCP server (`src/mcp/servers/Echo.js`) now spins up a lightweight XMPP parti
 ```
 XMPP_SERVICE=xmpp://localhost:5222       # or xmpps://host:5222 with NODE_TLS_REJECT_UNAUTHORIZED=0
 XMPP_DOMAIN=xmpp
-XMPP_USERNAME=dogbot
-XMPP_PASSWORD=woofwoof
 MUC_ROOM=general@conference.xmpp
 MCP_BOT_NICKNAME=McpDebug
 ```
+
+XMPP passwords are loaded from `config/agents/secrets.json` (set `AGENT_SECRETS_PATH` to override).
 
 On startup the server will join the MUC and log any messages it sees. Use `xmppStatus` to check join state and last observed message; use `xmppSend` to post a test message into the room.
 

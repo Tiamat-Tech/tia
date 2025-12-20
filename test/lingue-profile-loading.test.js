@@ -1,3 +1,4 @@
+import "./helpers/agent-secrets.js";
 import { describe, it, expect } from "vitest";
 import { loadAgentProfile } from "../src/agents/profile-loader.js";
 

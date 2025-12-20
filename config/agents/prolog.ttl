@@ -21,7 +21,7 @@
     xmpp:service "xmpp://tensegrity.it:5222" ;
     xmpp:domain "tensegrity.it" ;
     xmpp:username "prolog" ;
-    xmpp:password "prologpass" ;
+    xmpp:passwordKey "prolog" ;
     xmpp:resource "Prolog"
   ] ;
 

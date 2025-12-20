@@ -7,7 +7,6 @@ const baseXmppConfig = {
   service: process.env.XMPP_SERVICE || "xmpp://localhost:5222",
   domain: process.env.XMPP_DOMAIN || "xmpp",
   username: process.env.XMPP_USERNAME || "dogbot",
-  password: process.env.XMPP_PASSWORD || "woofwoof",
   resource: process.env.XMPP_RESOURCE,
   tls: { rejectUnauthorized: false }
 };

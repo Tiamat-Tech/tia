@@ -11,6 +11,7 @@ export * as Handlers from "./lib/lingue/handlers/index.js";
 // Utilities
 export { XmppRoomAgent } from "./lib/xmpp-room-agent.js";
 export { createMentionDetector } from "./agents/core/mention-detector.js";
+export { InMemoryHistoryStore, HistoryStore, HISTORY_TERMS } from "./lib/history/index.js";
 
 // Provider base
 export { BaseProvider } from "./agents/providers/base-provider.js";

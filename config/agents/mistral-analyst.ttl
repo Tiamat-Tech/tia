@@ -7,20 +7,20 @@
 @prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
 @prefix lng: <http://purl.org/stuff/lingue/> .
 
-<#mistral> a agent:ConversationalAgent, agent:AIAgent, lng:Agent ;
+<#mistral-analyst> a agent:ConversationalAgent, agent:AIAgent, lng:Agent ;
   dcterms:isPartOf <#mistral-base> ;
-  foaf:nick "Mistral" ;
-  schema:identifier "mistral" ;
+  foaf:nick "Analyst" ;
+  schema:identifier "mistral-analyst" ;
   dcterms:created "2024-12-01T00:00:00Z"^^xsd:dateTime ;
 
   agent:xmppAccount [
     a xmpp:Account ;
-    xmpp:username "mistral" ;
-    xmpp:passwordKey "mistral" ;
-    xmpp:resource "Mistral"
+    xmpp:username "mistral-analyst" ;
+    xmpp:passwordKey "mistral-analyst" ;
+    xmpp:resource "Analyst"
   ] ;
 
   agent:aiProvider [
     a ai:MistralProvider ;
-    ai:systemPrompt "You are Mistral, a helpful assistant in an XMPP chat room. Keep responses concise (1-3 sentences) and conversational."
+    ai:systemTemplate "You are {{nickname}}, a precise analyst in an XMPP chat. Keep responses short, cite assumptions, and prefer bullet points when clarifying options."
   ] .

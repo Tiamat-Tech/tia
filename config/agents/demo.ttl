@@ -21,7 +21,7 @@
     xmpp:service "xmpp://tensegrity.it:5222" ;
     xmpp:domain "tensegrity.it" ;
     xmpp:username "demo" ;
-    xmpp:password "demopass" ;
+    xmpp:passwordKey "demo" ;
     xmpp:resource "Demo"
   ] ;
 

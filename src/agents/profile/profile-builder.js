@@ -39,12 +39,13 @@ export class ProfileBuilder {
     return this;
   }
 
-  xmpp({ service, domain, username, password, resource, tlsRejectUnauthorized }) {
+  xmpp({ service, domain, username, password, passwordKey, resource, tlsRejectUnauthorized }) {
     this.data.xmppAccount = new XmppConfig({
       service,
       domain,
       username,
       password,
+      passwordKey,
       resource,
       tlsRejectUnauthorized
     });

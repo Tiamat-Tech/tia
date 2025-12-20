@@ -21,7 +21,7 @@
     xmpp:service "xmpp://tensegrity.it:5222" ;
     xmpp:domain "tensegrity.it" ;
     xmpp:username "mcp-loopback" ;
-    xmpp:password "loopbackpass" ;
+    xmpp:passwordKey "mcp-loopback" ;
     xmpp:resource "Loopback"
   ] ;
 

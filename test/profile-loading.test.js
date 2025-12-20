@@ -1,3 +1,4 @@
+import "./helpers/agent-secrets.js";
 import { describe, it, expect } from "vitest";
 import { loadAgentProfile } from "../src/services/agent-registry.js";
 import fs from "fs";
@@ -18,6 +19,8 @@ describe("agent profile loading", () => {
     expect(profile.nickname.toLowerCase()).toBe("mistral");
     expect(profile.xmppConfig.resource.toLowerCase()).toBe("mistral");
     expect(profile.xmppConfig.username.toLowerCase()).toBe("mistral");
+    expect(profile.xmppConfig.service).toBe("xmpp://tensegrity.it:5222");
+    expect(profile.xmppConfig.password).toBe("mistralpass");
   });
 
   it("loads demo profile from file", async () => {
