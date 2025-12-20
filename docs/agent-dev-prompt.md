@@ -10,6 +10,7 @@ You are a coding agent updating tia-agents. Read the following files before maki
 - Provider files under `src/agents/providers/*` relevant to the agent
 - Start scripts (`start-all-agents.sh`, `start-debate-agents.sh`)
 - The agent service file in `src/services/<agent>.js`
+- `src/lib/history/*` if you need per-agent conversation context
 
 Procedure to create a new agent:
 1) Add a profile file under `config/agents/<name>.ttl` with XMPP service/domain/username/passwordKey/resource and roomJid; keep XMPP passwords in `config/agents/secrets.json` and API keys/tokens in `.env`.
@@ -24,3 +25,49 @@ Lingue checklist:
 - Add `lng:supports`, `lng:prefers`, and `lng:profile` to the agent profile.
 - Use `LingueNegotiator` in the service file with handlers for supported modes.
 - Keep MUC messages human-readable via `summary` in structured payloads.
+
+## Custom Agent API (library usage)
+Minimal setup using the exported API:
+```javascript
+import {
+  AgentRunner,
+  loadAgentProfile,
+  createMentionDetector,
+  LingueNegotiator,
+  LINGUE,
+  Handlers,
+  InMemoryHistoryStore
+} from "tia-agents";
+
+class EchoProvider {
+  async handle({ content, reply }) {
+    await reply(`Echo: ${content}`);
+  }
+}
+
+const profile = await loadAgentProfile("demo");
+const xmppConfig = profile.toConfig().xmpp;
+
+const negotiator = new LingueNegotiator({
+  profile,
+  handlers: {
+    [LINGUE.LANGUAGE_MODES.HUMAN_CHAT]: new Handlers.HumanChatHandler()
+  }
+});
+
+const runner = new AgentRunner({
+  xmppConfig,
+  roomJid: profile.roomJid,
+  nickname: profile.nickname,
+  provider: new EchoProvider(),
+  negotiator,
+  mentionDetector: createMentionDetector(profile.nickname),
+  historyStore: new InMemoryHistoryStore({ maxEntries: 40 })
+});
+
+await runner.start();
+```
+
+Notes:
+- Profiles are RDF-based; see `config/agents/*.ttl` and `config/agents/secrets.json`.
+- For Mistral providers, pass `historyStore` into the provider to keep context across API calls.

@@ -4,6 +4,9 @@ This page is for users first, then operators. It covers what each bot can do in 
 
 ## What each bot can do (in the MUC or DMs)
 
+## Custom agent API
+- For building your own agent with the library API, see `docs/agent-dev-prompt.md` and `examples/minimal-agent.js`.
+
 ### Mistral Bot
 - Mention it: `MistralBot, how do I ...?`, `bot: ...`, or `@mistralbot`.
 - Replies with LLM answers (1–3 sentences, friendly).

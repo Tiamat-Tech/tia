@@ -54,7 +54,7 @@ The design goal is a clean, library-ready architecture that supports both deploy
 ## Library Usage
 
 ```javascript
-import { AgentRunner, LingueNegotiator, LINGUE, Handlers } from "tia-agents";
+import { AgentRunner, LingueNegotiator, LINGUE, Handlers, InMemoryHistoryStore } from "tia-agents";
 
 const negotiator = new LingueNegotiator({
   profile,
@@ -63,11 +63,22 @@ const negotiator = new LingueNegotiator({
   }
 });
 
-const runner = new AgentRunner({ profile, provider, negotiator });
+const runner = new AgentRunner({
+  profile,
+  provider,
+  negotiator,
+  historyStore: new InMemoryHistoryStore({ maxEntries: 40 })
+});
 await runner.start();
 ```
 
 See [examples/minimal-agent.js](examples/minimal-agent.js) for a runnable local example.
+
+## Custom Agent API
+
+For a fuller walkthrough and profile-driven setup, see:
+- [Agent developer prompt](docs/agent-dev-prompt.md)
+- [Minimal agent example](examples/minimal-agent.js)
 
 ## Installation & Running
 
