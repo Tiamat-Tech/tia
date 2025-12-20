@@ -7,6 +7,7 @@ import logger from "../lib/logger-lite.js";
 import { loadAgentProfile } from "../agents/profile-loader.js";
 import { LingueNegotiator, LANGUAGE_MODES } from "../lib/lingue/index.js";
 import { HumanChatHandler, PrologProgramHandler } from "../lib/lingue/handlers/index.js";
+import { loadAgentRoster } from "../agents/profile-roster.js";
 
 dotenv.config();
 
@@ -15,6 +16,7 @@ const profile = await loadAgentProfile(profileName);
 if (!profile) {
   throw new Error(`Prolog agent profile not found: ${profileName}.ttl`);
 }
+const agentRoster = await loadAgentRoster();
 
 const fileConfig = profile.toConfig();
 if (!fileConfig?.nickname || !fileConfig?.xmpp?.username) {
@@ -73,6 +75,7 @@ const runner = new AgentRunner({
     `${BOT_NICKNAME.toLowerCase()}:`
   ]),
   allowSelfMessages: false,
+  agentRoster,
   logger
 });
 

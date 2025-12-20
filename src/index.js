@@ -2,6 +2,7 @@
 export { AgentRunner } from "./agents/core/agent-runner.js";
 export { AgentProfile, XmppConfig } from "./agents/profile/index.js";
 export { loadAgentProfile, profileToTurtle } from "./agents/profile-loader.js";
+export { loadAgentRoster } from "./agents/profile-roster.js";
 
 // Lingue
 export { LingueNegotiator } from "./lib/lingue/index.js";

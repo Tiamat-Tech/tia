@@ -12,6 +12,7 @@ import {
   PrologProgramHandler,
   ProfileExchangeHandler
 } from "../lib/lingue/handlers/index.js";
+import { loadAgentRoster } from "../agents/profile-roster.js";
 
 dotenv.config();
 
@@ -20,6 +21,7 @@ const profile = await loadAgentProfile(profileName);
 if (!profile) {
   throw new Error(`Recorder agent profile not found: ${profileName}.ttl`);
 }
+const agentRoster = await loadAgentRoster();
 
 const fileConfig = profile.toConfig();
 if (!fileConfig?.nickname || !fileConfig?.xmpp?.username) {
@@ -84,6 +86,8 @@ const runner = new AgentRunner({
   commandParser: defaultCommandParser,
   allowSelfMessages: false,
   respondToAll: true, // Recorder should capture all messages
+  maxAgentRounds: 0,
+  agentRoster,
   logger
 });
 

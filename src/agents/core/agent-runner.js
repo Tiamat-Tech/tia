@@ -14,6 +14,8 @@ export class AgentRunner {
     commandParser,
     allowSelfMessages = false,
     respondToAll = false,
+    agentRoster = [],
+    maxAgentRounds = 3,
     logger = console
   }) {
     if (!provider?.handle) {
@@ -33,6 +35,13 @@ export class AgentRunner {
     this.commandParser = commandParser || defaultCommandParser;
     this.logger = logger;
     this.respondToAll = respondToAll;
+    this.agentRoster = new Set(
+      (agentRoster || [])
+        .map((name) => name?.toLowerCase?.())
+        .filter(Boolean)
+    );
+    this.maxAgentRounds = maxAgentRounds;
+    this.agentRoundCount = 0;
 
     this.agent = new XmppRoomAgent({
       xmppConfig: resolvedXmppConfig,
@@ -61,7 +70,22 @@ export class AgentRunner {
       if (handled) return;
     }
 
-    const addressed = this.respondToAll || type === "chat" || this.mentionDetector(body);
+    const senderIsAgent = this.isAgentSender(sender);
+    if (senderIsAgent) {
+      this.agentRoundCount += 1;
+    } else {
+      this.agentRoundCount = 0;
+    }
+
+    const explicitHumanAddress = type === "chat" || this.mentionDetector(body);
+    if (this.shouldRequireHumanAddress() && (senderIsAgent || !explicitHumanAddress)) {
+      this.logger.debug?.(
+        `[AgentRunner] Suppressing message after agent rounds (${this.agentRoundCount})`
+      );
+      return;
+    }
+
+    const addressed = this.respondToAll || explicitHumanAddress;
     if (!addressed) {
       this.logger.debug?.(`[AgentRunner] Ignoring message (not addressed): ${body}`);
       return;
@@ -89,6 +113,20 @@ export class AgentRunner {
 
   async stop() {
     await this.agent.stop();
+  }
+
+  isAgentSender(sender) {
+    if (!sender) return false;
+    const lower = sender.toLowerCase();
+    if (this.nickname && lower === this.nickname.toLowerCase()) {
+      return false;
+    }
+    return this.agentRoster.has(lower);
+  }
+
+  shouldRequireHumanAddress() {
+    if (!this.maxAgentRounds || this.maxAgentRounds < 1) return false;
+    return this.agentRoundCount >= this.maxAgentRounds;
   }
 }
 

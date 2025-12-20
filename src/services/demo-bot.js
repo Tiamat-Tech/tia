@@ -7,6 +7,7 @@ import logger from "../lib/logger-lite.js";
 import { loadAgentProfile } from "../agents/profile-loader.js";
 import { LingueNegotiator, LANGUAGE_MODES } from "../lib/lingue/index.js";
 import { HumanChatHandler } from "../lib/lingue/handlers/index.js";
+import { loadAgentRoster } from "../agents/profile-roster.js";
 
 dotenv.config();
 
@@ -15,6 +16,7 @@ const profile = await loadAgentProfile(profileName);
 if (!profile) {
   throw new Error(`Demo agent profile not found: ${profileName}.ttl`);
 }
+const agentRoster = await loadAgentRoster();
 
 const fileConfig = profile.toConfig();
 if (!fileConfig?.nickname || !fileConfig?.xmpp?.username) {
@@ -61,6 +63,7 @@ const runner = new AgentRunner({
   mentionDetector: createMentionDetector(DEMO_BOT_NICKNAME, [DEMO_BOT_NICKNAME]),
   commandParser: defaultCommandParser,
   allowSelfMessages: false,
+  agentRoster,
   logger
 });
 
