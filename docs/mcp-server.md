@@ -239,6 +239,13 @@ echo '{"jsonrpc":"2.0","id":1,"method":"tools/list"}' | node src/mcp/servers/tia
 npm test -- --grep "MCP"
 ```
 
+## System Configuration
+
+Runtime system settings live in `config/system.ttl`. This file is read via `rdf-ext` at startup.
+
+- `sys:maxAgentRounds` controls how many consecutive agent-to-agent turns are allowed before
+  agents start ignoring unaddressed messages (default: 5). Recorder keeps its own override.
+
 ## See Also
 
 - [MCP Client Guide](mcp-client.md) - Using TIA agents as MCP clients
