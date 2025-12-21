@@ -10,6 +10,9 @@ export class XmppRoomAgent {
     allowSelfMessages = false,
     onConflictRename = true,
     maxJoinRetries = 3,
+    reconnect = true,
+    reconnectDelayMs = 2000,
+    maxReconnectDelayMs = 30000,
     logger = console
   }) {
     this.xmpp = client(xmppConfig);
@@ -25,6 +28,13 @@ export class XmppRoomAgent {
     this.joinAttempts = 0;
     this.joinWaiters = [];
     this.pendingGroupMessages = [];
+    this.reconnect = reconnect;
+    this.reconnectDelayMs = reconnectDelayMs;
+    this.maxReconnectDelayMs = maxReconnectDelayMs;
+    this.reconnectAttempts = 0;
+    this.reconnectTimer = null;
+    this.manualStop = false;
+    this.isOnline = false;
 
     this.setupEventHandlers();
   }
@@ -32,15 +42,24 @@ export class XmppRoomAgent {
   setupEventHandlers() {
     this.xmpp.on("error", (err) => {
       this.logger.error("XMPP Error:", err);
+      if (!this.manualStop && this.reconnect && (!this.isOnline || err.condition === "conflict")) {
+        this.scheduleReconnect("error");
+      }
     });
 
     this.xmpp.on("offline", () => {
       this.logger.info("Agent offline");
       this.isInRoom = false;
+      this.isOnline = false;
+      if (!this.manualStop && this.reconnect) {
+        this.scheduleReconnect("offline");
+      }
     });
 
     this.xmpp.on("online", async (address) => {
       this.logger.info(`Agent connected as ${address.toString()}`);
+      this.isOnline = true;
+      this.reconnectAttempts = 0;
       await this.joinRoom();
     });
 
@@ -172,12 +191,42 @@ export class XmppRoomAgent {
   }
 
   async start() {
+    this.manualStop = false;
     await this.xmpp.start();
   }
 
   async stop() {
     this.logger.info("Stopping agent");
+    this.manualStop = true;
+    if (this.reconnectTimer) {
+      clearTimeout(this.reconnectTimer);
+      this.reconnectTimer = null;
+    }
     await this.xmpp.stop();
+  }
+
+  scheduleReconnect(reason = "unknown") {
+    if (this.reconnectTimer) return;
+    const attempt = this.reconnectAttempts + 1;
+    const delay = Math.min(
+      this.maxReconnectDelayMs,
+      this.reconnectDelayMs * Math.pow(2, this.reconnectAttempts)
+    );
+    this.reconnectAttempts = attempt;
+    this.logger.warn(`Reconnecting after ${delay}ms (attempt ${attempt}, reason: ${reason})`);
+    this.reconnectTimer = setTimeout(async () => {
+      this.reconnectTimer = null;
+      if (this.manualStop) return;
+      try {
+        await this.xmpp.stop().catch(() => {});
+        await this.xmpp.start();
+      } catch (err) {
+        this.logger.error("Reconnect failed:", err);
+        if (this.reconnect && !this.manualStop) {
+          this.scheduleReconnect("retry");
+        }
+      }
+    }, delay).unref?.();
   }
 
   resolveJoinWaiters() {

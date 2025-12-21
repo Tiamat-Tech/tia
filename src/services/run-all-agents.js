@@ -62,6 +62,9 @@ const agentNames =
 
 const processes = new Map();
 let shuttingDown = false;
+const restartState = new Map();
+const BASE_RESTART_DELAY_MS = 2000;
+const MAX_RESTART_DELAY_MS = 30000;
 
 function hasRequiredEnv(agentName, requiredEnv = []) {
   const missing = requiredEnv.filter((name) => !process.env[name]);
@@ -91,6 +94,14 @@ function startAgent(agentName, { command, requiredEnv = [], description }) {
 
   processes.set(agentName, child);
 
+  child.on("spawn", () => {
+    const state = restartState.get(agentName);
+    if (state) {
+      state.attempts = 0;
+      state.timer = null;
+    }
+  });
+
   child.on("exit", (code, signal) => {
     processes.delete(agentName);
     if (shuttingDown) return;
@@ -101,7 +112,7 @@ function startAgent(agentName, { command, requiredEnv = [], description }) {
       console.error(
         `Agent "${agentName}" exited with code ${code ?? "null"} signal ${signal ?? "null"}`
       );
-      shutdownAll(1);
+      scheduleRestart(agentName, command, requiredEnv, description);
     }
   });
 
@@ -109,9 +120,30 @@ function startAgent(agentName, { command, requiredEnv = [], description }) {
     console.error(`Failed to start agent "${agentName}": ${err.message}`);
     processes.delete(agentName);
     if (!shuttingDown) {
-      shutdownAll(1);
+      scheduleRestart(agentName, command, requiredEnv, description);
     }
   });
+}
+
+function scheduleRestart(agentName, command, requiredEnv, description) {
+  if (shuttingDown) return;
+  if (!hasRequiredEnv(agentName, requiredEnv)) {
+    console.warn(`Not restarting agent "${agentName}" due to missing env vars.`);
+    return;
+  }
+  const state = restartState.get(agentName) || { attempts: 0, timer: null };
+  if (state.timer) return;
+  const delay = Math.min(
+    MAX_RESTART_DELAY_MS,
+    BASE_RESTART_DELAY_MS * Math.pow(2, state.attempts)
+  );
+  state.attempts += 1;
+  state.timer = setTimeout(() => {
+    state.timer = null;
+    startAgent(agentName, { command, requiredEnv, description });
+  }, delay).unref?.();
+  restartState.set(agentName, state);
+  console.warn(`Restarting agent "${agentName}" in ${delay}ms (attempt ${state.attempts})`);
 }
 
 function shutdownAll(exitCode = 0) {
