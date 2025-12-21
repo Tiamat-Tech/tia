@@ -22,9 +22,10 @@
             // Display mode - fullscreen takes over entire page
             view_mode: 'fullscreen',
 
-            // XMPP connection settings for local Prosody server
-            // Adjust these based on your setup
-            websocket_url: 'wss://tensegrity.it:5281/xmpp-websocket',
+            // XMPP connection settings for Prosody server
+            // Try BOSH first (more commonly enabled), then WebSocket
+            bosh_service_url: 'https://tensegrity.it:5281/http-bind',
+            // websocket_url: 'wss://tensegrity.it:5281/xmpp-websocket',
 
             // Allow self-signed certificates for local development
             // Remove this in production with proper certificates
