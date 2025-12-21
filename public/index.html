@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TIA XMPP Client</title>
+    <link rel="stylesheet" href="https://cdn.conversejs.org/12.0.0/dist/converse.min.css">
+    <script src="https://cdn.conversejs.org/12.0.0/dist/converse.min.js" charset="utf-8"></script>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+        }
+    </style>
+</head>
+
+<body>
+    <script>
+        converse.initialize({
+            // Display mode - fullscreen takes over entire page
+            view_mode: 'fullscreen',
+
+            // XMPP connection settings for local Prosody server
+            // Adjust these based on your setup
+            websocket_url: 'wss://localhost:5281/xmpp-websocket',
+
+            // Allow self-signed certificates for local development
+            // Remove this in production with proper certificates
+            strict_plugin_dependencies: false,
+
+            // Authentication
+            authentication: 'login',
+            auto_login: false,
+
+            // Multi-user chat (MUC) settings
+            allow_muc_invitations: true,
+            auto_join_rooms: [],
+
+            // UI preferences
+            show_controlbox_by_default: true,
+            hide_muc_participants: false,
+
+            // Enable useful features
+            message_archiving: 'always',
+            enable_smacks: true,
+
+            // Domain - adjust to match your XMPP server
+            default_domain: 'tensegrity.it',
+
+            // Notification settings
+            show_desktop_notifications: true,
+            play_sounds: true,
+
+            // Theming
+            theme: 'concord',
+
+            // Debug mode - set to false in production
+            debug: true,
+            loglevel: 'info'
+        });
+    </script>
+</body>
+
+</html>
