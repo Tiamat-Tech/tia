@@ -4,7 +4,7 @@ To create an XMPP agent with Mistral capabilities using the npm package, copy th
 In the new dir, run :
 
 ```sh
-npm install
+npm install tia-agents
 npm install @mistralai/mistralai
 ```
 
