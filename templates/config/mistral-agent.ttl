@@ -1,0 +1,36 @@
+@prefix agent: <https://tensegrity.it/vocab/agent#> .
+@prefix foaf: <http://xmlns.com/foaf/0.1/> .
+@prefix schema: <https://schema.org/> .
+@prefix xmpp: <https://tensegrity.it/vocab/xmpp#> .
+@prefix ai: <https://tensegrity.it/vocab/ai-provider#> .
+@prefix lng: <http://purl.org/stuff/lingue/> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+
+<#mistral-agent> a agent:ConversationalAgent, agent:AIAgent, lng:Agent ;
+  foaf:nick "MistralAgent" ;
+  schema:identifier "mistral-agent" ;
+  dcterms:created "2025-01-01T00:00:00Z"^^xsd:dateTime ;
+  dcterms:description "AI-powered agent using Mistral API" ;
+
+  lng:supports lng:HumanChat, lng:IBISText ;
+  lng:prefers lng:HumanChat ;
+
+  agent:xmppAccount [
+    a xmpp:Account ;
+    xmpp:service "xmpp://localhost:5222" ;
+    xmpp:domain "xmpp" ;
+    xmpp:username "mistralagent" ;
+    xmpp:passwordKey "mistralagent" ;
+    xmpp:resource "MistralAgent"
+  ] ;
+
+  agent:roomJid "general@conference.xmpp" ;
+
+  agent:aiProvider [
+    a ai:MistralProvider ;
+    ai:model "mistral-small-latest" ;
+    ai:apiKeyEnv "MISTRAL_API_KEY" ;
+    ai:systemPrompt "You are a helpful AI assistant in an XMPP chat room. Be concise and friendly."
+  ] .

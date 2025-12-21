@@ -1,0 +1,45 @@
+# Test files
+test/
+*.test.js
+
+# Internal services not for npm package users
+src/services/
+src/examples/
+src/client/
+
+# Config files (users create their own)
+config/
+!templates/config/
+
+# Shell scripts for development
+start-*.sh
+*.sh
+
+# Development documentation
+docs/
+!docs/api-reference.md
+!docs/quick-start.md
+!docs/provider-guide.md
+CLAUDE.md
+AGENTS.md
+_README.md
+DEVELOPMENT_LOG.md
+MISTRAL_BOT.md
+SETUP_COMPLETE.md
+*.md
+!README.md
+!LICENSE
+!docs/api-reference.md
+!docs/quick-start.md
+!docs/provider-guide.md
+
+# CI/CD
+.github/
+
+# IDE
+.vscode/
+.idea/
+
+# Git
+.git/
+.gitignore

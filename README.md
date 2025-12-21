@@ -75,6 +75,125 @@ await runner.start();
 
 See [examples/minimal-agent.js](examples/minimal-agent.js) for a runnable local example.
 
+## NPM Package Usage
+
+TIA is published as `tia-agents` on npm and supports two approaches to creating bots:
+
+### Quick Start
+
+```bash
+npm install tia-agents
+```
+
+### Approach 1: Config-Driven (Profile Files)
+
+Create profile files and use the factory function:
+
+```javascript
+import { createAgent, DemoProvider } from "tia-agents";
+
+// Load from config/agents/mybot.ttl
+const runner = await createAgent("mybot", new DemoProvider());
+await runner.start();
+```
+
+Profile file (`config/agents/mybot.ttl`):
+```turtle
+@prefix agent: <https://tensegrity.it/vocab/agent#> .
+@prefix xmpp: <https://tensegrity.it/vocab/xmpp#> .
+
+<#mybot> a agent:ConversationalAgent ;
+  agent:xmppAccount [
+    xmpp:service "xmpp://localhost:5222" ;
+    xmpp:domain "xmpp" ;
+    xmpp:username "mybot" ;
+    xmpp:passwordKey "mybot"
+  ] ;
+  agent:roomJid "general@conference.xmpp" .
+```
+
+### Approach 2: Programmatic (No Config Files)
+
+Configure everything in code:
+
+```javascript
+import { createSimpleAgent, DemoProvider } from "tia-agents";
+
+const runner = createSimpleAgent({
+  xmppConfig: {
+    service: "xmpp://localhost:5222",
+    domain: "xmpp",
+    username: "mybot",
+    password: "secret"
+  },
+  roomJid: "general@conference.xmpp",
+  nickname: "MyBot",
+  provider: new DemoProvider()
+});
+
+await runner.start();
+```
+
+### Creating Custom Providers
+
+Extend `BaseProvider` to implement your own logic:
+
+```javascript
+import { BaseProvider } from "tia-agents";
+
+class MyProvider extends BaseProvider {
+  async handle({ command, content, metadata }) {
+    if (command !== "chat") return null;
+    return `You said: ${content}`;
+  }
+}
+
+const runner = createSimpleAgent({
+  // ... config
+  provider: new MyProvider()
+});
+```
+
+### AI-Powered Bots
+
+Install peer dependency:
+```bash
+npm install @mistralai/mistralai
+```
+
+Use MistralProvider:
+```javascript
+import { createAgent, InMemoryHistoryStore } from "tia-agents";
+import { MistralProvider } from "tia-agents/providers/mistral";
+
+const provider = new MistralProvider({
+  apiKey: process.env.MISTRAL_API_KEY,
+  historyStore: new InMemoryHistoryStore({ maxEntries: 40 })
+});
+
+const runner = await createAgent("aibot", provider);
+await runner.start();
+```
+
+### Templates & Examples
+
+Copy templates to get started:
+```bash
+cp -r node_modules/tia-agents/templates/* ./
+```
+
+See templates for:
+- Profile file examples (`.ttl`)
+- Provider templates (simple & LLM patterns)
+- Runnable example scripts
+
+### Documentation
+
+- 📚 [Quick Start Guide](docs/quick-start.md) - Detailed getting started guide
+- 🔧 [Provider Guide](docs/provider-guide.md) - Creating custom providers
+- 📖 [API Reference](docs/api-reference.md) - Complete API documentation
+- 📁 [Templates](templates/) - Example configurations and code
+
 ## Custom Agent API
 
 For a fuller walkthrough and profile-driven setup, see:

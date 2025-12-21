@@ -1,7 +1,7 @@
 {
   "name": "tia-agents",
-  "version": "0.2.0",
-  "description": "TIA Intelligence Agency",
+  "version": "0.3.0",
+  "description": "XMPP agent framework with Lingue protocol and MCP integration",
   "type": "module",
   "main": "./src/index.js",
   "exports": {
@@ -9,8 +9,24 @@
     "./core": "./src/agents/core/index.js",
     "./lingue": "./src/lib/lingue/index.js",
     "./providers": "./src/agents/providers/index.js",
-    "./mcp": "./src/mcp/index.js"
+    "./providers/base": "./src/agents/providers/base-provider.js",
+    "./providers/demo": "./src/agents/providers/demo-provider.js",
+    "./mcp": "./src/mcp/index.js",
+    "./templates/*": "./templates/*"
   },
+  "files": [
+    "src/agents/",
+    "src/lib/",
+    "src/mcp/",
+    "src/factories/",
+    "src/index.js",
+    "templates/",
+    "docs/api-reference.md",
+    "docs/quick-start.md",
+    "docs/provider-guide.md",
+    "README.md",
+    "LICENSE"
+  ],
   "directories": {
     "doc": "docs"
   },
@@ -18,9 +34,23 @@
     "test": "node --test test/ibis.test.js test/lingue-exchange.test.js test/lingue-store.test.js && vitest run test/profile-loading.test.js test/lingue-profile-loading.test.js test/lingue-discovery.test.js test/lingue-negotiation.test.js test/lingue-handlers/*.test.js test/agent-runner-lingue.test.js test/agent-runner-agent-rounds.test.js test/npm-exports.test.js test/prolog-provider.test.js test/prolog-lingue-payload.test.js test/mcp-profile-mapper.test.js test/mcp-loopback-provider.test.js test/history-store.test.js",
     "test:integration": "vitest run test/xmpp.integration.test.js test/xmpp.bots.integration.test.js test/xmpp.semem.integration.test.js"
   },
-  "keywords": [],
+  "keywords": [
+    "xmpp",
+    "jabber",
+    "chatbot",
+    "agent",
+    "ai",
+    "lingue",
+    "mcp",
+    "mistral",
+    "conversation"
+  ],
   "author": "Danny Ayers",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/danja/tia.git"
+  },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.63.0",
     "@modelcontextprotocol/sdk": "^1.25.1",
@@ -37,5 +67,13 @@
   },
   "devDependencies": {
     "vitest": "^4.0.16"
+  },
+  "peerDependencies": {
+    "@mistralai/mistralai": "^0.4.0 || ^0.5.0"
+  },
+  "peerDependenciesMeta": {
+    "@mistralai/mistralai": {
+      "optional": true
+    }
   }
 }

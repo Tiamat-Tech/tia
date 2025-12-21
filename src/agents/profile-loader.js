@@ -8,10 +8,10 @@ import { XmppConfig } from "./profile/xmpp-config.js";
 import { MistralProviderConfig, SememProviderConfig } from "./profile/provider-config.js";
 import { Capability } from "./profile/capability.js";
 
-const AGENT_PROFILE_DIR = process.env.AGENT_PROFILE_DIR ||
-  path.join(process.cwd(), "config", "agents");
-const defaultSecretsPath = () =>
-  process.env.AGENT_SECRETS_PATH || path.join(AGENT_PROFILE_DIR, "secrets.json");
+const DEFAULT_PROFILE_DIR = path.join(process.cwd(), "config", "agents");
+const AGENT_PROFILE_DIR = process.env.AGENT_PROFILE_DIR || DEFAULT_PROFILE_DIR;
+const defaultSecretsPath = (profileDir) =>
+  process.env.AGENT_SECRETS_PATH || path.join(profileDir || AGENT_PROFILE_DIR, "secrets.json");
 const secretsCache = new Map();
 
 const PREFIXES = {
@@ -35,12 +35,13 @@ const PREFIXES = {
 export async function loadAgentProfile(name, options = {}) {
   if (!name) return null;
 
-  const filePath = path.join(AGENT_PROFILE_DIR, `${name}.ttl`);
+  const profileDir = options.profileDir || process.env.AGENT_PROFILE_DIR || DEFAULT_PROFILE_DIR;
+  const filePath = path.join(profileDir, `${name}.ttl`);
 
   try {
     const turtle = await fs.readFile(filePath, "utf8");
     const subjectUri = options.subjectUri || `#${name}`;
-    const secrets = await loadSecrets(options.secretsPath);
+    const secrets = await loadSecrets(options.secretsPath || defaultSecretsPath(profileDir));
     const dataset = await turtleToDataset(turtle);
     const subject = rdf.namedNode(subjectUri);
     const profile = datasetToProfile(dataset, subject, {
@@ -66,6 +67,7 @@ export async function loadAgentProfile(name, options = {}) {
     for (const baseName of baseProfiles) {
       const baseProfile = await loadAgentProfile(baseName, {
         ...options,
+        profileDir,
         secretsPath: options.secretsPath,
         _stack: Array.from(stack),
         allowMissingPasswordKey: true
@@ -884,4 +886,19 @@ function addMcpMetadata(dataset, subject, mcp) {
 
 function stripPrefix(uri) {
   return uri.split('#').pop().split('/').pop();
+}
+
+/**
+ * Set the default profile directory for profile loading.
+ * This is a convenience function that sets the AGENT_PROFILE_DIR environment variable.
+ *
+ * @param {string} dir - The directory path to use as default for profile loading
+ * @example
+ * import { setDefaultProfileDir, loadAgentProfile } from "tia-agents";
+ *
+ * setDefaultProfileDir("./my-agents");
+ * const profile = await loadAgentProfile("mybot"); // loads from ./my-agents/mybot.ttl
+ */
+export function setDefaultProfileDir(dir) {
+  process.env.AGENT_PROFILE_DIR = dir;
 }

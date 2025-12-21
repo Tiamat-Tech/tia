@@ -1,0 +1,28 @@
+@prefix agent: <https://tensegrity.it/vocab/agent#> .
+@prefix foaf: <http://xmlns.com/foaf/0.1/> .
+@prefix schema: <https://schema.org/> .
+@prefix xmpp: <https://tensegrity.it/vocab/xmpp#> .
+@prefix lng: <http://purl.org/stuff/lingue/> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+
+<#myagent> a agent:ConversationalAgent, lng:Agent ;
+  foaf:nick "MyAgent" ;
+  schema:identifier "myagent" ;
+  dcterms:created "2025-01-01T00:00:00Z"^^xsd:dateTime ;
+  dcterms:description "My custom agent" ;
+
+  lng:supports lng:HumanChat ;
+  lng:prefers lng:HumanChat ;
+
+  agent:xmppAccount [
+    a xmpp:Account ;
+    xmpp:service "xmpp://localhost:5222" ;
+    xmpp:domain "xmpp" ;
+    xmpp:username "myagent" ;
+    xmpp:passwordKey "myagent" ;
+    xmpp:resource "MyAgent"
+  ] ;
+
+  agent:roomJid "general@conference.xmpp" .
