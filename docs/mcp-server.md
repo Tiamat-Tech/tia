@@ -22,7 +22,7 @@ TIA's MCP server implementation (`src/mcp/server-bridge.js`) provides:
 
 **Start the server:**
 ```bash
-AGENT_PROFILE=mistral node src/mcp/servers/tia-mcp-server.js
+node src/mcp/servers/tia-mcp-server.js
 ```
 
 **Tools exposed:**
@@ -41,13 +41,24 @@ AGENT_PROFILE=mistral node src/mcp/servers/tia-mcp-server.js
   - Returns: Agent capabilities, supported modes, endpoints as RDF
   - Use case: Discover agent capabilities, share semantic metadata
 
+- **`getRecentMessages`**: Return recent chat messages seen by the MCP agent
+  - Parameters: `limit` (number, optional, max 200)
+  - Returns: JSON array of `{ body, sender, from, roomJid, type, timestamp }`
+  - Use case: Poll for replies without a streaming connection
+
 - **`summarizeLingue`**: Analyze text and generate IBIS-style structured summary
   - Parameters: `text` (string)
   - Returns: Detected IBIS elements (Issues, Positions, Arguments)
   - Use case: Extract structured debate elements from conversation
 
 **Configuration:**
-The server uses the agent profile specified by `AGENT_PROFILE` (default: `mistral`). Profile files live in `config/agents/*.ttl` and define XMPP connection settings, supported Lingue modes, and capabilities.
+If `AGENT_PROFILE` is set, the server loads that profile from `config/agents/*.ttl`.
+If `AGENT_PROFILE` is not set, the server auto-creates a transient profile and auto-registers a new XMPP account:
+- Username/nick: `mcp-###` (random 3-digit suffix)
+- Room: `MUC_ROOM` (default `general@conference.tensegrity.it`)
+- Service/domain: `XMPP_SERVICE`/`XMPP_DOMAIN`
+
+Outgoing group messages are queued until the agent confirms it has joined the MUC.
 
 ### 2. SPARQL Server
 
@@ -128,6 +139,7 @@ Or manually add to your config:
   }
 }
 ```
+Omit `AGENT_PROFILE` to have the server auto-register a transient `mcp-###` user.
 
 **2. Restart Claude Code to load the new server**
 
@@ -136,6 +148,7 @@ Or manually add to your config:
 Ask Claude: "What MCP tools do you have access to?"
 
 You should see `sendMessage`, `offerLingueMode`, `getProfile`, and `summarizeLingue`.
+You should also see `getRecentMessages`.
 
 ### Example Usage
 
@@ -155,6 +168,11 @@ Argument: GraphQL allows clients to request exactly what they need."
 **Retrieve agent capabilities:**
 ```
 Claude, use getProfile to show me what this agent can do.
+```
+
+**Poll for recent chat messages:**
+```
+Claude, use getRecentMessages to fetch the last 10 messages from the room.
 ```
 
 **Query DBpedia (with SPARQL server configured):**
