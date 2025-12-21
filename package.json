@@ -63,6 +63,7 @@
     "n3": "^1.26.0",
     "rdf-ext": "^2.6.0",
     "tau-prolog": "^0.3.4",
+    "tia-agents": "file:tia-agents-0.3.0.tgz",
     "zod": "^4.2.1"
   },
   "devDependencies": {

@@ -19,6 +19,10 @@ export { defaultCommandParser } from "./agents/core/command-parser.js";
 export { InMemoryHistoryStore, HistoryStore, HISTORY_TERMS } from "./lib/history/index.js";
 export { loadSystemConfig } from "./lib/system-config.js";
 
+// Auto-registration
+export { autoConnectXmpp } from "./lib/xmpp-auto-connect.js";
+export { registerXmppAccount, generatePassword } from "./lib/xmpp-register.js";
+
 // Provider base and example
 export { BaseProvider } from "./agents/providers/base-provider.js";
 export { DemoProvider } from "./agents/providers/demo-provider.js";

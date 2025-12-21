@@ -1,5 +1,6 @@
 import { client, xml } from "@xmpp/client";
 import { LINGUE_NS } from "./lingue/constants.js";
+import { autoConnectXmpp } from "./xmpp-auto-connect.js";
 
 export class XmppRoomAgent {
   constructor({
@@ -13,9 +14,14 @@ export class XmppRoomAgent {
     reconnect = true,
     reconnectDelayMs = 2000,
     maxReconnectDelayMs = 30000,
+    autoRegister = false,
+    secretsPath,
     logger = console
   }) {
-    this.xmpp = client(xmppConfig);
+    this.xmppConfig = xmppConfig;
+    this.autoRegister = autoRegister;
+    this.secretsPath = secretsPath;
+    this.xmpp = null;  // Will be set in start()
     this.roomJid = roomJid;
     this.nickname = nickname;
     this.currentNickname = nickname;
@@ -35,8 +41,6 @@ export class XmppRoomAgent {
     this.reconnectTimer = null;
     this.manualStop = false;
     this.isOnline = false;
-
-    this.setupEventHandlers();
   }
 
   setupEventHandlers() {
@@ -192,7 +196,41 @@ export class XmppRoomAgent {
 
   async start() {
     this.manualStop = false;
-    await this.xmpp.start();
+
+    // Create XMPP client (with auto-registration if enabled)
+    if (this.autoRegister) {
+      this.logger.info("[XmppRoomAgent] Auto-registration enabled, attempting connection...");
+      try {
+        const { xmpp, credentials } = await autoConnectXmpp({
+          service: this.xmppConfig.service,
+          domain: this.xmppConfig.domain,
+          username: this.xmppConfig.username,
+          password: this.xmppConfig.password,
+          resource: this.xmppConfig.resource,
+          tls: this.xmppConfig.tls,
+          secretsPath: this.secretsPath,
+          autoRegister: true,
+          logger: this.logger
+        });
+
+        this.xmpp = xmpp;
+        this.logger.info(`[XmppRoomAgent] Connected successfully${credentials.registered ? ' (new account registered)' : ''}`);
+      } catch (err) {
+        this.logger.error("[XmppRoomAgent] Auto-connect failed:", err.message);
+        throw err;
+      }
+    } else {
+      // Regular connection (no auto-registration)
+      this.xmpp = client(this.xmppConfig);
+    }
+
+    // Setup event handlers now that xmpp client exists
+    this.setupEventHandlers();
+
+    // Start the client if not already started (autoConnectXmpp already starts it)
+    if (!this.autoRegister) {
+      await this.xmpp.start();
+    }
   }
 
   async stop() {

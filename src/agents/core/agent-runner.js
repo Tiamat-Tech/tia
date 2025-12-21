@@ -16,6 +16,8 @@ export class AgentRunner {
     respondToAll = false,
     agentRoster = [],
     maxAgentRounds = 5,
+    autoRegister = false,
+    secretsPath,
     logger = console
   }) {
     if (!provider?.handle) {
@@ -49,14 +51,10 @@ export class AgentRunner {
       nickname: resolvedNickname,
       onMessage: this.handleMessage.bind(this),
       allowSelfMessages,
+      autoRegister,
+      secretsPath,
       logger
     });
-
-    if (this.negotiator?.setXmppClient) {
-      this.negotiator.setXmppClient(this.agent.xmpp);
-    } else if (this.negotiator) {
-      this.negotiator.xmppClient = this.agent.xmpp;
-    }
   }
 
   async handleMessage({ body, sender, type, roomJid, reply, stanza }) {
@@ -109,6 +107,15 @@ export class AgentRunner {
 
   async start() {
     await this.agent.start();
+
+    // Setup negotiator with XMPP client after agent has started
+    if (this.negotiator && this.agent.xmpp) {
+      if (this.negotiator.setXmppClient) {
+        this.negotiator.setXmppClient(this.agent.xmpp);
+      } else {
+        this.negotiator.xmppClient = this.agent.xmpp;
+      }
+    }
   }
 
   async stop() {

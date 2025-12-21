@@ -111,8 +111,10 @@ export async function createAgent(profileName, provider, options = {}) {
  * @param {string} config.xmppConfig.service - XMPP server URL (e.g., "xmpp://localhost:5222")
  * @param {string} config.xmppConfig.domain - XMPP domain (e.g., "xmpp")
  * @param {string} config.xmppConfig.username - Bot username
- * @param {string} config.xmppConfig.password - Bot password
+ * @param {string} config.xmppConfig.password - Bot password (optional if autoRegister=true)
  * @param {string} config.xmppConfig.resource - XMPP resource (optional)
+ * @param {boolean} config.autoRegister - Auto-register if authentication fails (optional, default: false)
+ * @param {string} config.secretsPath - Path to save auto-registered credentials (optional, default: "config/agents/secrets.json")
  * @param {string} config.roomJid - MUC room JID (e.g., "general@conference.xmpp")
  * @param {string} config.nickname - Bot display nickname
  * @param {Object} config.provider - Provider instance (must implement handle() method)
@@ -140,7 +142,18 @@ export async function createAgent(profileName, provider, options = {}) {
  * await runner.start();
  */
 export function createSimpleAgent(config) {
-  const { xmppConfig, roomJid, nickname, provider, logger, allowSelfMessages, historyStore, maxAgentRounds } = config;
+  const {
+    xmppConfig,
+    roomJid,
+    nickname,
+    provider,
+    logger,
+    allowSelfMessages,
+    historyStore,
+    maxAgentRounds,
+    autoRegister,
+    secretsPath
+  } = config;
 
   if (!xmppConfig || !roomJid || !nickname || !provider) {
     throw new Error("Missing required config: xmppConfig, roomJid, nickname, provider");
@@ -156,6 +169,8 @@ export function createSimpleAgent(config) {
     allowSelfMessages: allowSelfMessages || false,
     historyStore,
     maxAgentRounds: maxAgentRounds || 5,
+    autoRegister: autoRegister || false,
+    secretsPath,
     logger: logger || console
   });
 }
