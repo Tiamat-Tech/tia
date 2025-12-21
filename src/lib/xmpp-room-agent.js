@@ -214,6 +214,8 @@ export class XmppRoomAgent {
         });
 
         this.xmpp = xmpp;
+        this.isOnline = true;
+        this.reconnectAttempts = 0;
         this.logger.info(`[XmppRoomAgent] Connected successfully${credentials.registered ? ' (new account registered)' : ''}`);
       } catch (err) {
         this.logger.error("[XmppRoomAgent] Auto-connect failed:", err.message);
@@ -230,6 +232,9 @@ export class XmppRoomAgent {
     // Start the client if not already started (autoConnectXmpp already starts it)
     if (!this.autoRegister) {
       await this.xmpp.start();
+    } else {
+      // autoConnectXmpp resolves after "online" fires, so we need to join explicitly
+      await this.joinRoom();
     }
   }
 

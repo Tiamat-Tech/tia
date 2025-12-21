@@ -11,6 +11,7 @@
     "./providers": "./src/agents/providers/index.js",
     "./providers/base": "./src/agents/providers/base-provider.js",
     "./providers/demo": "./src/agents/providers/demo-provider.js",
+    "./providers/mistral": "./src/agents/providers/mistral-provider.js",
     "./mcp": "./src/mcp/index.js",
     "./templates/*": "./templates/*"
   },
@@ -70,7 +71,7 @@
     "vitest": "^4.0.16"
   },
   "peerDependencies": {
-    "@mistralai/mistralai": "^0.4.0 || ^0.5.0"
+    "@mistralai/mistralai": "^0.4.0 || ^0.5.0 || ^1.5.0"
   },
   "peerDependenciesMeta": {
     "@mistralai/mistralai": {

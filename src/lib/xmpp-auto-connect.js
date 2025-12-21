@@ -34,17 +34,7 @@ export async function autoConnectXmpp({
 
   // Try to load password from secrets.json if not provided
   if (!actualPassword) {
-    try {
-      const secretsData = await fs.readFile(secretsPath, "utf-8");
-      const secrets = JSON.parse(secretsData);
-      actualPassword = secrets.xmpp?.[username];
-
-      if (actualPassword) {
-        logger.debug?.(`[AutoConnect] Loaded password for ${username} from ${secretsPath}`);
-      }
-    } catch (err) {
-      logger.debug?.(`[AutoConnect] Could not load secrets from ${secretsPath}: ${err.message}`);
-    }
+    actualPassword = await readPasswordFromSecrets({ username, secretsPath, logger });
   }
 
   // If still no password and auto-register is enabled, register
@@ -69,7 +59,16 @@ export async function autoConnectXmpp({
       // Save to secrets.json
       await savePassword({ username, password: actualPassword, secretsPath, logger });
     } catch (err) {
-      throw new Error(`Auto-registration failed: ${err.message}`);
+      if (isAlreadyRegisteredError(err)) {
+        logger.warn?.(`[AutoConnect] ${err.message}; trying stored credentials instead`);
+        actualPassword = await readPasswordFromSecrets({ username, secretsPath, logger });
+
+        if (!actualPassword) {
+          throw new Error(`Auto-registration failed: ${err.message} and no stored password found in ${secretsPath}`);
+        }
+      } else {
+        throw new Error(`Auto-registration failed: ${err.message}`);
+      }
     }
   }
 
@@ -217,4 +216,26 @@ async function savePassword({ username, password, secretsPath, logger = console 
     logger.error?.(`[AutoConnect] Failed to save password to ${secretsPath}: ${err.message}`);
     throw err;
   }
+}
+
+async function readPasswordFromSecrets({ username, secretsPath, logger = console }) {
+  try {
+    const secretsData = await fs.readFile(secretsPath, "utf-8");
+    const secrets = JSON.parse(secretsData);
+    const storedPassword = secrets.xmpp?.[username];
+
+    if (storedPassword) {
+      logger.debug?.(`[AutoConnect] Loaded password for ${username} from ${secretsPath}`);
+    }
+
+    return storedPassword;
+  } catch (err) {
+    logger.debug?.(`[AutoConnect] Could not load secrets from ${secretsPath}: ${err.message}`);
+    return undefined;
+  }
+}
+
+function isAlreadyRegisteredError(err) {
+  const message = err?.message?.toLowerCase?.() || "";
+  return message.includes("already exists") || message.includes("conflict");
 }

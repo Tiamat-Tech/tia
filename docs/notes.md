@@ -1,3 +1,15 @@
+npm pack
+
+  Then from your test project (/home/danny/hyperdata/tia-test):
+
+  npm install ../tia/tia-agents-0.3.0.tgz
+
+npm install @mistralai/mistralai
+
+ If you want the history store size or any other provider options to be 100%
+  config‑driven too, we can add those to the profile and wire them in the
+  provider config.
+
 systemctl restart tia-agents
 
 claude mcp add tia-chat node /home/danny/hyperdata/tia/src/mcp/servers/tia-mcp-server.js
