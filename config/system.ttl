@@ -1,0 +1,5 @@
+@prefix sys: <https://tensegrity.it/vocab/system#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+
+<#system> a sys:SystemConfig ;
+  sys:maxAgentRounds "5"^^xsd:integer .

@@ -9,6 +9,7 @@ import logger from "../lib/logger-lite.js";
 import { LingueNegotiator, LANGUAGE_MODES } from "../lib/lingue/index.js";
 import { HumanChatHandler, IBISTextHandler, ProfileExchangeHandler } from "../lib/lingue/handlers/index.js";
 import { loadAgentRoster } from "../agents/profile-roster.js";
+import { loadSystemConfig } from "../lib/system-config.js";
 
 dotenv.config();
 
@@ -18,6 +19,7 @@ if (!profile?.nickname || !profile?.xmppConfig?.username) {
   throw new Error("Semem agent profile is missing nickname or XMPP username");
 }
 const agentRoster = await loadAgentRoster();
+const systemConfig = await loadSystemConfig();
 
 const XMPP_CONFIG = {
   service: profile.xmppConfig?.service,
@@ -73,6 +75,7 @@ const runner = new AgentRunner({
   mentionDetector: createMentionDetector(BOT_NICKNAME, [BOT_NICKNAME]),
   commandParser: defaultCommandParser,
   allowSelfMessages: false,
+  maxAgentRounds: systemConfig.maxAgentRounds,
   agentRoster,
   logger
 });

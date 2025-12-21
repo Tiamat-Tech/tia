@@ -6,10 +6,8 @@ codex mcp add tia-chat node /home/danny/hyperdata/tia/src/mcp/servers/tia-mcp-se
 
 src/mcp/servers/tia-mcp-server.js
 
-  Creating accounts from local code is only possible if in-band registration is
-  enabled on the server (often disabled). If you want that route, tell me the Prosody
-  domain and 
-  
+  If you want, I can add tunable env vars for reconnect delays/retry caps or logging around reconnect attempts.
+    
     1. If you want history per room or per user, I can add a keyed history manager that
      uses roomJid/from to select a store.
   2. If you want file persistence, we can implement a file-backed store that shares

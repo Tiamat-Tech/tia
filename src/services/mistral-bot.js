@@ -9,6 +9,7 @@ import { LingueNegotiator, LANGUAGE_MODES, featuresForModes } from "../lib/lingu
 import { HumanChatHandler, IBISTextHandler } from "../lib/lingue/handlers/index.js";
 import { InMemoryHistoryStore } from "../lib/history/index.js";
 import { loadAgentRoster } from "../agents/profile-roster.js";
+import { loadSystemConfig } from "../lib/system-config.js";
 
 dotenv.config();
 
@@ -19,6 +20,7 @@ if (!profile) {
 }
 
 const agentRoster = await loadAgentRoster();
+const systemConfig = await loadSystemConfig();
 
 const fileConfig = profile.toConfig();
 if (!fileConfig?.nickname || !fileConfig?.xmpp?.username) {
@@ -80,6 +82,7 @@ const runner = new AgentRunner({
   mentionDetector: createMentionDetector(BOT_NICKNAME, [BOT_NICKNAME]),
   commandParser: defaultCommandParser,
   allowSelfMessages: false,
+  maxAgentRounds: systemConfig.maxAgentRounds,
   agentRoster,
   logger
 });

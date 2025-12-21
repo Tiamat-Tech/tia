@@ -7,6 +7,7 @@ import { loadAgentProfile } from "../agents/profile-loader.js";
 import { McpLoopbackProvider } from "../agents/providers/mcp-loopback-provider.js";
 import { loadAgentRoster } from "../agents/profile-roster.js";
 import { autoConnectXmpp } from "../lib/xmpp-auto-connect.js";
+import { loadSystemConfig } from "../lib/system-config.js";
 
 dotenv.config();
 
@@ -16,6 +17,7 @@ if (!profile) {
   throw new Error(`Loopback agent profile not found: ${profileName}.ttl`);
 }
 const agentRoster = await loadAgentRoster();
+const systemConfig = await loadSystemConfig();
 
 const fileConfig = profile.toConfig();
 if (!fileConfig?.nickname || !fileConfig?.xmpp?.username) {
@@ -71,6 +73,7 @@ const runner = new AgentRunner({
   mentionDetector: createMentionDetector(BOT_NICKNAME, [BOT_NICKNAME]),
   commandParser: defaultCommandParser,
   allowSelfMessages: false,
+  maxAgentRounds: systemConfig.maxAgentRounds,
   agentRoster,
   logger
 });

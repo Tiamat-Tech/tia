@@ -15,7 +15,7 @@ export class AgentRunner {
     allowSelfMessages = false,
     respondToAll = false,
     agentRoster = [],
-    maxAgentRounds = 3,
+    maxAgentRounds = 5,
     logger = console
   }) {
     if (!provider?.handle) {
