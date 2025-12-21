@@ -85,6 +85,10 @@ TIA is published as `tia-agents` on npm and supports two approaches to creating 
 npm install tia-agents
 ```
 
+For a minimal, npm-packaged Mistral bot starter, see `mistral-minimal/README.md`.
+If you're using the Mistral provider, install the peer dependency and ensure the API key env var referenced in your profile is set (default: `MISTRAL_API_KEY`).
+If you want auto-registration, omit `xmpp:passwordKey` from the profile and set `autoRegister: true` when creating the agent.
+
 ### Approach 1: Config-Driven (Profile Files)
 
 Create profile files and use the factory function:
