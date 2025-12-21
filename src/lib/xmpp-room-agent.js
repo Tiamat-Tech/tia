@@ -23,6 +23,8 @@ export class XmppRoomAgent {
     this.onConflictRename = onConflictRename;
     this.maxJoinRetries = maxJoinRetries;
     this.joinAttempts = 0;
+    this.joinWaiters = [];
+    this.pendingGroupMessages = [];
 
     this.setupEventHandlers();
   }
@@ -67,6 +69,7 @@ export class XmppRoomAgent {
         if (stanza.attrs.from === `${this.roomJid}/${this.currentNickname}`) {
           this.isInRoom = true;
           this.logger.info(`Joined room ${this.roomJid} as ${this.currentNickname}`);
+          this.resolveJoinWaiters();
         }
         return;
       }
@@ -151,8 +154,10 @@ export class XmppRoomAgent {
   async sendGroupMessage(message) {
     if (!this.isInRoom) {
       this.logger.warn("Cannot send group message before joining the room");
-      return;
+      this.pendingGroupMessages.push(message);
+      await this.waitForJoin();
     }
+    this.logger.info(`Sending group message to ${this.roomJid} as ${this.currentNickname}`);
     const mucMessage = xml(
       "message",
       { type: "groupchat", to: this.roomJid },
@@ -173,6 +178,38 @@ export class XmppRoomAgent {
   async stop() {
     this.logger.info("Stopping agent");
     await this.xmpp.stop();
+  }
+
+  resolveJoinWaiters() {
+    if (!this.isInRoom) return;
+    const waiters = this.joinWaiters;
+    this.joinWaiters = [];
+    waiters.forEach(({ resolve }) => resolve());
+    if (this.pendingGroupMessages.length) {
+      const pending = this.pendingGroupMessages;
+      this.pendingGroupMessages = [];
+      pending.forEach((message) => {
+        this.sendGroupMessage(message).catch((err) => {
+          this.logger.warn("Failed to send queued group message:", err);
+        });
+      });
+    }
+  }
+
+  waitForJoin() {
+    if (this.isInRoom) return Promise.resolve();
+    return new Promise((resolve, reject) => {
+      const timeout = setTimeout(() => {
+        reject(new Error("Timed out waiting for room join"));
+      }, 15000);
+      this.joinWaiters.push({
+        resolve: () => {
+          clearTimeout(timeout);
+          resolve();
+        },
+        reject
+      });
+    });
   }
 }
 

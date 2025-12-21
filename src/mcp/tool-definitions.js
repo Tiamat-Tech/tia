@@ -43,6 +43,19 @@ export function createChatTools({ chatAdapter } = {}) {
       }
     },
     {
+      name: "getRecentMessages",
+      description: "Return recent chat messages seen by the MCP agent.",
+      inputSchema: {
+        limit: z.number().int().positive().max(200).optional().describe("Max messages to return")
+      },
+      handler: async ({ limit }) => {
+        const messages = await chatAdapter.getRecentMessages({ limit });
+        return {
+          content: [{ type: "text", text: JSON.stringify(messages, null, 2) }]
+        };
+      }
+    },
+    {
       name: "summarizeLingue",
       description: "Summarize a text into IBIS-style summary.",
       inputSchema: {

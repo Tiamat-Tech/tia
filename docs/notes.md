@@ -1,3 +1,9 @@
+claude mcp add tia-chat node /home/danny/hyperdata/tia/src/mcp/servers/tia-mcp-server.js
+
+codex mcp add tia-chat node /home/danny/hyperdata/tia/src/mcp/servers/tia-mcp-server.js
+
+src/mcp/servers/tia-mcp-server.js
+
   Creating accounts from local code is only possible if in-band registration is
   enabled on the server (often disabled). If you want that route, tell me the Prosody
   domain and 

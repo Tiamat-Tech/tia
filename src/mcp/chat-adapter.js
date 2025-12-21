@@ -8,7 +8,8 @@ export class McpChatAdapter {
     nickname,
     profile,
     negotiator = null,
-    logger = console
+    logger = console,
+    maxBufferedMessages = 50
   }) {
     this.xmppConfig = xmppConfig;
     this.roomJid = roomJid;
@@ -16,14 +17,41 @@ export class McpChatAdapter {
     this.profile = profile;
     this.negotiator = negotiator;
     this.logger = logger;
+    this.maxBufferedMessages = maxBufferedMessages;
+    this.messageBuffer = [];
     this.agent = new XmppRoomAgent({
       xmppConfig,
       roomJid,
       nickname,
-      onMessage: () => {},
+      onMessage: (message) => this.recordMessage(message),
       allowSelfMessages: true,
       logger
     });
+  }
+
+  recordMessage(message) {
+    try {
+      const { body, sender, from, roomJid, type } = message;
+      const entry = {
+        body,
+        sender,
+        from,
+        roomJid,
+        type,
+        timestamp: new Date().toISOString()
+      };
+      this.messageBuffer.push(entry);
+      if (this.messageBuffer.length > this.maxBufferedMessages) {
+        this.messageBuffer.splice(0, this.messageBuffer.length - this.maxBufferedMessages);
+      }
+    } catch (err) {
+      this.logger.warn?.("[MCP] Failed to record message:", err);
+    }
+  }
+
+  getRecentMessages({ limit = 20 } = {}) {
+    const safeLimit = Math.max(1, Math.min(limit, this.maxBufferedMessages));
+    return this.messageBuffer.slice(-safeLimit);
   }
 
   async start() {

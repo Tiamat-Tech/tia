@@ -1,0 +1,11 @@
+@prefix agent: <http://example.org/agent#> .
+@prefix xmpp: <http://example.org/xmpp#> .
+@prefix mcp: <http://example.org/mcp#> .
+
+agent:mcp-test a agent:Agent ;
+    agent:nickname "MCPTest" ;
+    xmpp:service "xmpp://tensegrity.it:5222" ;
+    xmpp:domain "tensegrity.it" ;
+    xmpp:username "mcptest456" ;
+    xmpp:resource "MCPTest" ;
+    agent:roomJid "general@conference.tensegrity.it" .

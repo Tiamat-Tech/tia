@@ -23,6 +23,7 @@ The design goal is a clean, library-ready architecture that supports both deploy
 ## Start Here (Docs)
 
 - [Agent capabilities & commands](docs/agents.md)
+- [Auto-connect & credentials](docs/auto-registration.md) - Automatic credential loading and connection
 - [Lingue integration](docs/lingue-integration.md)
 - [MCP client guide](docs/mcp-client.md)
 - [MCP server guide](docs/mcp-server.md)
