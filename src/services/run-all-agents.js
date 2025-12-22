@@ -48,6 +48,11 @@ const AGENT_DEFINITIONS = {
     command: "node src/services/prolog-agent.js",
     description: "Prolog agent (tau-prolog)",
     env: { AGENT_PROFILE: "prolog" }
+  },
+  data: {
+    command: "node src/services/data-agent.js",
+    description: "Data agent (SPARQL-backed)",
+    env: { AGENT_PROFILE: "data" }
   }
 };
 

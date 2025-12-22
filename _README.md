@@ -46,7 +46,7 @@ SEMEM_BASE_URL=https://mcp.tensegrity.it
 ```
 
 3) Set agent profiles (XMPP creds/resources)
-- Edit `config/agents/*.ttl` for each agent (mistral, semem, demo, chair, recorder). Each file defines:
+- Edit `config/agents/*.ttl` for each agent (mistral, semem, demo, data, chair, recorder). Each file defines:
   - `xmpp.service/domain/username/password/resource`
   - `roomJid` (e.g., `general@conference.tensegrity.it`)
   - Provider settings (model, Semem base URL, etc.)
@@ -292,13 +292,13 @@ Profiles:
 
 ### Start all agents (systemd-friendly)
 
-To launch multiple agents under one supervisor (semem, mistral, demo), run:
+To launch multiple agents under one supervisor (semem, mistral variants, demo, data, prolog, chair, recorder), run:
 ```bash
 ./start-all-agents.sh
 ```
 
 Environment knobs:
-- `AGENTS`: comma list to limit which agents start (default: all known). Options: `semem`, `mistral`, `demo`.
+- `AGENTS`: comma list to limit which agents start (default: all known). Options: `semem`, `mistral`, `analyst`, `creative`, `chair`, `recorder`, `demo`, `prolog`, `data`.
 - `AGENT_PROFILE`: passed through to Semem agent.
 - `MISTRAL_API_KEY` required if `mistral` is included; missing keys cause that agent to be skipped with a warning.
 

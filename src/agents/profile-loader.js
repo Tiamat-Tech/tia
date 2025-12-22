@@ -5,7 +5,7 @@ import { Writer } from "n3";
 import { turtleToDataset } from "../lib/ibis-rdf.js";
 import { AgentProfile } from "./profile/agent-profile.js";
 import { XmppConfig } from "./profile/xmpp-config.js";
-import { MistralProviderConfig, SememProviderConfig } from "./profile/provider-config.js";
+import { MistralProviderConfig, SememProviderConfig, DataProviderConfig } from "./profile/provider-config.js";
 import { Capability } from "./profile/capability.js";
 
 const DEFAULT_PROFILE_DIR = path.join(process.cwd(), "config", "agents");
@@ -184,6 +184,11 @@ function extractProviderConfig(dataset, subject) {
     return extractSememProvider(dataset, providerNode);
   }
 
+  providerNode = extractObject(dataset, subject, PREFIXES.agent + "dataProvider");
+  if (providerNode) {
+    return extractDataProvider(dataset, providerNode);
+  }
+
   return null;
 }
 
@@ -221,6 +226,19 @@ function extractSememProvider(dataset, providerNode) {
     authTokenEnv: extractLiteral(dataset, providerNode, PREFIXES.ai + "authTokenEnv"),
     timeoutMs: extractInteger(dataset, providerNode, PREFIXES.ai + "timeoutMs"),
     features
+  });
+}
+
+/**
+ * Extract Data provider config
+ */
+function extractDataProvider(dataset, providerNode) {
+  return new DataProviderConfig({
+    sparqlEndpoint: extractLiteral(dataset, providerNode, PREFIXES.ai + "sparqlEndpoint"),
+    extractionModel: extractLiteral(dataset, providerNode, PREFIXES.ai + "extractionModel"),
+    extractionApiKeyEnv: extractLiteral(dataset, providerNode, PREFIXES.ai + "extractionApiKeyEnv"),
+    maxTokens: extractInteger(dataset, providerNode, PREFIXES.ai + "maxTokens"),
+    temperature: extractFloat(dataset, providerNode, PREFIXES.ai + "temperature")
   });
 }
 
@@ -386,9 +404,16 @@ export function profileToDataset(profile) {
 
   if (profile.provider) {
     const providerNode = rdf.blankNode();
-    const providerPredicate = profile.provider.type === 'mistral'
-      ? PREFIXES.agent + "aiProvider"
-      : PREFIXES.agent + "mcpProvider";
+    let providerPredicate;
+    if (profile.provider.type === 'mistral') {
+      providerPredicate = PREFIXES.agent + "aiProvider";
+    } else if (profile.provider.type === 'semem') {
+      providerPredicate = PREFIXES.agent + "mcpProvider";
+    } else if (profile.provider.type === 'data') {
+      providerPredicate = PREFIXES.agent + "dataProvider";
+    } else {
+      providerPredicate = PREFIXES.agent + "aiProvider";
+    }
 
     dataset.add(rdf.quad(subject, rdf.namedNode(providerPredicate), providerNode));
 
@@ -656,6 +681,9 @@ function mergeProviderConfigs(baseProvider, derivedProvider) {
   }
   if (baseProvider.type === "semem") {
     return new SememProviderConfig(mergedConfig);
+  }
+  if (baseProvider.type === "data") {
+    return new DataProviderConfig(mergedConfig);
   }
   return derivedProvider;
 }

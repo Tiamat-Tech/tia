@@ -11,6 +11,12 @@ export function defaultCommandParser(text) {
   if (lowered.startsWith("augment ")) {
     return { command: "augment", content: trimmed.slice(8).trim() };
   }
+  if (lowered.startsWith("query:") || lowered.startsWith("query ")) {
+    return { command: "query", content: trimmed.slice(6).trim() };
+  }
+  if (lowered.startsWith("sparql:") || lowered.startsWith("sparql ")) {
+    return { command: "sparql", content: trimmed.slice(7).trim() };
+  }
 
   return { command: "chat", content: trimmed };
 }

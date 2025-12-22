@@ -20,5 +20,6 @@ echo "    Creative: ${CREATIVE_NICKNAME:-Creative} / ${CREATIVE_RESOURCE:-<auto>
 echo "    Semem:   ${SEMEM_NICKNAME:-${SEMEM_LITE_NICKNAME:-${AGENT_NICKNAME:-Semem}}} / ${AGENT_RESOURCE:-${XMPP_RESOURCE:-<auto>}}"
 echo "    Demo:    ${BOT_NICKNAME:-DemoBot} / ${XMPP_RESOURCE:-<auto>}"
 echo "    Prolog:  ${PROLOG_NICKNAME:-Prolog} / ${PROLOG_RESOURCE:-<auto>}"
+echo "    Data:    <from profile>"
 
 node src/services/run-all-agents.js

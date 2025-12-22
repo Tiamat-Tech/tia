@@ -23,6 +23,7 @@ The design goal is a clean, library-ready architecture that supports both deploy
 ## Start Here (Docs)
 
 - [Agent capabilities & commands](docs/agents.md)
+- [Data Agent guide](docs/data-agent.md) - SPARQL knowledge queries (Wikidata, DBpedia, custom endpoints)
 - [Auto-connect & credentials](docs/auto-registration.md) - Automatic credential loading and connection
 - [Lingue integration](docs/lingue-integration.md)
 - [MCP client guide](docs/mcp-client.md)
@@ -46,6 +47,7 @@ The design goal is a clean, library-ready architecture that supports both deploy
 
 - **Mistral** — AI chat agent backed by Mistral API with Lingue/IBIS summaries.
 - **Semem** — MCP-backed knowledge agent for `tell/ask/augment` flows.
+- **Data** — SPARQL knowledge query agent for Wikidata, DBpedia, and custom endpoints. [Guide](docs/data-agent.md)
 - **Demo** — Minimal chat bot for quick XMPP smoke checks.
 - **Chair** — Debate facilitator/Moderator agent.
 - **Recorder** — Meeting logger/recorder agent that listens broadly.

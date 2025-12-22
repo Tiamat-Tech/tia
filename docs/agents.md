@@ -29,6 +29,17 @@ This page is for users first, then operators. It covers what each bot can do in 
 ### Demo Bot
 - Simple canned/demo responses; no external API.
 
+### Data Agent
+- Mention it: `Data, ...` (comma/colon supported) or DM.
+- Query modes:
+  - `Data query: <entity>` → lookup entity facts from SPARQL endpoint (Wikidata by default).
+  - `Data sparql: <query>` → execute direct SPARQL query.
+  - `Data, <natural language question>` → extracts entity with Mistral, then queries.
+- Returns human-friendly summaries instead of raw JSON.
+- Lingue/SPARQL: supports `lng:SparqlQuery` mode for agent-to-agent SPARQL exchange.
+- Fully configurable via RDF profile - can be adapted to any SPARQL endpoint (DBpedia, local triplestores, etc.).
+- See [Data Agent Guide](data-agent.md) for detailed documentation.
+
 ## Running the bots
 
 Common XMPP env (put in `.env`):
@@ -67,8 +78,17 @@ with `AGENT_SECRETS_PATH` if needed.
 - Start: `./start-demo-bot.sh`
 - Env: `BOT_NICKNAME` (default `DemoBot`), uses XMPP vars.
 
+### Data Agent
+- Start: `./start-data-agent.sh`
+- Env:
+  - `MISTRAL_API_KEY` (optional, for natural language entity extraction)
+  - `AGENT_PROFILE` (default `data`) - use different profiles for different SPARQL endpoints
+  - Standard XMPP vars from profile
+- SPARQL endpoint and other config defined in RDF profile (`config/agents/data.ttl`)
+- See [Data Agent Guide](data-agent.md) for query modes and configuration.
+
 ## Running multiple agents
-- `./start-all-agents.sh` spawns Semem, Mistral, and Demo. Use distinct nicknames/resources to avoid MUC confusion, e.g.:
+- `./start-all-agents.sh` spawns all known agents (Semem, Mistral variants, Demo, Data, Prolog, Chair, Recorder). Use distinct nicknames/resources to avoid MUC confusion, e.g.:
   ```
   BOT_NICKNAME=Mistral1
   SEMEM_NICKNAME=Semem1

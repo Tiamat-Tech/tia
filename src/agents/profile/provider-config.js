@@ -74,3 +74,34 @@ export class SememProviderConfig extends ProviderConfig {
     return config;
   }
 }
+
+/**
+ * Data-specific provider for SPARQL queries
+ */
+export class DataProviderConfig extends ProviderConfig {
+  constructor({
+    sparqlEndpoint,
+    extractionModel,
+    extractionApiKeyEnv,
+    maxTokens,
+    temperature
+  }) {
+    super('data', {
+      sparqlEndpoint,
+      extractionModel,
+      extractionApiKeyEnv,
+      maxTokens,
+      temperature
+    });
+  }
+
+  toConfig() {
+    const config = {};
+    if (this.config.sparqlEndpoint !== undefined) config.sparqlEndpoint = this.config.sparqlEndpoint;
+    if (this.config.extractionModel !== undefined) config.extractionModel = this.config.extractionModel;
+    if (this.config.extractionApiKeyEnv !== undefined) config.extractionApiKeyEnv = this.config.extractionApiKeyEnv;
+    if (this.config.maxTokens !== undefined) config.maxTokens = this.config.maxTokens;
+    if (this.config.temperature !== undefined) config.temperature = this.config.temperature;
+    return config;
+  }
+}

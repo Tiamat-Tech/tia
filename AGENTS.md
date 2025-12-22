@@ -23,7 +23,7 @@
 - Use async/await for I/O; keep logging terse via `src/lib/logger.js`.
 - Two-space indentation, single-responsibility modules, and descriptive function names (`joinMUC`, `handleStanza`).
 - Environment-driven config defaults live near the top of each file; keep new defaults together.
-
+- There should be no defaults or fallbacks in the code, the parameters should be loaded from RDF profiles or secrets.json file (local to this app) or .env in the case of remote services
 ## Testing Guidelines
 - `npm test` runs the current unit and integration test set.
 - Favor runnable example scripts per feature alongside Vitest coverage.

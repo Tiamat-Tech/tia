@@ -33,7 +33,8 @@ server.registerTool("sparqlQuery", {
     method: "POST",
     headers: {
       "content-type": "application/sparql-query",
-      "accept": "application/sparql-results+json"
+      "accept": "application/sparql-results+json",
+      "user-agent": "TIA-DataAgent/0.3.0 (https://github.com/danja/tia)"
     },
     body: query
   });

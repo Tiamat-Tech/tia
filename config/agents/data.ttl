@@ -1,0 +1,56 @@
+@prefix agent: <https://tensegrity.it/vocab/agent#> .
+@prefix foaf: <http://xmlns.com/foaf/0.1/> .
+@prefix schema: <https://schema.org/> .
+@prefix xmpp: <https://tensegrity.it/vocab/xmpp#> .
+@prefix ai: <https://tensegrity.it/vocab/ai-provider#> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+@prefix lng: <http://purl.org/stuff/lingue/> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix mcp: <http://purl.org/stuff/mcp/> .
+
+<#data> a agent:ConversationalAgent, agent:KnowledgeAgent, lng:Agent, mcp:Client ;
+  foaf:nick "Data" ;
+  schema:identifier "data" ;
+  dcterms:created "2025-12-22T00:00:00Z"^^xsd:dateTime ;
+  dcterms:description "SPARQL query agent for Wikidata and other knowledge endpoints" ;
+
+  lng:supports lng:HumanChat, lng:SparqlQuery ;
+  lng:prefers lng:SparqlQuery ;
+  lng:profile <#data-lingue-profile> ;
+
+  agent:xmppAccount [
+    a xmpp:Account ;
+    xmpp:service "xmpp://tensegrity.it:5222" ;
+    xmpp:domain "tensegrity.it" ;
+    xmpp:username "data" ;
+    xmpp:passwordKey "data" ;
+    xmpp:resource "Data"
+  ] ;
+
+  agent:roomJid "general@conference.tensegrity.it" ;
+
+  agent:dataProvider [
+    a ai:DataProvider ;
+    ai:sparqlEndpoint "https://query.wikidata.org/sparql" ;
+    ai:extractionModel "mistral-small-latest" ;
+    ai:extractionApiKeyEnv "MISTRAL_API_KEY" ;
+    ai:maxTokens "50"^^xsd:integer ;
+    ai:temperature "0.3"^^xsd:float
+  ] ;
+
+  mcp:providesTool [
+    a mcp:Tool ;
+    mcp:name "sparqlQuery" ;
+    mcp:description "Execute SPARQL queries against configured endpoint"
+  ] .
+
+<#data-lingue-profile> a lng:Profile ;
+  lng:availability lng:Process ;
+  lng:in [ a lng:Interface ; rdfs:label "XMPP MUC text + SPARQL queries" ] ;
+  lng:out [ a lng:Interface ; rdfs:label "XMPP MUC text summaries" ] ;
+  lng:dependsOn
+    [ a lng:Environment ; rdfs:label "XMPP/Prosody" ],
+    [ a lng:Environment ; rdfs:label "SPARQL endpoint" ],
+    [ a lng:Environment ; rdfs:label "Mistral API" ] ;
+  lng:alang "JavaScript" .
