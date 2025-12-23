@@ -153,21 +153,25 @@ async function runMfrSession(problemDescription) {
           }
 
           // Extract session ID
-          if (!sessionId && body.includes("session") && body.includes("ID")) {
-            const match = body.match(/session\s+(?:ID:?\s*)?([a-f0-9-]+)/i);
+          if (!sessionId) {
+            const match = body.match(/session\s+(?:id|started)[:\s]*([a-f0-9-]{36})/i);
             if (match) {
               sessionId = match[1];
               console.log(`\n📋 Session ID: ${sessionId}`);
             }
           }
 
-          // Check for solution
-          if (sender === "Coordinator" && (
-            body.includes("solution") ||
-            body.includes("schedule") ||
-            body.includes("plan") ||
-            body.includes("allocation")
-          )) {
+          // Check for solution (avoid false positives like "Solution request broadcast")
+          const lowerBody = body.toLowerCase();
+          const isSolutionRequest =
+            lowerBody.includes("solution request") ||
+            lowerBody.includes("request solutions") ||
+            lowerBody.includes("waiting for agent solutions");
+          const looksLikeSolution =
+            /\b(solution|schedule|plan|allocation)\b/i.test(body) &&
+            !isSolutionRequest;
+
+          if (sender === "Coordinator" && looksLikeSolution) {
             solution = body;
             console.log("\n✅ Solution received!");
 
@@ -210,6 +214,10 @@ runMfrSession(problem)
     console.log(`Session ID: ${result.sessionId || 'N/A'}`);
     console.log(`Responses received: ${result.responses.length}`);
     console.log(`Solution delivered: ${result.solution ? 'Yes' : 'No'}`);
+    if (result.solution) {
+      console.log("\n=== Solution ===");
+      console.log(result.solution);
+    }
 
     if (result.completed) {
       console.log("\n✅ MFR session completed successfully");

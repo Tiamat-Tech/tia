@@ -7,7 +7,13 @@ import { McpClientBridge } from "../mcp/client-bridge.js";
 import logger from "../lib/logger-lite.js";
 import { loadAgentProfile } from "../agents/profile-loader.js";
 import { LingueNegotiator, LANGUAGE_MODES, featuresForModes } from "../lib/lingue/index.js";
-import { HumanChatHandler, SparqlQueryHandler } from "../lib/lingue/handlers/index.js";
+import {
+  HumanChatHandler,
+  ModelFirstRdfHandler,
+  ModelNegotiationHandler,
+  SparqlQueryHandler
+} from "../lib/lingue/handlers/index.js";
+import { MFR_MESSAGE_TYPES } from "../lib/mfr/constants.js";
 import { loadAgentRoster } from "../agents/profile-roster.js";
 import { loadSystemConfig } from "../lib/system-config.js";
 
@@ -78,6 +84,7 @@ const provider = new DataProvider({
   logger
 });
 
+let negotiator = null;
 const handlers = {};
 if (profile.supportsLingueMode(LANGUAGE_MODES.HUMAN_CHAT)) {
   handlers[LANGUAGE_MODES.HUMAN_CHAT] = new HumanChatHandler({ logger });
@@ -91,7 +98,58 @@ if (profile.supportsLingueMode(LANGUAGE_MODES.SPARQL_QUERY)) {
   });
 }
 
-const negotiator = new LingueNegotiator({
+const modelFirstRdfHandler = profile.supportsLingueMode(LANGUAGE_MODES.MODEL_FIRST_RDF)
+  ? new ModelFirstRdfHandler({ logger })
+  : null;
+if (modelFirstRdfHandler) {
+  handlers[LANGUAGE_MODES.MODEL_FIRST_RDF] = modelFirstRdfHandler;
+}
+
+if (profile.supportsLingueMode(LANGUAGE_MODES.MODEL_NEGOTIATION)) {
+  handlers[LANGUAGE_MODES.MODEL_NEGOTIATION] = new ModelNegotiationHandler({
+    logger,
+    onPayload: async ({ payload, roomJid, stanza }) => {
+      const messageType = payload?.messageType;
+      if (messageType !== MFR_MESSAGE_TYPES.MODEL_CONTRIBUTION_REQUEST) {
+        return null;
+      }
+
+      const sessionId = payload?.sessionId;
+      if (!sessionId) {
+        logger.warn?.("[DataAgent] MFR contribution request missing sessionId");
+        return null;
+      }
+
+      const rdf = await provider.handleMfrContributionRequest(payload);
+      if (!rdf || !rdf.trim()) {
+        return null;
+      }
+
+      if (!modelFirstRdfHandler || !negotiator?.xmppClient) {
+        logger.warn?.("[DataAgent] Cannot send MFR contribution (handler or client missing)");
+        return null;
+      }
+
+      const targetRoom = roomJid || stanza?.attrs?.from?.split("/")?.[0];
+      if (!targetRoom) {
+        logger.warn?.("[DataAgent] Cannot determine target room for MFR contribution");
+        return null;
+      }
+
+      const contributionStanza = modelFirstRdfHandler.createStanza(
+        targetRoom,
+        rdf,
+        `MFR contribution from ${BOT_NICKNAME}`,
+        { metadata: { sessionId } }
+      );
+
+      await negotiator.xmppClient.send(contributionStanza);
+      return null;
+    }
+  });
+}
+
+negotiator = new LingueNegotiator({
   profile,
   handlers,
   logger

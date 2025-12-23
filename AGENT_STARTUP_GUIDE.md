@@ -64,12 +64,17 @@ This starts all agents for which credentials are available. Agents requiring mis
 ./start-all.sh mfr
 ```
 
-Starts the Model-First Reasoning system:
+Starts the Model-First Reasoning system (full suite):
 - `coordinator` - MFR orchestrator
 - `mistral` - Natural language understanding
+- `analyst` - Analytical AI participant
+- `creative` - Creative AI participant
+- `chair` - Debate facilitator
+- `recorder` - Meeting recorder
+- `semem` - Semantic reasoning (if configured)
 - `data` - Knowledge grounding (Wikidata/SPARQL)
 - `prolog` - Logical reasoning
-- `semem` - Semantic reasoning (if configured)
+- `demo` - Simple demo bot
 
 **Requirements:**
 - `MISTRAL_API_KEY` in `.env`

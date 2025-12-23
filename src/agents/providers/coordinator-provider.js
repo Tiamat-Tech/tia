@@ -11,6 +11,7 @@ import {
   MFR_CONTRIBUTION_TYPES,
   VALIDATION_STATUS
 } from "../../lib/mfr/constants.js";
+import { LANGUAGE_MODES } from "../../lib/lingue/constants.js";
 import { randomUUID } from "crypto";
 
 /**
@@ -25,6 +26,7 @@ export class CoordinatorProvider extends BaseProvider {
     agentRegistry = new Map(),
     multiRoomManager = null,
     negotiator = null,
+    primaryRoomJid = null,
     logger = console
   } = {}) {
     super();
@@ -36,6 +38,7 @@ export class CoordinatorProvider extends BaseProvider {
     this.agentRegistry = agentRegistry;
     this.multiRoomManager = multiRoomManager;
     this.negotiator = negotiator;
+    this.primaryRoomJid = primaryRoomJid;
     this.logger = logger;
 
     // Active MFR sessions: Map<sessionId, MfrProtocolState>
@@ -162,12 +165,34 @@ export class CoordinatorProvider extends BaseProvider {
     // Track expected contributions
     this.expectedContributions.set(sessionId, new Set());
 
-    // Broadcast via negotiator if available
-    if (this.negotiator && this.multiRoomManager) {
-      const state = this.activeSessions.get(sessionId);
-      const phase = state?.getCurrentPhase();
+    const state = this.activeSessions.get(sessionId);
+    const phase = state?.getCurrentPhase();
+    const targetRooms = new Set();
 
-      // Send to appropriate room
+    if (this.primaryRoomJid) {
+      targetRooms.add(this.primaryRoomJid);
+    }
+
+    if (this.multiRoomManager) {
+      const roomType = this.multiRoomManager.getRoomTypeForPhase(
+        phase || MFR_PHASES.ENTITY_DISCOVERY
+      );
+      const roomJid = this.multiRoomManager.getRoomJid(roomType);
+      if (roomJid) {
+        targetRooms.add(roomJid);
+      }
+    }
+
+    if (this.negotiator && targetRooms.size > 0) {
+      const summary = `MFR contribution request for ${sessionId}`;
+      for (const roomJid of targetRooms) {
+        await this.negotiator.send(roomJid, {
+          mode: LANGUAGE_MODES.MODEL_NEGOTIATION,
+          payload: message,
+          summary
+        });
+      }
+    } else if (this.multiRoomManager) {
       await this.multiRoomManager.broadcastForPhase(
         phase || MFR_PHASES.ENTITY_DISCOVERY,
         JSON.stringify(message)
@@ -414,7 +439,32 @@ export class CoordinatorProvider extends BaseProvider {
       timestamp: new Date().toISOString()
     };
 
+    const targetRooms = new Set();
+
+    if (this.primaryRoomJid) {
+      targetRooms.add(this.primaryRoomJid);
+    }
+
     if (this.multiRoomManager) {
+      const roomType = this.multiRoomManager.getRoomTypeForPhase(
+        MFR_PHASES.CONSTRAINED_REASONING
+      );
+      const roomJid = this.multiRoomManager.getRoomJid(roomType);
+      if (roomJid) {
+        targetRooms.add(roomJid);
+      }
+    }
+
+    if (this.negotiator && targetRooms.size > 0) {
+      const summary = `MFR solution request for ${sessionId}`;
+      for (const roomJid of targetRooms) {
+        await this.negotiator.send(roomJid, {
+          mode: LANGUAGE_MODES.MODEL_NEGOTIATION,
+          payload: message,
+          summary
+        });
+      }
+    } else if (this.multiRoomManager) {
       await this.multiRoomManager.broadcastForPhase(
         MFR_PHASES.CONSTRAINED_REASONING,
         JSON.stringify(message)

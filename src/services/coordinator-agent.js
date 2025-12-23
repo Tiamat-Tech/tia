@@ -113,6 +113,8 @@ const provider = new CoordinatorProvider({
   merger,
   shapesLoader,
   agentRegistry,
+  negotiator: null,
+  primaryRoomJid: MUC_ROOM,
   logger
 });
 
@@ -161,6 +163,8 @@ const negotiator = new LingueNegotiator({
   handlers,
   logger
 });
+
+provider.negotiator = negotiator;
 
 // Create agent runner
 const runner = new AgentRunner({

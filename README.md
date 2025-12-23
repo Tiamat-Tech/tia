@@ -87,7 +87,7 @@ AGENTS=mistral,data,prolog ./start-all.sh
 3. For MFR system: Configure Prosody MUC rooms (see [MFR Room Setup](MFR_ROOM_SETUP.md))
 
 **Agent Presets:**
-- `mfr` - MFR system: coordinator, mistral, data, prolog, semem
+- `mfr` - MFR system (full suite): coordinator, mistral, analyst, creative, chair, recorder, semem, data, prolog, demo
 - `debate` - Debate system: chair, recorder, mistral, analyst, creative
 - `basic` - Basic agents: mistral, data, prolog, demo
 

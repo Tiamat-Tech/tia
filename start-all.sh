@@ -24,7 +24,8 @@ CYAN='\033[0;36m'
 NC='\033[0m' # No Color
 
 # Preset agent groups
-MFR_AGENTS="coordinator,mistral,data,prolog,semem"
+ALL_AGENTS="coordinator,mistral,analyst,creative,chair,recorder,semem,data,prolog,demo"
+MFR_AGENTS="$ALL_AGENTS"
 DEBATE_AGENTS="chair,recorder,mistral,analyst,creative"
 BASIC_AGENTS="mistral,data,prolog,demo"
 
@@ -59,7 +60,7 @@ if [ -n "$1" ]; then
       echo "Usage: $0 [preset|help]"
       echo ""
       echo "Presets:"
-      echo "  mfr      - MFR system: $MFR_AGENTS"
+      echo "  mfr      - MFR system (full suite): $MFR_AGENTS"
       echo "  debate   - Debate system: $DEBATE_AGENTS"
       echo "  basic    - Basic agents: $BASIC_AGENTS"
       echo "  (none)   - All available agents"

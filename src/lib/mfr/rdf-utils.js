@@ -189,6 +189,10 @@ export class RdfUtils {
    * @returns {Array<any>} Array of values
    */
   static extractValues(dataset, subjectUri, predicateUri) {
+    if (!dataset || !subjectUri || !predicateUri) {
+      return [];
+    }
+
     const results = [];
     const subject = rdf.namedNode(subjectUri);
     const predicate = rdf.namedNode(predicateUri);
