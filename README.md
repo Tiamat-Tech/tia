@@ -22,12 +22,14 @@ The design goal is a clean, library-ready architecture that supports both deploy
 
 ## Start Here (Docs)
 
+- [Agent Startup Guide](AGENT_STARTUP_GUIDE.md) - **Start here!** Unified script for starting agents
 - [Agent capabilities & commands](docs/agents.md)
 - [Data Agent guide](docs/data-agent.md) - SPARQL knowledge queries (Wikidata, DBpedia, custom endpoints)
 - [Auto-connect & credentials](docs/auto-registration.md) - Automatic credential loading and connection
 - [Lingue integration](docs/lingue-integration.md)
 - [MCP client guide](docs/mcp-client.md)
 - [MCP server guide](docs/mcp-server.md)
+- [MFR Room Setup](MFR_ROOM_SETUP.md) - Model-First Reasoning multi-room configuration (**requires Prosody setup**)
 - [API reference](docs/api-reference.md)
 - [Testing & env](docs/testing.md)
 - [Server deployment](docs/server.md)
@@ -45,6 +47,7 @@ The design goal is a clean, library-ready architecture that supports both deploy
 
 ## Implemented Agents
 
+- **Coordinator** — MFR (Model-First Reasoning) orchestrator for multi-agent problem solving.
 - **Mistral** — AI chat agent backed by Mistral API with Lingue/IBIS summaries.
 - **Semem** — MCP-backed knowledge agent for `tell/ask/augment` flows.
 - **Data** — SPARQL knowledge query agent for Wikidata, DBpedia, and custom endpoints. [Guide](docs/data-agent.md)
@@ -53,6 +56,47 @@ The design goal is a clean, library-ready architecture that supports both deploy
 - **Recorder** — Meeting logger/recorder agent that listens broadly.
 - **Prolog** — Logic agent using tau-prolog for queries.
 - **MCP Loopback** — MCP client/server echo agent for integration tests.
+
+## Quick Start: Running Agents
+
+The `start-all.sh` script provides a unified way to start all agents or specific subsets:
+
+```bash
+# Start all available agents
+./start-all.sh
+
+# Start MFR (Model-First Reasoning) system
+./start-all.sh mfr
+
+# Start debate system
+./start-all.sh debate
+
+# Start basic agents
+./start-all.sh basic
+
+# Custom agent selection
+AGENTS=mistral,data,prolog ./start-all.sh
+
+# Get help
+./start-all.sh help
+```
+
+**Prerequisites:**
+1. Configure `.env` file with API keys (see `.env.example`)
+2. Create `config/agents/secrets.json` with XMPP passwords
+3. For MFR system: Configure Prosody MUC rooms (see [MFR Room Setup](MFR_ROOM_SETUP.md))
+
+**Agent Presets:**
+- `mfr` - MFR system: coordinator, mistral, data, prolog, semem
+- `debate` - Debate system: chair, recorder, mistral, analyst, creative
+- `basic` - Basic agents: mistral, data, prolog, demo
+
+The script automatically:
+- Loads `.env` file
+- Checks for required API keys
+- Skips agents with missing credentials
+- Provides restart on crash
+- Handles graceful shutdown (SIGTERM/SIGINT)
 
 ## Library Usage
 
@@ -208,7 +252,11 @@ For a fuller walkthrough and profile-driven setup, see:
 
 ## Installation & Running
 
-Installation, configuration, and run scripts are documented in:
+Quick start - see [Agent Startup Guide](AGENT_STARTUP_GUIDE.md) for complete instructions.
+
+Additional documentation:
+- [Agent Startup Guide](AGENT_STARTUP_GUIDE.md) - **Main guide for starting agents**
 - [Testing](docs/testing.md)
 - [Server](docs/server.md)
 - [MCP Server](docs/mcp-server.md)
+- [MFR Room Setup](MFR_ROOM_SETUP.md) - **Requires Prosody MUC configuration** for persistent rooms

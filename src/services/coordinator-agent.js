@@ -1,7 +1,7 @@
 import dotenv from "dotenv";
 import { AgentRunner } from "../agents/core/agent-runner.js";
 import { createMentionDetector } from "../agents/core/mention-detector.js";
-import { defaultCommandParser } from "../agents/core/command-parser.js";
+import { coordinatorCommandParser } from "../agents/core/coordinator-command-parser.js";
 import { CoordinatorProvider } from "../agents/providers/coordinator-provider.js";
 import { MfrModelStore } from "../lib/mfr/model-store.js";
 import { MfrShaclValidator } from "../lib/mfr/shacl-validator.js";
@@ -170,8 +170,9 @@ const runner = new AgentRunner({
   provider,
   negotiator,
   mentionDetector: createMentionDetector(BOT_NICKNAME, [BOT_NICKNAME]),
-  commandParser: defaultCommandParser,
+  commandParser: coordinatorCommandParser,
   allowSelfMessages: false,
+  respondToAll: true,  // Coordinator should process all commands in room
   maxAgentRounds: systemConfig.maxAgentRounds,
   agentRoster,
   logger

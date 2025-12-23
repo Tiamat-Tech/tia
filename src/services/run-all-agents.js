@@ -4,6 +4,11 @@ import { spawn } from "child_process";
 dotenv.config();
 
 const AGENT_DEFINITIONS = {
+  coordinator: {
+    command: "node src/services/coordinator-agent.js",
+    description: "MFR Coordinator (orchestrates Model-First Reasoning)",
+    env: { AGENT_PROFILE: "coordinator" }
+  },
   semem: {
     command: "node src/services/semem-agent.js",
     description: "Semem MCP-backed agent",

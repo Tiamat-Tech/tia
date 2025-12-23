@@ -29,11 +29,11 @@ import { client, xml } from "@xmpp/client";
 // Configuration from environment or defaults
 const SERVICE = process.env.XMPP_SERVICE || "xmpp://tensegrity.it:5222";
 const DOMAIN = process.env.XMPP_DOMAIN || "tensegrity.it";
-const USERNAME = process.env.XMPP_USERNAME || "mfruser";
-const PASSWORD = process.env.XMPP_PASSWORD || "mfrpass";
-const COORDINATOR_ROOM = "general@conference.tensegrity.it";
-const NICKNAME = "MFR-Client";
-const TIMEOUT_MS = 60000; // 60 seconds
+const USERNAME = process.env.XMPP_USERNAME || "admin";
+const PASSWORD = process.env.XMPP_PASSWORD || "admin123";
+const COORDINATOR_ROOM = process.env.COORDINATOR_ROOM || "general@conference.tensegrity.it";
+const NICKNAME = process.env.CLIENT_NICKNAME || "MFR-Client";
+const TIMEOUT_MS = parseInt(process.env.MFR_TIMEOUT_MS || "120000"); // 2 minutes default
 
 // Get problem from command line
 const problem = process.argv[2];
@@ -59,6 +59,12 @@ function wait(ms) {
 async function runMfrSession(problemDescription) {
   console.log("=== MFR Session Runner ===");
   console.log(`Problem: ${problemDescription}`);
+  console.log("");
+  console.log("Configuration:");
+  console.log(`  Service: ${SERVICE}`);
+  console.log(`  Username: ${USERNAME}`);
+  console.log(`  Room: ${COORDINATOR_ROOM}`);
+  console.log(`  Timeout: ${TIMEOUT_MS}ms`);
   console.log("");
 
   const xmpp = client({
@@ -116,10 +122,11 @@ async function runMfrSession(problemDescription) {
             await wait(1000);
 
             // Send MFR start command
+            console.log(`📤 Sending: mfr-start ${problemDescription.substring(0, 60)}${problemDescription.length > 60 ? '...' : ''}`);
             await xmpp.send(xml(
               "message",
               { type: "groupchat", to: COORDINATOR_ROOM },
-              xml("body", {}, `Coordinator: mfr-start ${problemDescription}`)
+              xml("body", {}, `mfr-start ${problemDescription}`)
             ));
           }
         }

@@ -2,6 +2,8 @@ pkill -f 'node src/services'
 ./start-mfr-system.sh
 ./start-all-agents.sh
 
+./start-all.sh mfr
+
 npm pack
 
   Then from your test project (/home/danny/hyperdata/tia-test):
@@ -35,6 +37,14 @@ node src/examples/semem-direct-test.js "Glitch is a canary" "What is Glitch?"
 
 systemctl stop tia-agents
 
+ prosodyctl mod_muc delete_room <room-jid>
+
+nano  /etc/prosody/conf.d/conference.cfg.lua
+
+Component "conference.tensegrity.it" "muc"
+    muc_room_default_persistent = true
+    muc_room_default_public = true
+
 
 prosodyctl adduser semem@tensegrity.it
 prosodyctl adduser mistral@tensegrity.it
@@ -49,6 +59,7 @@ prosodyctl adduser admin@tensegrity.it
 
 prosodyctl adduser mfruser@tensegrity.it
 mfrpass
+prosodyctl adduser testuser@tensegrity.it
 
  sudo prosodyctl register mistral-analyst tensegrity.it analystpass???
 

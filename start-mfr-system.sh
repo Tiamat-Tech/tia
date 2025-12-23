@@ -21,15 +21,28 @@ NC='\033[0m' # No Color
 echo -e "${BLUE}=== Starting MFR Multi-Agent System ===${NC}"
 echo ""
 
-# Check if required environment variables are set
-if [ -z "$MISTRAL_API_KEY" ]; then
-  echo -e "${YELLOW}⚠️  Warning: MISTRAL_API_KEY not set${NC}"
-  echo "   Mistral agent may not function properly"
+# Load .env file if it exists
+if [ -f ".env" ]; then
+  echo -e "${GREEN}📄 Loading environment from .env file${NC}"
+  set -a  # automatically export all variables
+  source .env
+  set +a
+  echo ""
 fi
 
-if [ -z "$SEMEM_AUTH_TOKEN" ]; then
-  echo -e "${YELLOW}⚠️  Warning: SEMEM_AUTH_TOKEN not set${NC}"
-  echo "   Semem agent may not function properly"
+# Check if required environment variables are set
+if [ -z "$MISTRAL_API_KEY" ] || [ "$MISTRAL_API_KEY" = "your_mistral_api_key_here" ] || [ "$MISTRAL_API_KEY" = "your API key" ]; then
+  echo -e "${YELLOW}⚠️  Warning: MISTRAL_API_KEY not set or is placeholder${NC}"
+  echo "   Set MISTRAL_API_KEY in .env file to enable Mistral agent"
+  echo "   Get your API key from: https://console.mistral.ai/"
+  echo ""
+fi
+
+if [ -z "$SEMEM_AUTH_TOKEN" ] || [ "$SEMEM_AUTH_TOKEN" = "your-api-key" ]; then
+  echo -e "${YELLOW}⚠️  Warning: SEMEM_AUTH_TOKEN not set or is placeholder${NC}"
+  echo "   Semem agent will be skipped"
+  echo "   (This is optional - system will work without it)"
+  echo ""
 fi
 
 # Check for secrets file
@@ -82,10 +95,11 @@ start_agent "prolog" "AGENT_PROFILE=prolog node src/services/prolog-agent.js"
 start_agent "mistral" "AGENT_PROFILE=mistral node src/services/mistral-bot.js"
 
 # 5. Semem Agent (semantic reasoning) - optional if not configured
-if [ -n "$SEMEM_AUTH_TOKEN" ]; then
+if [ -n "$SEMEM_AUTH_TOKEN" ] && [ "$SEMEM_AUTH_TOKEN" != "your-api-key" ]; then
   start_agent "semem" "AGENT_PROFILE=semem node src/services/semem-agent.js"
 else
-  echo -e "${YELLOW}⚠️  Skipping Semem agent (SEMEM_AUTH_TOKEN not set)${NC}"
+  echo -e "${YELLOW}⚠️  Skipping Semem agent (SEMEM_AUTH_TOKEN not configured)${NC}"
+  echo "   MFR system will work without it"
   echo ""
 fi
 

@@ -82,8 +82,14 @@ export class CoordinatorProvider extends BaseProvider {
         case "list":
           return await this.listActiveSessions(metadata, reply);
 
-        default:
+        case "help":
+        case "mfr-help":
           return this.getHelpMessage();
+
+        case "chat":
+        default:
+          // Don't respond to regular chat messages
+          return null;
       }
     } catch (error) {
       this.logger.error?.(
