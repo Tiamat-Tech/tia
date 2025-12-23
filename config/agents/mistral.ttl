@@ -6,12 +6,22 @@
 @prefix dcterms: <http://purl.org/dc/terms/> .
 @prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
 @prefix lng: <http://purl.org/stuff/lingue/> .
+@prefix mfr: <http://purl.org/stuff/mfr/> .
 
-<#mistral> a agent:ConversationalAgent, agent:AIAgent, lng:Agent ;
+<#mistral> a agent:ConversationalAgent, agent:AIAgent, lng:Agent, mfr:NaturalLanguageAgent ;
   dcterms:isPartOf <#mistral-base> ;
   foaf:nick "Mistral" ;
   schema:identifier "mistral" ;
   dcterms:created "2024-12-01T00:00:00Z"^^xsd:dateTime ;
+
+  lng:supports lng:HumanChat, lng:ModelFirstRDF, lng:ModelNegotiation ;
+
+  mfr:capabilities [
+    mfr:extractsEntities true ;
+    mfr:identifiesGoals true ;
+    mfr:generatesNaturalLanguageExplanations true ;
+    mfr:contributionTypes mfr:EntityDiscovery, mfr:GoalIdentification
+  ] ;
 
   agent:xmppAccount [
     a xmpp:Account ;

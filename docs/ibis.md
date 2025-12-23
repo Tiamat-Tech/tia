@@ -11,6 +11,13 @@ This project can detect and surface IBIS (Issue-Based Information System) struct
 - Mention the bot with Issue/Position/Argument language, e.g.:
   - “Issue: How should we handle authentication? I propose OAuth2 because it is standard, but the downside is complexity.”
   - “Position: Use X. Argument: It’s faster.”
+- Shorthand labels also work:
+  - `I:` / `Issue:` for issues
+  - `P:` / `Position:` for positions
+  - `A:` / `Arg:` / `Argument:` for arguments
+  - `S:` / `Support:` for supporting arguments
+  - `O:` / `Objection:` / `Oppose:` for objections
+- `A:` is neutral by default; the detector infers support vs objection from nearby words (e.g., “because” → support, “however” → objection).
 - Lingue runs automatically when `LINGUE_ENABLED=true` (default).
 
 ## Configuration

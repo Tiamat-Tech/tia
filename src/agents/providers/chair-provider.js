@@ -48,8 +48,8 @@ export class ChairProvider {
     }
 
     const lower = text.toLowerCase();
-    if (lower.includes("start debate") || lower.startsWith("issue:")) {
-      this.currentIssue = text.replace(/^issue:\s*/i, "").trim() || text;
+    if (lower.includes("start debate") || lower.startsWith("issue:") || lower.startsWith("i:")) {
+      this.currentIssue = text.replace(/^(issue|i):\s*/i, "").trim() || text;
       this.positions = [];
       this.arguments = [];
       return `Debate started. Issue: ${this.currentIssue}\nPlease provide Positions and Arguments.`;

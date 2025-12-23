@@ -8,16 +8,26 @@
 @prefix lng: <http://purl.org/stuff/lingue/> .
 @prefix ibis: <https://vocab.methodandstructure.com/ibis#> .
 @prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix mfr: <http://purl.org/stuff/mfr/> .
 
-<#semem> a agent:ConversationalAgent, agent:KnowledgeAgent, lng:Agent ;
+<#semem> a agent:ConversationalAgent, agent:KnowledgeAgent, lng:Agent, mfr:SemanticReasoningAgent ;
   foaf:nick "Semem" ;
   schema:identifier "semem" ;
   dcterms:created "2024-12-01T00:00:00Z"^^xsd:dateTime ;
 
-  lng:supports lng:HumanChat, lng:IBISText, lng:AgentProfileExchange ;
+  lng:supports lng:HumanChat, lng:IBISText, lng:AgentProfileExchange, lng:ModelFirstRDF, lng:ModelNegotiation, lng:ShaclValidation ;
   lng:prefers lng:HumanChat ;
   lng:understands <https://vocab.methodandstructure.com/ibis#> ;
   lng:profile <#semem-lingue-profile> ;
+
+  mfr:capabilities [
+    mfr:identifiesConstraints true ;
+    mfr:detectsConflicts true ;
+    mfr:validatesConsistency true ;
+    mfr:extractsDomainRules true ;
+    mfr:assessesReasoningReadiness true ;
+    mfr:contributionTypes mfr:ConstraintDefinition, mfr:ConflictDetection, mfr:DomainRules, mfr:ConsistencyValidation
+  ] ;
 
   agent:xmppAccount [
     a xmpp:Account ;

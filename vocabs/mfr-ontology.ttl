@@ -1,0 +1,455 @@
+@prefix mfr: <http://purl.org/stuff/mfr/> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix schema: <http://schema.org/> .
+
+# ========================================
+# Model-First Reasoning (MFR) Ontology
+# ========================================
+# Defines the vocabulary for explicit problem modeling in multi-agent systems
+
+<http://purl.org/stuff/mfr/>
+  a owl:Ontology ;
+  dcterms:title "Model-First Reasoning Ontology" ;
+  dcterms:description "Vocabulary for collaborative problem model construction and constrained reasoning in multi-agent systems" ;
+  dcterms:created "2025-12-22"^^xsd:date ;
+  owl:versionInfo "0.1.0" .
+
+# ========================================
+# Core Classes
+# ========================================
+
+mfr:ProblemModel
+  a owl:Class ;
+  rdfs:label "Problem Model" ;
+  rdfs:comment "An explicit representation of a problem space, including entities, actions, constraints, and goals" .
+
+mfr:Entity
+  a owl:Class ;
+  rdfs:label "Entity" ;
+  rdfs:comment "An object in the problem space (e.g., patient, drug, location, vehicle)" .
+
+mfr:StateVariable
+  a owl:Class ;
+  rdfs:label "State Variable" ;
+  rdfs:comment "A mutable property of an entity that can change over time" .
+
+mfr:Action
+  a owl:Class ;
+  rdfs:label "Action" ;
+  rdfs:comment "A transformation that can be applied to entities, subject to preconditions and producing effects" .
+
+mfr:Precondition
+  a owl:Class ;
+  rdfs:label "Precondition" ;
+  rdfs:comment "A condition that must be true before an action can be executed" .
+
+mfr:Effect
+  a owl:Class ;
+  rdfs:label "Effect" ;
+  rdfs:comment "A change to the problem state resulting from an action" .
+
+mfr:Constraint
+  a owl:Class ;
+  rdfs:label "Constraint" ;
+  rdfs:comment "An invariant that must hold in valid problem states and solutions" .
+
+mfr:Goal
+  a owl:Class ;
+  rdfs:label "Goal" ;
+  rdfs:comment "A desired state or outcome to be achieved" .
+
+mfr:Solution
+  a owl:Class ;
+  rdfs:label "Solution" ;
+  rdfs:comment "A proposed answer that satisfies the problem model constraints and achieves the goals" .
+
+mfr:Contribution
+  a owl:Class ;
+  rdfs:label "Contribution" ;
+  rdfs:comment "A fragment of a problem model contributed by a specific agent" .
+
+mfr:ValidationReport
+  a owl:Class ;
+  rdfs:label "Validation Report" ;
+  rdfs:comment "Results of validating a problem model or solution against constraints" .
+
+mfr:Conflict
+  a owl:Class ;
+  rdfs:label "Conflict" ;
+  rdfs:comment "A contradiction or inconsistency detected in a problem model" .
+
+# ========================================
+# Problem Model Structure Properties
+# ========================================
+
+mfr:hasEntity
+  a owl:ObjectProperty ;
+  rdfs:label "has entity" ;
+  rdfs:domain mfr:ProblemModel ;
+  rdfs:range mfr:Entity ;
+  rdfs:comment "Links a problem model to its entities" .
+
+mfr:hasStateVariable
+  a owl:ObjectProperty ;
+  rdfs:label "has state variable" ;
+  rdfs:domain mfr:Entity ;
+  rdfs:range mfr:StateVariable ;
+  rdfs:comment "Links an entity to its mutable state variables" .
+
+mfr:hasAction
+  a owl:ObjectProperty ;
+  rdfs:label "has action" ;
+  rdfs:domain mfr:ProblemModel ;
+  rdfs:range mfr:Action ;
+  rdfs:comment "Links a problem model to its available actions" .
+
+mfr:hasPrecondition
+  a owl:ObjectProperty ;
+  rdfs:label "has precondition" ;
+  rdfs:domain mfr:Action ;
+  rdfs:range mfr:Precondition ;
+  rdfs:comment "Links an action to its preconditions" .
+
+mfr:hasEffect
+  a owl:ObjectProperty ;
+  rdfs:label "has effect" ;
+  rdfs:domain mfr:Action ;
+  rdfs:range mfr:Effect ;
+  rdfs:comment "Links an action to its effects" .
+
+mfr:hasConstraint
+  a owl:ObjectProperty ;
+  rdfs:label "has constraint" ;
+  rdfs:domain mfr:ProblemModel ;
+  rdfs:range mfr:Constraint ;
+  rdfs:comment "Links a problem model to its constraints" .
+
+mfr:hasGoal
+  a owl:ObjectProperty ;
+  rdfs:label "has goal" ;
+  rdfs:domain mfr:ProblemModel ;
+  rdfs:range mfr:Goal ;
+  rdfs:comment "Links a problem model to its goals" .
+
+mfr:hasSolution
+  a owl:ObjectProperty ;
+  rdfs:label "has solution" ;
+  rdfs:domain mfr:ProblemModel ;
+  rdfs:range mfr:Solution ;
+  rdfs:comment "Links a problem model to proposed solutions" .
+
+# ========================================
+# Provenance and Collaboration Properties
+# ========================================
+
+mfr:contributedBy
+  a owl:ObjectProperty ;
+  rdfs:label "contributed by" ;
+  rdfs:domain mfr:Contribution ;
+  rdfs:comment "Links a contribution to the agent that created it" .
+
+mfr:contributesTo
+  a owl:ObjectProperty ;
+  rdfs:label "contributes to" ;
+  rdfs:domain mfr:Contribution ;
+  rdfs:range mfr:ProblemModel ;
+  rdfs:comment "Links a contribution to the problem model it belongs to" .
+
+mfr:validatedBy
+  a owl:ObjectProperty ;
+  rdfs:label "validated by" ;
+  rdfs:domain mfr:ValidationReport ;
+  rdfs:comment "Links a validation report to the agent that performed validation" .
+
+mfr:validates
+  a owl:ObjectProperty ;
+  rdfs:label "validates" ;
+  rdfs:domain mfr:ValidationReport ;
+  rdfs:comment "Links a validation report to the artifact being validated" .
+
+# ========================================
+# Constraint Properties
+# ========================================
+
+mfr:constraintType
+  a owl:ObjectProperty ;
+  rdfs:label "constraint type" ;
+  rdfs:domain mfr:Constraint ;
+  rdfs:comment "Specifies the type of constraint (temporal, capacity, incompatibility, etc.)" .
+
+mfr:appliesTo
+  a owl:ObjectProperty ;
+  rdfs:label "applies to" ;
+  rdfs:domain mfr:Constraint ;
+  rdfs:comment "Links a constraint to the entities, actions, or states it applies to" .
+
+mfr:constraintExpression
+  a owl:DatatypeProperty ;
+  rdfs:label "constraint expression" ;
+  rdfs:domain mfr:Constraint ;
+  rdfs:range xsd:string ;
+  rdfs:comment "A formal expression of the constraint (e.g., Prolog rule, SPARQL query, logic formula)" .
+
+# ========================================
+# Action Properties
+# ========================================
+
+mfr:actionName
+  a owl:DatatypeProperty ;
+  rdfs:label "action name" ;
+  rdfs:domain mfr:Action ;
+  rdfs:range xsd:string ;
+  rdfs:comment "The name of the action" .
+
+mfr:actionParameter
+  a owl:ObjectProperty ;
+  rdfs:label "action parameter" ;
+  rdfs:domain mfr:Action ;
+  rdfs:comment "Links an action to its parameters" .
+
+mfr:expression
+  a owl:DatatypeProperty ;
+  rdfs:label "expression" ;
+  rdfs:range xsd:string ;
+  rdfs:comment "A formal expression (precondition, effect, constraint, etc.)" .
+
+# ========================================
+# Entity Properties
+# ========================================
+
+mfr:entityType
+  a owl:ObjectProperty ;
+  rdfs:label "entity type" ;
+  rdfs:domain mfr:Entity ;
+  rdfs:comment "The type or class of the entity (e.g., schema:Patient, schema:Drug)" .
+
+mfr:groundedAs
+  a owl:ObjectProperty ;
+  rdfs:label "grounded as" ;
+  rdfs:domain mfr:Entity ;
+  rdfs:comment "Links an entity to its grounded representation in an external knowledge base (e.g., Wikidata URI)" .
+
+# ========================================
+# Solution Properties
+# ========================================
+
+mfr:satisfiesConstraint
+  a owl:ObjectProperty ;
+  rdfs:label "satisfies constraint" ;
+  rdfs:domain mfr:Solution ;
+  rdfs:range mfr:Constraint ;
+  rdfs:comment "Indicates that a solution satisfies a specific constraint" .
+
+mfr:achievesGoal
+  a owl:ObjectProperty ;
+  rdfs:label "achieves goal" ;
+  rdfs:domain mfr:Solution ;
+  rdfs:range mfr:Goal ;
+  rdfs:comment "Indicates that a solution achieves a specific goal" .
+
+mfr:assignment
+  a owl:ObjectProperty ;
+  rdfs:label "assignment" ;
+  rdfs:domain mfr:Solution ;
+  rdfs:comment "Links a solution to specific variable assignments or action sequences" .
+
+mfr:qualityScore
+  a owl:DatatypeProperty ;
+  rdfs:label "quality score" ;
+  rdfs:domain mfr:Solution ;
+  rdfs:range xsd:decimal ;
+  rdfs:comment "A numeric score indicating solution quality or optimality" .
+
+# ========================================
+# Validation Properties
+# ========================================
+
+mfr:conforms
+  a owl:DatatypeProperty ;
+  rdfs:label "conforms" ;
+  rdfs:domain mfr:ValidationReport ;
+  rdfs:range xsd:boolean ;
+  rdfs:comment "Indicates whether validation passed (true) or failed (false)" .
+
+mfr:hasViolation
+  a owl:ObjectProperty ;
+  rdfs:label "has violation" ;
+  rdfs:domain mfr:ValidationReport ;
+  rdfs:comment "Links a validation report to specific constraint violations" .
+
+mfr:hasConflict
+  a owl:ObjectProperty ;
+  rdfs:label "has conflict" ;
+  rdfs:domain mfr:ProblemModel ;
+  rdfs:range mfr:Conflict ;
+  rdfs:comment "Links a problem model to detected conflicts" .
+
+mfr:conflictBetween
+  a owl:ObjectProperty ;
+  rdfs:label "conflict between" ;
+  rdfs:domain mfr:Conflict ;
+  rdfs:comment "Links a conflict to the conflicting assertions or contributions" .
+
+# ========================================
+# Protocol and Session Properties
+# ========================================
+
+mfr:sessionId
+  a owl:DatatypeProperty ;
+  rdfs:label "session ID" ;
+  rdfs:range xsd:string ;
+  rdfs:comment "Unique identifier for an MFR session" .
+
+mfr:problemDescription
+  a owl:DatatypeProperty ;
+  rdfs:label "problem description" ;
+  rdfs:domain mfr:ProblemModel ;
+  rdfs:range xsd:string ;
+  rdfs:comment "Natural language description of the problem" .
+
+mfr:timestamp
+  a owl:DatatypeProperty ;
+  rdfs:label "timestamp" ;
+  rdfs:range xsd:dateTime ;
+  rdfs:comment "Timestamp for contributions, validations, solutions, etc." .
+
+mfr:phase
+  a owl:DatatypeProperty ;
+  rdfs:label "phase" ;
+  rdfs:range xsd:string ;
+  rdfs:comment "Current protocol phase (initialization, entity_discovery, reasoning, etc.)" .
+
+# ========================================
+# Constraint Type Individuals
+# ========================================
+
+mfr:TemporalConstraint
+  a owl:Class ;
+  rdfs:subClassOf mfr:Constraint ;
+  rdfs:label "Temporal Constraint" ;
+  rdfs:comment "Constraint involving time ordering or duration" .
+
+mfr:CapacityConstraint
+  a owl:Class ;
+  rdfs:subClassOf mfr:Constraint ;
+  rdfs:label "Capacity Constraint" ;
+  rdfs:comment "Constraint involving resource limits or capacities" .
+
+mfr:IncompatibilityConstraint
+  a owl:Class ;
+  rdfs:subClassOf mfr:Constraint ;
+  rdfs:label "Incompatibility Constraint" ;
+  rdfs:comment "Constraint specifying that certain entities or actions cannot co-occur" .
+
+mfr:LogicalConstraint
+  a owl:Class ;
+  rdfs:subClassOf mfr:Constraint ;
+  rdfs:label "Logical Constraint" ;
+  rdfs:comment "Constraint expressed as a logical formula" .
+
+mfr:SemanticConstraint
+  a owl:Class ;
+  rdfs:subClassOf mfr:Constraint ;
+  rdfs:label "Semantic Constraint" ;
+  rdfs:comment "Constraint derived from ontological or semantic relationships" .
+
+# ========================================
+# Agent Role Classes (for MFR protocol)
+# ========================================
+
+mfr:Coordinator
+  a owl:Class ;
+  rdfs:label "Coordinator Agent" ;
+  rdfs:comment "Agent responsible for orchestrating MFR protocol and model validation" .
+
+mfr:EntityExtractor
+  a owl:Class ;
+  rdfs:label "Entity Extractor Agent" ;
+  rdfs:comment "Agent that extracts entities and goals from natural language descriptions" .
+
+mfr:KnowledgeGrounder
+  a owl:Class ;
+  rdfs:label "Knowledge Grounder Agent" ;
+  rdfs:comment "Agent that grounds entities in external knowledge bases" .
+
+mfr:ConstraintReasoner
+  a owl:Class ;
+  rdfs:label "Constraint Reasoner Agent" ;
+  rdfs:comment "Agent that identifies and validates constraints" .
+
+mfr:ActionModeler
+  a owl:Class ;
+  rdfs:label "Action Modeler Agent" ;
+  rdfs:comment "Agent that defines actions with preconditions and effects" .
+
+# ========================================
+# MFR Protocol Phase Individuals
+# ========================================
+
+mfr:ModelConstruction
+  a owl:NamedIndividual ;
+  rdfs:label "Model Construction Phase" ;
+  rdfs:comment "Phase 1 of MFR protocol where agents collaboratively build the problem model" .
+
+mfr:ModelValidation
+  a owl:NamedIndividual ;
+  rdfs:label "Model Validation Phase" ;
+  rdfs:comment "Validation and conflict resolution phase" .
+
+mfr:ConstrainedReasoning
+  a owl:NamedIndividual ;
+  rdfs:label "Constrained Reasoning Phase" ;
+  rdfs:comment "Phase 2 of MFR protocol where agents reason within the validated model" .
+
+# ========================================
+# Contribution Type Individuals
+# ========================================
+
+mfr:EntityDiscovery
+  a owl:NamedIndividual ;
+  rdfs:label "Entity Discovery" ;
+  rdfs:comment "Contribution type: identifying entities in the problem space" .
+
+mfr:EntityGrounding
+  a owl:NamedIndividual ;
+  rdfs:label "Entity Grounding" ;
+  rdfs:comment "Contribution type: linking entities to knowledge base URIs" .
+
+mfr:GoalIdentification
+  a owl:NamedIndividual ;
+  rdfs:label "Goal Identification" ;
+  rdfs:comment "Contribution type: identifying problem goals" .
+
+mfr:ConstraintIdentification
+  a owl:NamedIndividual ;
+  rdfs:label "Constraint Identification" ;
+  rdfs:comment "Contribution type: identifying problem constraints" .
+
+mfr:ActionDefinition
+  a owl:NamedIndividual ;
+  rdfs:label "Action Definition" ;
+  rdfs:comment "Contribution type: defining available actions" .
+
+mfr:StateValidation
+  a owl:NamedIndividual ;
+  rdfs:label "State Validation" ;
+  rdfs:comment "Contribution type: validating state transitions" .
+
+mfr:SolutionExplanation
+  a owl:NamedIndividual ;
+  rdfs:label "Solution Explanation" ;
+  rdfs:comment "Contribution type: generating natural language explanations" .
+
+mfr:OntologyValidation
+  a owl:NamedIndividual ;
+  rdfs:label "Ontology Validation" ;
+  rdfs:comment "Contribution type: checking ontological consistency" .
+
+mfr:RelationshipDiscovery
+  a owl:NamedIndividual ;
+  rdfs:label "Relationship Discovery" ;
+  rdfs:comment "Contribution type: discovering relationships between entities" .

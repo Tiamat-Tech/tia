@@ -6,7 +6,11 @@ export const LANGUAGE_MODES = {
   IBIS_TEXT: `${LINGUE_NS}IBISText`,
   PROLOG_PROGRAM: `${LINGUE_NS}PrologProgram`,
   PROFILE_EXCHANGE: `${LINGUE_NS}AgentProfileExchange`,
-  SPARQL_QUERY: `${LINGUE_NS}SparqlQuery`
+  SPARQL_QUERY: `${LINGUE_NS}SparqlQuery`,
+  // MFR (Model-First Reasoning) modes
+  MODEL_FIRST_RDF: `${LINGUE_NS}ModelFirstRDF`,
+  MODEL_NEGOTIATION: `${LINGUE_NS}ModelNegotiation`,
+  SHACL_VALIDATION: `${LINGUE_NS}ShaclValidation`
 };
 
 export const FEATURES = {
@@ -14,7 +18,11 @@ export const FEATURES = {
   LANG_IBIS_TEXT: `${LINGUE_NS}feature/lang/ibis-text`,
   LANG_PROLOG_PROGRAM: `${LINGUE_NS}feature/lang/prolog-program`,
   LANG_PROFILE_EXCHANGE: `${LINGUE_NS}feature/lang/profile-exchange`,
-  LANG_SPARQL_QUERY: `${LINGUE_NS}feature/lang/sparql-query`
+  LANG_SPARQL_QUERY: `${LINGUE_NS}feature/lang/sparql-query`,
+  // MFR features
+  LANG_MODEL_FIRST_RDF: `${LINGUE_NS}feature/lang/model-first-rdf`,
+  LANG_MODEL_NEGOTIATION: `${LINGUE_NS}feature/lang/model-negotiation`,
+  LANG_SHACL_VALIDATION: `${LINGUE_NS}feature/lang/shacl-validation`
 };
 
 export const MIME_TYPES = {
@@ -22,7 +30,11 @@ export const MIME_TYPES = {
   IBIS_TEXT: "text/plain",
   PROLOG_PROGRAM: "text/x-prolog",
   PROFILE_EXCHANGE: "text/turtle",
-  SPARQL_QUERY: "application/sparql-query"
+  SPARQL_QUERY: "application/sparql-query",
+  // MFR MIME types
+  MODEL_FIRST_RDF: "text/turtle",
+  MODEL_NEGOTIATION: "application/json",
+  SHACL_VALIDATION: "application/json"
 };
 
 export const MODE_TO_FEATURE = {
@@ -30,7 +42,11 @@ export const MODE_TO_FEATURE = {
   [LANGUAGE_MODES.IBIS_TEXT]: FEATURES.LANG_IBIS_TEXT,
   [LANGUAGE_MODES.PROLOG_PROGRAM]: FEATURES.LANG_PROLOG_PROGRAM,
   [LANGUAGE_MODES.PROFILE_EXCHANGE]: FEATURES.LANG_PROFILE_EXCHANGE,
-  [LANGUAGE_MODES.SPARQL_QUERY]: FEATURES.LANG_SPARQL_QUERY
+  [LANGUAGE_MODES.SPARQL_QUERY]: FEATURES.LANG_SPARQL_QUERY,
+  // MFR mode-to-feature mappings
+  [LANGUAGE_MODES.MODEL_FIRST_RDF]: FEATURES.LANG_MODEL_FIRST_RDF,
+  [LANGUAGE_MODES.MODEL_NEGOTIATION]: FEATURES.LANG_MODEL_NEGOTIATION,
+  [LANGUAGE_MODES.SHACL_VALIDATION]: FEATURES.LANG_SHACL_VALIDATION
 };
 
 export function featuresForModes(modes = []) {
@@ -45,6 +61,8 @@ export const MODE_BY_MIME = {
   [MIME_TYPES.IBIS_TEXT]: LANGUAGE_MODES.IBIS_TEXT,
   [MIME_TYPES.PROFILE_EXCHANGE]: LANGUAGE_MODES.PROFILE_EXCHANGE,
   [MIME_TYPES.SPARQL_QUERY]: LANGUAGE_MODES.SPARQL_QUERY
+  // Note: MFR modes share MIME types with existing modes (turtle, json)
+  // They are distinguished by explicit mode specification in Lingue protocol
 };
 
 export function modeFromMime(mimeType) {

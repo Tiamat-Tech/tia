@@ -1,0 +1,72 @@
+@prefix agent: <https://tensegrity.it/vocab/agent#> .
+@prefix foaf: <http://xmlns.com/foaf/0.1/> .
+@prefix schema: <https://schema.org/> .
+@prefix xmpp: <https://tensegrity.it/vocab/xmpp#> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+@prefix lng: <http://purl.org/stuff/lingue/> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix mfr: <http://purl.org/stuff/mfr/> .
+
+<#coordinator> a agent:ConversationalAgent, mfr:Coordinator, lng:Agent ;
+  foaf:nick "Coordinator" ;
+  schema:identifier "coordinator" ;
+  dcterms:created "2025-12-22T00:00:00Z"^^xsd:dateTime ;
+  dcterms:description "MFR protocol coordinator for orchestrating collaborative model construction and constrained reasoning" ;
+
+  # Lingue protocol support
+  lng:supports lng:HumanChat, lng:ModelFirstRDF, lng:ModelNegotiation, lng:ShaclValidation ;
+  lng:prefers lng:ModelFirstRDF ;
+  lng:profile <#coordinator-lingue-profile> ;
+
+  # XMPP configuration
+  agent:xmppAccount [
+    a xmpp:Account ;
+    xmpp:service "xmpp://tensegrity.it:5222" ;
+    xmpp:domain "tensegrity.it" ;
+    xmpp:username "coordinator" ;
+    xmpp:passwordKey "coordinator" ;
+    xmpp:resource "Coordinator"
+  ] ;
+
+  # Primary room for receiving user requests
+  agent:roomJid "general@conference.tensegrity.it" ;
+
+  # MFR-specific configuration
+  agent:mfrConfig [
+    a mfr:CoordinatorConfig ;
+    mfr:shapesPath "vocabs/mfr-shapes.ttl" ;
+    mfr:enableMultiRoom "true"^^xsd:boolean ;
+    mfr:contributionTimeout "30000"^^xsd:integer ;
+    mfr:validationTimeout "10000"^^xsd:integer ;
+    mfr:reasoningTimeout "60000"^^xsd:integer
+  ] ;
+
+  # MFR rooms configuration
+  agent:mfrRooms [
+    mfr:constructRoom "mfr-construct@conference.tensegrity.it" ;
+    mfr:validateRoom "mfr-validate@conference.tensegrity.it" ;
+    mfr:reasonRoom "mfr-reason@conference.tensegrity.it"
+  ] ;
+
+  # Orchestrated phases
+  mfr:orchestratesPhases
+    mfr:ModelConstruction,
+    mfr:ModelValidation,
+    mfr:ConstrainedReasoning .
+
+<#coordinator-lingue-profile> a lng:Profile ;
+  lng:availability lng:Process ;
+  lng:in [
+    a lng:Interface ;
+    rdfs:label "XMPP MUC text + RDF models + negotiation messages"
+  ] ;
+  lng:out [
+    a lng:Interface ;
+    rdfs:label "XMPP MUC orchestration + validation reports + synthesis results"
+  ] ;
+  lng:dependsOn
+    [ a lng:Environment ; rdfs:label "XMPP/Prosody" ],
+    [ a lng:Environment ; rdfs:label "MFR agents (Mistral, Data, Prolog, Semem)" ],
+    [ a lng:Environment ; rdfs:label "SHACL validator" ] ;
+  lng:alang "JavaScript" .

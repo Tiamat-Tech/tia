@@ -1,0 +1,25 @@
+{
+    "output": {
+        "filePath": "./tia_repomix.md",
+        "headerText": "TIA repo",
+        "removeComments": true
+    },
+    "ignore": {
+        "useDefaultPatterns": true,
+        "customPatterns": [
+            "dist",
+            "docs/postcraft",
+            "docs/docs",
+            "docs/kia",
+            ".env",
+            "knowledge",
+            "**/_*/**",
+            "**/webpack/*",
+            "*.log",
+            "**/*repopack*",
+            "**/*repomix*",
+            "**/*old*",
+            "**/*prompt*"
+        ]
+    }
+}

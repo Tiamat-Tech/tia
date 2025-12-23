@@ -8,16 +8,24 @@
 @prefix lng: <http://purl.org/stuff/lingue/> .
 @prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
 @prefix mcp: <http://purl.org/stuff/mcp/> .
+@prefix mfr: <http://purl.org/stuff/mfr/> .
 
-<#data> a agent:ConversationalAgent, agent:KnowledgeAgent, lng:Agent, mcp:Client ;
+<#data> a agent:ConversationalAgent, agent:KnowledgeAgent, lng:Agent, mcp:Client, mfr:KnowledgeQueryAgent ;
   foaf:nick "Data" ;
   schema:identifier "data" ;
   dcterms:created "2025-12-22T00:00:00Z"^^xsd:dateTime ;
   dcterms:description "SPARQL query agent for Wikidata and other knowledge endpoints" ;
 
-  lng:supports lng:HumanChat, lng:SparqlQuery ;
+  lng:supports lng:HumanChat, lng:SparqlQuery, lng:ModelFirstRDF, lng:ModelNegotiation ;
   lng:prefers lng:SparqlQuery ;
   lng:profile <#data-lingue-profile> ;
+
+  mfr:capabilities [
+    mfr:groundsEntities true ;
+    mfr:discoversRelationships true ;
+    mfr:linksToWikidata true ;
+    mfr:contributionTypes mfr:EntityDiscovery, mfr:EntityGrounding, mfr:RelationshipDiscovery
+  ] ;
 
   agent:xmppAccount [
     a xmpp:Account ;

@@ -47,3 +47,13 @@ test("serializes and parses IBIS RDF using rdf-ext", async () => {
   assert.equal(roundTrip.positions[0].label, "Use XMPP");
   assert.equal(roundTrip.arguments[0].stance, "support");
 });
+
+test("infers stance for shorthand arguments", () => {
+  const support = detectIBISStructure("Issue: X. A: because it works.");
+  const objection = detectIBISStructure("Issue: X. A: however it is risky.");
+  const neutral = detectIBISStructure("Issue: X. A: needs more data.");
+
+  assert.equal(support.arguments[0]?.stance, "support");
+  assert.equal(objection.arguments[0]?.stance, "object");
+  assert.equal(neutral.arguments[0]?.stance, "neutral");
+});

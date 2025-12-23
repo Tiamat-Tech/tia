@@ -214,6 +214,296 @@ LIMIT 5
 
     return `Error executing query. Please try again or rephrase your request.`;
   }
+
+  // ========================================
+  // MFR (Model-First Reasoning) Methods
+  // ========================================
+
+  /**
+   * Ground an entity by finding its Wikidata URI and properties
+   * @param {string} entityName - Entity name to ground
+   * @returns {Promise<Object|null>} Grounded entity with URI and properties
+   */
+  async groundEntity(entityName) {
+    try {
+      this.logger.debug?.(`[DataProvider] Grounding entity: ${entityName}`);
+
+      const query = this.buildWikidataQuery(entityName);
+      const result = await this.mcpBridge.callTool("sparqlQuery", {
+        query,
+        endpoint: this.endpoint
+      });
+
+      const jsonText = result.content[0].text;
+      const parsed = JSON.parse(jsonText);
+      const bindings = parsed.results?.bindings || [];
+
+      if (bindings.length === 0) {
+        this.logger.debug?.(`[DataProvider] No Wikidata match for: ${entityName}`);
+        return null;
+      }
+
+      // Take the first result as the most likely match
+      const binding = bindings[0];
+      return {
+        name: entityName,
+        uri: binding.item?.value,
+        label: binding.itemLabel?.value,
+        description: binding.description?.value,
+        type: binding.instanceOfLabel?.value,
+        typeUri: binding.instanceOf?.value
+      };
+    } catch (error) {
+      this.logger.error?.(`[DataProvider] Entity grounding error for "${entityName}": ${error.message}`);
+      return null;
+    }
+  }
+
+  /**
+   * Get relationships for a grounded entity
+   * @param {string} entityUri - Wikidata entity URI
+   * @returns {Promise<Array<Object>>} Array of relationships
+   */
+  async getEntityRelationships(entityUri) {
+    try {
+      this.logger.debug?.(`[DataProvider] Getting relationships for: ${entityUri}`);
+
+      // Extract entity ID from URI (e.g., http://www.wikidata.org/entity/Q937 -> Q937)
+      const entityId = entityUri.split('/').pop();
+
+      const query = `
+PREFIX wd: <http://www.wikidata.org/entity/>
+PREFIX wdt: <http://www.wikidata.org/prop/direct/>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+
+SELECT ?property ?propertyLabel ?value ?valueLabel WHERE {
+  wd:${entityId} ?property ?value .
+  ?property rdfs:label ?propertyLabel .
+  FILTER(LANG(?propertyLabel) = "en")
+  OPTIONAL { ?value rdfs:label ?valueLabel . FILTER(LANG(?valueLabel) = "en") }
+  FILTER(STRSTARTS(STR(?property), "http://www.wikidata.org/prop/direct/"))
+}
+LIMIT 20
+      `.trim();
+
+      const result = await this.mcpBridge.callTool("sparqlQuery", {
+        query,
+        endpoint: this.endpoint
+      });
+
+      const jsonText = result.content[0].text;
+      const parsed = JSON.parse(jsonText);
+      const bindings = parsed.results?.bindings || [];
+
+      return bindings.map(binding => ({
+        property: binding.property?.value,
+        propertyLabel: binding.propertyLabel?.value,
+        value: binding.value?.value,
+        valueLabel: binding.valueLabel?.value
+      }));
+    } catch (error) {
+      this.logger.error?.(`[DataProvider] Relationship query error: ${error.message}`);
+      return [];
+    }
+  }
+
+  /**
+   * Generate RDF representation of grounded entities
+   * @param {Array<Object>} entities - Entities to ground and convert to RDF
+   * @param {string} sessionId - MFR session ID
+   * @returns {Promise<string>} RDF in Turtle format
+   */
+  async generateEntityRdf(entities, sessionId = "unknown") {
+    const MFR_NS = "http://purl.org/stuff/mfr/";
+    const SCHEMA_NS = "http://schema.org/";
+    const WD_NS = "http://www.wikidata.org/entity/";
+
+    const lines = [
+      `@prefix mfr: <${MFR_NS}> .`,
+      `@prefix schema: <${SCHEMA_NS}> .`,
+      `@prefix wd: <${WD_NS}> .`,
+      `@prefix owl: <http://www.w3.org/2002/07/owl#> .`,
+      `@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .`,
+      ``,
+      `# Grounded entities from ${this.nickname} for session ${sessionId}`,
+      ``
+    ];
+
+    for (let i = 0; i < entities.length; i++) {
+      const entity = entities[i];
+      const entityId = `entity-${i + 1}`;
+      const entityUri = `<${MFR_NS}${sessionId}/${entityId}>`;
+
+      // Try to ground the entity
+      const grounded = await this.groundEntity(entity.name || entity);
+
+      lines.push(`${entityUri} a mfr:Entity ;`);
+      lines.push(`  schema:name "${entity.name || entity}" ;`);
+
+      if (grounded) {
+        lines.push(`  owl:sameAs <${grounded.uri}> ;`);
+
+        if (grounded.label) {
+          lines.push(`  rdfs:label "${grounded.label}" ;`);
+        }
+
+        if (grounded.description) {
+          lines.push(`  rdfs:comment "${grounded.description}" ;`);
+        }
+
+        if (grounded.typeUri) {
+          lines.push(`  mfr:hasType <${grounded.typeUri}> ;`);
+        }
+
+        lines.push(`  mfr:groundedBy "${this.nickname}" ;`);
+        lines.push(`  mfr:wikidataEntity <${grounded.uri}> ;`);
+      } else {
+        lines.push(`  mfr:groundingStatus "ungrounded" ;`);
+      }
+
+      lines.push(`  mfr:contributedBy "${this.nickname}" .`);
+      lines.push(``);
+    }
+
+    return lines.join('\n');
+  }
+
+  /**
+   * Generate RDF representation of entity relationships
+   * @param {Array<Object>} groundedEntities - Grounded entities with URIs
+   * @param {string} sessionId - MFR session ID
+   * @returns {Promise<string>} RDF in Turtle format
+   */
+  async generateRelationshipRdf(groundedEntities, sessionId = "unknown") {
+    const MFR_NS = "http://purl.org/stuff/mfr/";
+    const lines = [
+      `@prefix mfr: <${MFR_NS}> .`,
+      `@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .`,
+      ``,
+      `# Entity relationships from ${this.nickname} for session ${sessionId}`,
+      ``
+    ];
+
+    for (const entity of groundedEntities) {
+      if (!entity.uri) continue;
+
+      const relationships = await this.getEntityRelationships(entity.uri);
+
+      if (relationships.length === 0) continue;
+
+      lines.push(`# Relationships for ${entity.name}`);
+
+      for (let i = 0; i < Math.min(relationships.length, 5); i++) {
+        const rel = relationships[i];
+        const relId = `rel-${Date.now()}-${i}`;
+        const relUri = `<${MFR_NS}${sessionId}/${relId}>`;
+
+        lines.push(`${relUri} a mfr:Relationship ;`);
+        lines.push(`  mfr:subject <${entity.uri}> ;`);
+        lines.push(`  mfr:predicate <${rel.property}> ;`);
+
+        if (rel.propertyLabel) {
+          lines.push(`  mfr:predicateLabel "${rel.propertyLabel}" ;`);
+        }
+
+        if (rel.valueLabel) {
+          lines.push(`  mfr:objectLabel "${rel.valueLabel}" ;`);
+        }
+
+        lines.push(`  mfr:contributedBy "${this.nickname}" .`);
+        lines.push(``);
+      }
+    }
+
+    return lines.join('\n');
+  }
+
+  /**
+   * Handle MFR contribution request
+   * @param {Object} request - Contribution request message
+   * @returns {Promise<string>} RDF contribution
+   */
+  async handleMfrContributionRequest(request) {
+    const { sessionId, problemDescription, requestedContributions } = request;
+
+    this.logger.info?.(`[DataProvider] Handling MFR contribution request for ${sessionId}`);
+
+    const contributions = [];
+
+    // Check if entity discovery is requested
+    if (requestedContributions?.includes("http://purl.org/stuff/mfr/EntityDiscovery")) {
+      // Extract entities from problem description using Mistral
+      await this.initMistral();
+
+      if (this.mistralClient) {
+        try {
+          const entities = await this.extractEntitiesForMfr(problemDescription);
+          if (entities.length > 0) {
+            const entityRdf = await this.generateEntityRdf(entities, sessionId);
+            contributions.push(entityRdf);
+
+            // Also get relationships for grounded entities
+            const groundedEntities = [];
+            for (const entityName of entities) {
+              const grounded = await this.groundEntity(entityName);
+              if (grounded) {
+                groundedEntities.push(grounded);
+              }
+            }
+
+            if (groundedEntities.length > 0) {
+              const relationshipRdf = await this.generateRelationshipRdf(groundedEntities, sessionId);
+              contributions.push(relationshipRdf);
+            }
+          }
+        } catch (error) {
+          this.logger.error?.(`[DataProvider] MFR entity extraction error: ${error.message}`);
+        }
+      }
+    }
+
+    // Combine all contributions
+    return contributions.join('\n\n');
+  }
+
+  /**
+   * Extract entities from problem description for MFR
+   * @param {string} problemDescription - Natural language problem
+   * @returns {Promise<Array<string>>} Entity names
+   */
+  async extractEntitiesForMfr(problemDescription) {
+    const prompt = `Extract all concrete entities (people, places, things, organizations) from this problem description.
+Return ONLY a JSON array of entity names.
+
+Problem: ${problemDescription}
+
+Format: ["Entity1", "Entity2", "Entity3"]
+
+Respond with ONLY the JSON array, no other text.`;
+
+    const response = await this.mistralClient.chat.complete({
+      model: this.extractionModel,
+      messages: [{ role: "user", content: prompt }],
+      maxTokens: 200,
+      temperature: 0.3
+    });
+
+    const content = response.choices[0]?.message?.content?.trim();
+
+    // Extract JSON from potential markdown code blocks
+    const jsonMatch = content.match(/```(?:json)?\s*([\s\S]*?)\s*```/) ||
+                     content.match(/(\[[\s\S]*\])/);
+    const jsonText = jsonMatch ? jsonMatch[1] : content;
+
+    try {
+      const entities = JSON.parse(jsonText);
+      this.logger.debug?.(`[DataProvider] Extracted ${entities.length} entities for MFR`);
+      return entities;
+    } catch (error) {
+      this.logger.error?.(`[DataProvider] Entity extraction parsing error: ${error.message}`);
+      return [];
+    }
+  }
 }
 
 export default DataProvider;

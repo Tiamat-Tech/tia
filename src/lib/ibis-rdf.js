@@ -40,19 +40,21 @@ export function structureToDataset(structure) {
   (structure.arguments || []).forEach((arg, idx) => {
     const argId = arg.id || `arg-${idx + 1}`;
     const argNode = rdf.namedNode(`#${argId}`);
-    const posTarget =
-      arg.position || (structure.positions || [])[0]?.id || "pos-1";
-    const predicate =
-      arg.stance === "object"
-        ? rdf.namedNode(`${PREFIXES.ibis}objects-to`)
-        : rdf.namedNode(`${PREFIXES.ibis}supports`);
 
     dataset.add(
       rdf.quad(argNode, rdf.namedNode(`${PREFIXES.rdfs}label`), rdf.literal(arg.label || "Argument"))
     );
-    dataset.add(
-      rdf.quad(argNode, predicate, rdf.namedNode(`#${posTarget}`))
-    );
+    if (arg.stance === "support" || arg.stance === "object") {
+      const posTarget =
+        arg.position || (structure.positions || [])[0]?.id || "pos-1";
+      const predicate =
+        arg.stance === "object"
+          ? rdf.namedNode(`${PREFIXES.ibis}objects-to`)
+          : rdf.namedNode(`${PREFIXES.ibis}supports`);
+      dataset.add(
+        rdf.quad(argNode, predicate, rdf.namedNode(`#${posTarget}`))
+      );
+    }
     dataset.add(
       rdf.quad(argNode, rdf.namedNode("http://www.w3.org/1999/02/22-rdf-syntax-ns#type"), rdf.namedNode(`${PREFIXES.ibis}Argument`))
     );
@@ -121,7 +123,7 @@ export function datasetToStructure(dataset) {
         argumentsList.push({
           id: stripHash(quad.subject.value),
           label: quad.object.value,
-          stance: "support",
+          stance: "neutral",
         });
       }
     }

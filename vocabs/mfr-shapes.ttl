@@ -1,0 +1,465 @@
+@prefix mfr: <http://purl.org/stuff/mfr/> .
+@prefix sh: <http://www.w3.org/ns/shacl#> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+@prefix schema: <http://schema.org/> .
+
+# ========================================
+# SHACL Shapes for MFR Model Validation
+# ========================================
+# Ensures problem models are complete and consistent before reasoning
+
+# ========================================
+# Problem Model Shape
+# ========================================
+
+mfr:ProblemModelShape
+  a sh:NodeShape ;
+  sh:targetClass mfr:ProblemModel ;
+  sh:name "Problem Model Shape" ;
+  sh:description "Validates that a problem model has required components" ;
+
+  # Must have at least one entity
+  sh:property [
+    sh:path mfr:hasEntity ;
+    sh:minCount 1 ;
+    sh:class mfr:Entity ;
+    sh:message "Problem model must have at least one entity" ;
+  ] ;
+
+  # Must have a problem description
+  sh:property [
+    sh:path mfr:problemDescription ;
+    sh:minCount 1 ;
+    sh:maxCount 1 ;
+    sh:datatype xsd:string ;
+    sh:message "Problem model must have exactly one problem description" ;
+  ] ;
+
+  # Must have a session ID
+  sh:property [
+    sh:path mfr:sessionId ;
+    sh:minCount 1 ;
+    sh:maxCount 1 ;
+    sh:datatype xsd:string ;
+    sh:message "Problem model must have exactly one session ID" ;
+  ] ;
+
+  # Should have at least one goal
+  sh:property [
+    sh:path mfr:hasGoal ;
+    sh:minCount 1 ;
+    sh:class mfr:Goal ;
+    sh:severity sh:Warning ;
+    sh:message "Problem model should have at least one goal" ;
+  ] ;
+
+  # Should have at least one action
+  sh:property [
+    sh:path mfr:hasAction ;
+    sh:minCount 1 ;
+    sh:class mfr:Action ;
+    sh:severity sh:Warning ;
+    sh:message "Problem model should have at least one action for reasoning" ;
+  ] .
+
+# ========================================
+# Entity Shape
+# ========================================
+
+mfr:EntityShape
+  a sh:NodeShape ;
+  sh:targetClass mfr:Entity ;
+  sh:name "Entity Shape" ;
+  sh:description "Validates entity definitions" ;
+
+  # Must have a type
+  sh:property [
+    sh:path mfr:entityType ;
+    sh:minCount 1 ;
+    sh:message "Entity must have at least one type" ;
+  ] ;
+
+  # Must have a name (via schema:name or rdfs:label)
+  sh:or (
+    [ sh:path schema:name ; sh:minCount 1 ; sh:datatype xsd:string ]
+    [ sh:path rdfs:label ; sh:minCount 1 ; sh:datatype xsd:string ]
+  ) ;
+  sh:message "Entity must have a name (schema:name or rdfs:label)" .
+
+# ========================================
+# Action Shape
+# ========================================
+
+mfr:ActionShape
+  a sh:NodeShape ;
+  sh:targetClass mfr:Action ;
+  sh:name "Action Shape" ;
+  sh:description "Validates action definitions" ;
+
+  # Must have a name
+  sh:property [
+    sh:path mfr:actionName ;
+    sh:minCount 1 ;
+    sh:maxCount 1 ;
+    sh:datatype xsd:string ;
+    sh:message "Action must have exactly one name" ;
+  ] ;
+
+  # Should have at least one precondition
+  sh:property [
+    sh:path mfr:hasPrecondition ;
+    sh:minCount 1 ;
+    sh:class mfr:Precondition ;
+    sh:severity sh:Warning ;
+    sh:message "Action should have at least one precondition" ;
+  ] ;
+
+  # Should have at least one effect
+  sh:property [
+    sh:path mfr:hasEffect ;
+    sh:minCount 1 ;
+    sh:class mfr:Effect ;
+    sh:severity sh:Warning ;
+    sh:message "Action should have at least one effect" ;
+  ] .
+
+# ========================================
+# Precondition Shape
+# ========================================
+
+mfr:PreconditionShape
+  a sh:NodeShape ;
+  sh:targetClass mfr:Precondition ;
+  sh:name "Precondition Shape" ;
+  sh:description "Validates precondition definitions" ;
+
+  # Must have an expression
+  sh:property [
+    sh:path mfr:expression ;
+    sh:minCount 1 ;
+    sh:maxCount 1 ;
+    sh:datatype xsd:string ;
+    sh:minLength 1 ;
+    sh:message "Precondition must have exactly one non-empty expression" ;
+  ] .
+
+# ========================================
+# Effect Shape
+# ========================================
+
+mfr:EffectShape
+  a sh:NodeShape ;
+  sh:targetClass mfr:Effect ;
+  sh:name "Effect Shape" ;
+  sh:description "Validates effect definitions" ;
+
+  # Must have an expression
+  sh:property [
+    sh:path mfr:expression ;
+    sh:minCount 1 ;
+    sh:maxCount 1 ;
+    sh:datatype xsd:string ;
+    sh:minLength 1 ;
+    sh:message "Effect must have exactly one non-empty expression" ;
+  ] .
+
+# ========================================
+# Constraint Shape
+# ========================================
+
+mfr:ConstraintShape
+  a sh:NodeShape ;
+  sh:targetClass mfr:Constraint ;
+  sh:name "Constraint Shape" ;
+  sh:description "Validates constraint definitions" ;
+
+  # Must have a constraint type
+  sh:property [
+    sh:path mfr:constraintType ;
+    sh:minCount 1 ;
+    sh:message "Constraint must have at least one type" ;
+  ] ;
+
+  # Must apply to something
+  sh:property [
+    sh:path mfr:appliesTo ;
+    sh:minCount 1 ;
+    sh:message "Constraint must apply to at least one entity, action, or state" ;
+  ] ;
+
+  # Must have an expression or description
+  sh:or (
+    [ sh:path mfr:constraintExpression ; sh:minCount 1 ; sh:datatype xsd:string ]
+    [ sh:path rdfs:comment ; sh:minCount 1 ; sh:datatype xsd:string ]
+  ) ;
+  sh:message "Constraint must have an expression or comment describing it" .
+
+# ========================================
+# Goal Shape
+# ========================================
+
+mfr:GoalShape
+  a sh:NodeShape ;
+  sh:targetClass mfr:Goal ;
+  sh:name "Goal Shape" ;
+  sh:description "Validates goal definitions" ;
+
+  # Must have a description
+  sh:or (
+    [ sh:path rdfs:label ; sh:minCount 1 ; sh:datatype xsd:string ]
+    [ sh:path rdfs:comment ; sh:minCount 1 ; sh:datatype xsd:string ]
+    [ sh:path mfr:expression ; sh:minCount 1 ; sh:datatype xsd:string ]
+  ) ;
+  sh:message "Goal must have a label, comment, or expression" .
+
+# ========================================
+# Solution Shape
+# ========================================
+
+mfr:SolutionShape
+  a sh:NodeShape ;
+  sh:targetClass mfr:Solution ;
+  sh:name "Solution Shape" ;
+  sh:description "Validates solution proposals" ;
+
+  # Must have at least one assignment or action sequence
+  sh:property [
+    sh:path mfr:assignment ;
+    sh:minCount 1 ;
+    sh:message "Solution must have at least one assignment or action" ;
+  ] ;
+
+  # Should satisfy constraints
+  sh:property [
+    sh:path mfr:satisfiesConstraint ;
+    sh:minCount 1 ;
+    sh:class mfr:Constraint ;
+    sh:severity sh:Warning ;
+    sh:message "Solution should reference the constraints it satisfies" ;
+  ] ;
+
+  # Should achieve goals
+  sh:property [
+    sh:path mfr:achievesGoal ;
+    sh:minCount 1 ;
+    sh:class mfr:Goal ;
+    sh:severity sh:Warning ;
+    sh:message "Solution should reference the goals it achieves" ;
+  ] .
+
+# ========================================
+# Contribution Shape
+# ========================================
+
+mfr:ContributionShape
+  a sh:NodeShape ;
+  sh:targetClass mfr:Contribution ;
+  sh:name "Contribution Shape" ;
+  sh:description "Validates agent contributions" ;
+
+  # Must be contributed by an agent
+  sh:property [
+    sh:path mfr:contributedBy ;
+    sh:minCount 1 ;
+    sh:maxCount 1 ;
+    sh:message "Contribution must be from exactly one agent" ;
+  ] ;
+
+  # Must contribute to a problem model
+  sh:property [
+    sh:path mfr:contributesTo ;
+    sh:minCount 1 ;
+    sh:maxCount 1 ;
+    sh:class mfr:ProblemModel ;
+    sh:message "Contribution must contribute to exactly one problem model" ;
+  ] ;
+
+  # Must have a timestamp
+  sh:property [
+    sh:path mfr:timestamp ;
+    sh:minCount 1 ;
+    sh:maxCount 1 ;
+    sh:datatype xsd:dateTime ;
+    sh:message "Contribution must have exactly one timestamp" ;
+  ] .
+
+# ========================================
+# Validation Report Shape
+# ========================================
+
+mfr:ValidationReportShape
+  a sh:NodeShape ;
+  sh:targetClass mfr:ValidationReport ;
+  sh:name "Validation Report Shape" ;
+  sh:description "Validates validation reports" ;
+
+  # Must have a conforms value
+  sh:property [
+    sh:path mfr:conforms ;
+    sh:minCount 1 ;
+    sh:maxCount 1 ;
+    sh:datatype xsd:boolean ;
+    sh:message "Validation report must have exactly one conforms value (true/false)" ;
+  ] ;
+
+  # Must validate something
+  sh:property [
+    sh:path mfr:validates ;
+    sh:minCount 1 ;
+    sh:maxCount 1 ;
+    sh:message "Validation report must validate exactly one artifact" ;
+  ] ;
+
+  # Must have a timestamp
+  sh:property [
+    sh:path mfr:timestamp ;
+    sh:minCount 1 ;
+    sh:maxCount 1 ;
+    sh:datatype xsd:dateTime ;
+    sh:message "Validation report must have exactly one timestamp" ;
+  ] .
+
+# ========================================
+# Conflict Shape
+# ========================================
+
+mfr:ConflictShape
+  a sh:NodeShape ;
+  sh:targetClass mfr:Conflict ;
+  sh:name "Conflict Shape" ;
+  sh:description "Validates conflict reports" ;
+
+  # Must identify what is in conflict
+  sh:property [
+    sh:path mfr:conflictBetween ;
+    sh:minCount 2 ;
+    sh:message "Conflict must identify at least two conflicting elements" ;
+  ] ;
+
+  # Must have a description
+  sh:property [
+    sh:path rdfs:comment ;
+    sh:minCount 1 ;
+    sh:datatype xsd:string ;
+    sh:message "Conflict must have a description" ;
+  ] .
+
+# ========================================
+# State Variable Shape
+# ========================================
+
+mfr:StateVariableShape
+  a sh:NodeShape ;
+  sh:targetClass mfr:StateVariable ;
+  sh:name "State Variable Shape" ;
+  sh:description "Validates state variable definitions" ;
+
+  # Must have a name
+  sh:or (
+    [ sh:path schema:name ; sh:minCount 1 ; sh:datatype xsd:string ]
+    [ sh:path rdfs:label ; sh:minCount 1 ; sh:datatype xsd:string ]
+  ) ;
+  sh:message "State variable must have a name (schema:name or rdfs:label)" .
+
+# ========================================
+# Completeness Shape (Model-Level Validation)
+# ========================================
+
+mfr:CompletenessShape
+  a sh:NodeShape ;
+  sh:targetClass mfr:ProblemModel ;
+  sh:name "Model Completeness Shape" ;
+  sh:description "Ensures problem model has contributions from all necessary agent roles" ;
+
+  # This shape can be extended to check for specific contribution types
+  # For now, it ensures basic structural completeness
+
+  sh:property [
+    sh:path mfr:hasEntity ;
+    sh:minCount 1 ;
+    sh:message "Complete model must have entities (typically from EntityExtractor)" ;
+  ] ;
+
+  sh:property [
+    sh:path mfr:hasConstraint ;
+    sh:minCount 1 ;
+    sh:severity sh:Warning ;
+    sh:message "Complete model should have constraints (typically from ConstraintReasoner)" ;
+  ] .
+
+# ========================================
+# Consistency Checks
+# ========================================
+
+# Check: Actions reference valid entities
+mfr:ActionEntityConsistencyShape
+  a sh:NodeShape ;
+  sh:targetClass mfr:Action ;
+  sh:name "Action-Entity Consistency" ;
+  sh:description "Ensures actions reference entities that exist in the model" ;
+
+  # This is a pattern - specific implementations would check that
+  # entities referenced in action preconditions/effects exist
+  sh:property [
+    sh:path mfr:actionParameter ;
+    sh:severity sh:Info ;
+    sh:message "Action parameters should reference valid entities in the model" ;
+  ] .
+
+# Check: Constraints reference valid entities/actions
+mfr:ConstraintReferenceConsistencyShape
+  a sh:NodeShape ;
+  sh:targetClass mfr:Constraint ;
+  sh:name "Constraint Reference Consistency" ;
+  sh:description "Ensures constraints reference entities/actions that exist in the model" ;
+
+  sh:property [
+    sh:path mfr:appliesTo ;
+    sh:minCount 1 ;
+    sh:message "Constraint must apply to entities or actions that exist in the model" ;
+  ] .
+
+# ========================================
+# Grounding Validation
+# ========================================
+
+mfr:EntityGroundingShape
+  a sh:NodeShape ;
+  sh:targetClass mfr:Entity ;
+  sh:name "Entity Grounding Shape" ;
+  sh:description "Validates entity grounding in external knowledge bases" ;
+
+  # Entities should ideally be grounded
+  sh:property [
+    sh:path mfr:groundedAs ;
+    sh:minCount 1 ;
+    sh:severity sh:Info ;
+    sh:message "Entity is not grounded in an external knowledge base (e.g., Wikidata)" ;
+  ] .
+
+# ========================================
+# Provenance Validation
+# ========================================
+
+mfr:ProvenanceShape
+  a sh:NodeShape ;
+  sh:target [
+    sh:union (
+      [ sh:class mfr:Entity ]
+      [ sh:class mfr:Action ]
+      [ sh:class mfr:Constraint ]
+      [ sh:class mfr:Goal ]
+    )
+  ] ;
+  sh:name "Provenance Shape" ;
+  sh:description "Ensures model components track their provenance" ;
+
+  # Components should track which agent contributed them
+  sh:property [
+    sh:path mfr:contributedBy ;
+    sh:minCount 1 ;
+    sh:severity sh:Info ;
+    sh:message "Model component should track which agent contributed it" ;
+  ] .

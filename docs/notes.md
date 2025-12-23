@@ -1,3 +1,7 @@
+pkill -f 'node src/services'
+./start-mfr-system.sh
+./start-all-agents.sh
+
 npm pack
 
   Then from your test project (/home/danny/hyperdata/tia-test):
@@ -37,6 +41,14 @@ prosodyctl adduser mistral@tensegrity.it
 prosodyctl adduser demo@tensegrity.it
 
 prosodyctl adduser prolog@tensegrity.it
+
+prosodyctl adduser coordinator@tensegrity.it
+coordinatorpass
+
+prosodyctl adduser admin@tensegrity.it
+
+prosodyctl adduser mfruser@tensegrity.it
+mfrpass
 
  sudo prosodyctl register mistral-analyst tensegrity.it analystpass???
 

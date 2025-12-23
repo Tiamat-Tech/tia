@@ -6,15 +6,25 @@
 @prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
 @prefix lng: <http://purl.org/stuff/lingue/> .
 @prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix mfr: <http://purl.org/stuff/mfr/> .
 
-<#prolog> a agent:ConversationalAgent, lng:Agent ;
+<#prolog> a agent:ConversationalAgent, lng:Agent, mfr:LogicalReasoningAgent ;
   foaf:nick "Prolog" ;
   schema:identifier "prolog" ;
   dcterms:created "2024-12-01T00:00:00Z"^^xsd:dateTime ;
 
-  lng:supports lng:HumanChat, lng:PrologProgram ;
+  lng:supports lng:HumanChat, lng:PrologProgram, lng:ModelFirstRDF, lng:ModelNegotiation ;
   lng:prefers lng:PrologProgram ;
   lng:profile <#prolog-lingue-profile> ;
+
+  mfr:capabilities [
+    mfr:modelsActions true ;
+    mfr:definesStateVariables true ;
+    mfr:validatesPreconditions true ;
+    mfr:validatesActionSequences true ;
+    mfr:generatesSolutions true ;
+    mfr:contributionTypes mfr:ActionDefinition, mfr:StateVariable, mfr:PlanGeneration
+  ] ;
 
   agent:xmppAccount [
     a xmpp:Account ;
