@@ -106,6 +106,12 @@ for (const agentNick of agentRoster) {
   agentRegistry.set(agentNick.toLowerCase(), { nickname: agentNick });
 }
 
+// Debate feature flag (optional - defaults to false for backward compatibility)
+const enableDebate = process.env.MFR_ENABLE_DEBATE === 'true';
+if (enableDebate) {
+  logger.info?.('[CoordinatorAgent] Debate feature enabled');
+}
+
 // Create provider
 const provider = new CoordinatorProvider({
   modelStore,
@@ -115,6 +121,7 @@ const provider = new CoordinatorProvider({
   agentRegistry,
   negotiator: null,
   primaryRoomJid: MUC_ROOM,
+  enableDebate,
   logger
 });
 

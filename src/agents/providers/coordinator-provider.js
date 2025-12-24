@@ -28,6 +28,7 @@ export class CoordinatorProvider extends BaseProvider {
     multiRoomManager = null,
     negotiator = null,
     primaryRoomJid = null,
+    enableDebate = false,
     logger = console
   } = {}) {
     super();
@@ -40,6 +41,7 @@ export class CoordinatorProvider extends BaseProvider {
     this.multiRoomManager = multiRoomManager;
     this.negotiator = negotiator;
     this.primaryRoomJid = primaryRoomJid;
+    this.enableDebate = enableDebate;
     this.logger = logger;
 
     // Active MFR sessions: Map<sessionId, MfrProtocolState>
@@ -53,6 +55,9 @@ export class CoordinatorProvider extends BaseProvider {
 
     // Pending plan executions: Map<sessionId, { solution, sender }>
     this.pendingExecutions = new Map();
+
+    // Debate tracking: Map<sessionId, debateData>
+    this.activeDebates = new Map();
   }
 
   /**
@@ -68,6 +73,13 @@ export class CoordinatorProvider extends BaseProvider {
         case "mfr-start":
         case "start":
           return await this.startMfrSession(content, metadata, reply);
+
+        case "mfr-debate":
+        case "debate":
+          if (!this.enableDebate) {
+            return "Debate feature not enabled. Use 'mfr-start' to proceed with standard MFR session.";
+          }
+          return await this.startDebateSession(content, metadata, reply);
 
         case "mfr-contribute":
         case "contribute":
@@ -140,6 +152,114 @@ export class CoordinatorProvider extends BaseProvider {
     await this.broadcastContributionRequest(sessionId, problemDescription);
 
     return `MFR session started: ${sessionId}\nWaiting for agent contributions...`;
+  }
+
+  /**
+   * Start debate session for tool selection
+   * @param {string} problemDescription - Problem description
+   * @param {Object} metadata - Message metadata
+   * @param {Function} reply - Reply function
+   * @returns {Promise<string>} Response message
+   */
+  async startDebateSession(problemDescription, metadata, reply) {
+    const sessionId = randomUUID();
+
+    this.logger.info?.(
+      `[CoordinatorProvider] Starting debate session: ${sessionId}`
+    );
+
+    // Create protocol state in debate phase
+    const state = new MfrProtocolState(sessionId, {
+      logger: this.logger,
+      initialPhase: MFR_PHASES.PROBLEM_INTERPRETATION
+    });
+    this.activeSessions.set(sessionId, state);
+
+    // Transition to debate phase
+    state.transition(MFR_PHASES.TOOL_SELECTION_DEBATE, {
+      problemDescription,
+      startedBy: metadata?.sender
+    });
+
+    // Store debate metadata
+    this.activeDebates.set(sessionId, {
+      problemDescription,
+      startTime: Date.now(),
+      positions: [],
+      consensusReached: false
+    });
+
+    // Format debate issue for Chair and participants
+    const debateIssue = [
+      `Issue: Which tools and agents should we use to solve this problem?`,
+      ``,
+      `Problem: ${problemDescription}`,
+      ``,
+      `Available agents:`,
+      `  - Mistral: Natural language processing, entity extraction`,
+      `  - Data: Wikidata/DBpedia knowledge grounding`,
+      `  - Prolog: Logical reasoning, constraint satisfaction`,
+      `  - MFR-Semantic: Constraint extraction from domain knowledge`,
+      ``,
+      `Please contribute:`,
+      `  Position: I recommend [agent] because...`,
+      `  Support: [agent] would help because...`,
+      `  Objection: [agent] may not work because...`,
+      ``
+    ].join('\n');
+
+    // Send debate issue to primary room
+    await this.sendStatusMessage(debateIssue);
+
+    // Set timeout for debate phase (60 seconds)
+    setTimeout(async () => {
+      await this.concludeDebate(sessionId);
+    }, 60000);
+
+    return `Debate session started: ${sessionId}\n\nDebate window: 60 seconds\nType positions and arguments or wait for Chair to detect consensus.`;
+  }
+
+  /**
+   * Conclude debate and transition to entity discovery
+   * @param {string} sessionId - Session ID
+   * @returns {Promise<void>}
+   */
+  async concludeDebate(sessionId) {
+    const state = this.activeSessions.get(sessionId);
+    const debateData = this.activeDebates.get(sessionId);
+
+    if (!state || !debateData) {
+      this.logger.warn?.(`[CoordinatorProvider] No active debate for ${sessionId}`);
+      return;
+    }
+
+    // Check if already concluded
+    if (!state.isPhase(MFR_PHASES.TOOL_SELECTION_DEBATE)) {
+      return;
+    }
+
+    this.logger.info?.(
+      `[CoordinatorProvider] Concluding debate for ${sessionId}`
+    );
+
+    // For now, proceed with all agents (consensus detection to be added with Chair integration)
+    const message = debateData.consensusReached
+      ? `Consensus reached. Proceeding with selected tools.`
+      : `Debate timeout reached. Proceeding with all available agents.`;
+
+    await this.sendStatusMessage(message);
+
+    // Create model
+    await this.modelStore.createModel(sessionId, debateData.problemDescription);
+
+    // Transition to entity discovery
+    state.transition(MFR_PHASES.ENTITY_DISCOVERY);
+
+    // Broadcast contribution request (same as normal MFR session)
+    await this.broadcastContributionRequest(sessionId, debateData.problemDescription);
+
+    // Clean up debate data
+    this.activeDebates.delete(sessionId);
   }
 
   /**
@@ -864,13 +984,19 @@ export class CoordinatorProvider extends BaseProvider {
    * @returns {string} Help text
    */
   getHelpMessage() {
-    return `MFR Coordinator Commands:
+    const baseCommands = `MFR Coordinator Commands:
   mfr-start <problem description> - Start new MFR session
   mfr-contribute <sessionId> <rdf> - Submit contribution
   mfr-validate <sessionId> - Validate model
   mfr-solve <sessionId> - Request solutions
   mfr-status <sessionId> - Get session status
   mfr-list - List active sessions`;
+
+    const debateCommand = this.enableDebate
+      ? `\n  mfr-debate <problem description> - Start debate-driven MFR session (tool selection via Chair)`
+      : '';
+
+    return baseCommands + debateCommand;
   }
 
   /**

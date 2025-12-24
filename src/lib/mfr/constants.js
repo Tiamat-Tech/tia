@@ -32,6 +32,9 @@ export const MFR_MESSAGE_TYPES = {
   // Phase 2: Constrained Reasoning
   SOLUTION_REQUEST: `${MFR_NS}SolutionRequest`,
   SOLUTION_PROPOSAL: `${MFR_NS}SolutionProposal`,
+
+  // Tool Selection (optional debate phase)
+  TOOL_RECOMMENDATION: `${MFR_NS}ToolRecommendation`,
   SOLUTION_VALIDATION: `${MFR_NS}SolutionValidation`,
   SOLUTION_VALIDATION_RESULT: `${MFR_NS}SolutionValidationResult`,
   PLAN_EXECUTION_REQUEST: `${MFR_NS}PlanExecutionRequest`,
@@ -60,6 +63,7 @@ export const MFR_PHASES = {
 
   // Phase 1: Collaborative Model Construction
   PROBLEM_INTERPRETATION: 'problem_interpretation',
+  TOOL_SELECTION_DEBATE: 'tool_selection_debate',  // Optional debate phase for tool selection
   ENTITY_DISCOVERY: 'entity_discovery',
   CONSTRAINT_IDENTIFICATION: 'constraint_identification',
   ACTION_DEFINITION: 'action_definition',
@@ -92,6 +96,10 @@ export const VALID_PHASE_TRANSITIONS = {
     MFR_PHASES.PROBLEM_INTERPRETATION
   ],
   [MFR_PHASES.PROBLEM_INTERPRETATION]: [
+    MFR_PHASES.TOOL_SELECTION_DEBATE,  // Optional debate path
+    MFR_PHASES.ENTITY_DISCOVERY         // Direct path (existing behavior)
+  ],
+  [MFR_PHASES.TOOL_SELECTION_DEBATE]: [
     MFR_PHASES.ENTITY_DISCOVERY
   ],
   [MFR_PHASES.ENTITY_DISCOVERY]: [

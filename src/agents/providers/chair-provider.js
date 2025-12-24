@@ -59,8 +59,74 @@ export class ChairProvider {
       return this.summarizeState();
     }
 
+    // NEW: Check for tool consensus request (for MFR debate integration)
+    if (lower.includes("tool consensus")) {
+      const consensus = this.detectToolConsensus();
+      if (consensus.reached) {
+        return `${consensus.summary}\nBased on ${this.positions.length} positions and ${this.arguments.length} arguments.`;
+      }
+      return this.summarizeState();  // Fallback to regular summary
+    }
+
     // Default prompt to contribute
     return `Please contribute Position: ... or Argument: ...${this.currentIssue ? ` (Issue: ${this.currentIssue})` : ""}`;
+  }
+
+  /**
+   * Extract tool recommendations from positions (MFR debate integration)
+   * @returns {Map<string, number>} Tool names and vote counts
+   */
+  extractToolRecommendations() {
+    const MFR_AGENTS = ['mistral', 'data', 'prolog', 'semantic', 'mfr-semantic', 'mfr semantic'];
+    const recommendations = new Map();
+
+    this.positions.forEach(position => {
+      const text = position.text.toLowerCase();
+      MFR_AGENTS.forEach(agent => {
+        if (text.includes(agent)) {
+          const normalizedAgent = agent.replace('mfr-semantic', 'semantic').replace('mfr semantic', 'semantic');
+          recommendations.set(normalizedAgent, (recommendations.get(normalizedAgent) || 0) + 1);
+        }
+      });
+    });
+
+    return recommendations;
+  }
+
+  /**
+   * Detect if tool consensus has been reached (MFR debate integration)
+   * @returns {Object} { reached: boolean, tools?: string[], summary?: string }
+   */
+  detectToolConsensus() {
+    const recommendations = this.extractToolRecommendations();
+    const totalPositions = this.positions.length;
+
+    if (totalPositions === 0) {
+      return { reached: false };
+    }
+
+    // Tools with more than 50% of positions
+    const agreedTools = [];
+    for (const [tool, count] of recommendations) {
+      if (count > totalPositions / 2) {
+        agreedTools.push(tool);
+      }
+    }
+
+    // Check for unresolved objections
+    const hasUnresolvedObjections = this.arguments.some(arg =>
+      arg.stance === 'object'
+    );
+
+    if (agreedTools.length > 0 && !hasUnresolvedObjections) {
+      return {
+        reached: true,
+        tools: agreedTools,
+        summary: `Consensus reached: Use ${agreedTools.join(', ')} for this problem.`
+      };
+    }
+
+    return { reached: false };
   }
 }
 

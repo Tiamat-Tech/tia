@@ -46,6 +46,10 @@ Individual specifications for each MFR agent:
 ### Testing & Room Setup
 - **[MFR Room Creation & Testing](mfr-room-creation-testing.html)** - Prosody MUC configuration
 
+### Experimental Features
+- **[MFR Debate Integration](mfr-debate-integration.html)** ✅ - Tool selection through structured dialogue (Phase 1 complete, ready to try with `MFR_ENABLE_DEBATE=true`)
+- **[MFR Debate Requirements](mfr-debate-agent-requirements.html)** - Implementation requirements ensuring zero breaking changes
+
 ## 🔌 Integration Protocols
 
 ### Lingue Protocol
