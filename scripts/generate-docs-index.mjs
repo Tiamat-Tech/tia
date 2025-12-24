@@ -23,6 +23,16 @@ export async function generateDocsIndex({ docsDir }) {
   }
 
   const indexPath = path.join(docsDir, "index.md");
+
+  // Check if index.md already exists - if so, don't overwrite it
+  try {
+    await fs.access(indexPath);
+    console.log("index.md exists, skipping auto-generation");
+    return; // Index already exists, don't overwrite
+  } catch {
+    // Index doesn't exist, generate it
+  }
+
   const markdownFiles = await collectMarkdownFiles(docsDir);
   const links = markdownFiles
     .map((filePath) => path.relative(docsDir, filePath))
