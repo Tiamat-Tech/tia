@@ -100,6 +100,58 @@ The script automatically:
 - Provides restart on crash
 - Handles graceful shutdown (SIGTERM/SIGINT)
 
+## Interacting with Agents
+
+### Using the REPL Client
+
+Once agents are running, you can interact with them directly from a chatroom using the REPL client:
+
+```bash
+# Connect to the chatroom
+NODE_TLS_REJECT_UNAUTHORIZED=0 node src/client/repl.js <username> <password>
+
+# Example:
+NODE_TLS_REJECT_UNAUTHORIZED=0 node src/client/repl.js admin admin123
+```
+
+### MFR (Model-First Reasoning) Commands
+
+Once connected to the chatroom, you can pose problems to the MFR system:
+
+```
+# Start a new MFR session
+mfr-start Schedule appointments for patients. Alice takes warfarin, Bob takes aspirin. Ensure no drug interactions.
+
+# Check session status
+mfr-status <sessionId>
+
+# List active sessions
+mfr-list
+
+# Get help
+help
+```
+
+**Short command versions:**
+- `start` instead of `mfr-start`
+- `status` instead of `mfr-status`
+- `list` instead of `mfr-list`
+
+**Other MFR commands:**
+- `mfr-contribute <sessionId> <rdf>` - Submit a contribution manually
+- `mfr-validate <sessionId>` - Validate a model
+- `mfr-solve <sessionId>` - Request solutions
+
+### Programmatic MFR Sessions
+
+You can also run MFR sessions programmatically:
+
+```bash
+node src/examples/run-mfr-session.js "Your problem description here"
+```
+
+This will automatically connect, start a session, wait for the solution, and display the results.
+
 ## Library Usage
 
 ```javascript
