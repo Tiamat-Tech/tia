@@ -65,7 +65,7 @@ export class ExecutorProvider {
       return null;
     }
 
-    const prompt = `You are generating a Prolog program to execute a high-level plan.
+    const prompt = `You are generating a minimal, valid Prolog program to produce concrete bindings for a plan.
 
 Problem description:
 ${problemDescription}
@@ -77,16 +77,17 @@ Plan steps (in order):
 ${plan.map((step, index) => `${index + 1}. ${step}`).join("\n")}
 
 Return ONLY a JSON object with "program" and "query" fields.
-- "program" should define facts and rules needed to bind plan parameters.
-- "query" should be a single Prolog query that yields bindings for the plan.
-- Use clear predicate names like assignment/2, route/3, or schedule/3 as needed.
-- The query should be solvable with finite answers.
+Requirements:
+- Output must be valid JSON only (no markdown, no commentary).
+- "program" must be plain Prolog facts/rules, no JSON, no triple quotes.
+- "query" must be a single Prolog query that yields bindings in finite time.
+- Prefer simple facts and rules; avoid recursion unless necessary.
+- Use lowercase predicate names; use atoms for identifiers (e.g., truck1, loc_a).
+- Include at least one predicate that captures the plan outcome, like assignment/2.
+- If constraints are unclear, include a minimal consistent model and still produce bindings.
 
-Example JSON shape:
-{
-  "program": "truck(t1).\\nlocation(a).\\n...",
-  "query": "assignment(Truck, Location)."
-}`;
+Example JSON:
+{"program":"truck(truck1).\\nlocation(a).\\nassignment(truck1,a).","query":"assignment(Truck, Location)."}\n`;
 
     try {
       const content = await this.requestCompletion(prompt);

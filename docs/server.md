@@ -10,6 +10,7 @@ This describes how to run the agents as a systemd service that starts on boot an
 - `Restart=on-failure` with `RestartSec=5`
 - `User=danny`
 - `WantedBy=multi-user.target`
+- Ensure `logs/` exists and is writable by the service user (start scripts default to per-agent log files).
 
 ## Install & enable
 ```bash
@@ -28,4 +29,5 @@ journalctl -u tia-agents.service -f
 ## Prereqs
 - Populate `/home/danny/hyperdata/tia/.env` (or per-agent configs in `config/agents/`) with XMPP credentials/resources and any API keys/tokens.
 - Ensure `start-all-agents.sh` is executable.
+- Create `logs/` and set ownership (e.g., `mkdir -p /home/danny/hyperdata/tia/logs && chown -R danny:danny /home/danny/hyperdata/tia/logs`).
 - If your XMPP server doesn’t support multiple resources on one account, use distinct accounts per agent in `config/agents/{mistral,semem,demo}.ttl` and restart the service.
