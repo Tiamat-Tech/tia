@@ -58,6 +58,44 @@ export class PrologProvider {
     });
   }
 
+  async runProgramQuery(program, queryText) {
+    if (!program || !queryText) {
+      return [];
+    }
+
+    await this.ensureSession();
+    const local = this.pl.create(1000);
+
+    const consult = () => new Promise((resolve, reject) => {
+      local.consult(program, {
+        success: () => resolve(),
+        error: (err) => reject(new Error(err))
+      });
+    });
+
+    const query = () => new Promise((resolve) => {
+      const answers = [];
+      local.query(queryText, {
+        success: () => {
+          local.answers((answer) => {
+            if (answer === false) {
+              resolve(answers);
+              return;
+            }
+            answers.push(this.pl.format_answer(answer));
+            if (answers.length >= this.maxAnswers) {
+              resolve(answers);
+            }
+          });
+        },
+        error: (err) => resolve([`Error: ${err}`])
+      });
+    });
+
+    await consult();
+    return query();
+  }
+
   parseInput(text) {
     const trimmed = this.normalizeContent(text);
     const marker = trimmed.indexOf("?-");

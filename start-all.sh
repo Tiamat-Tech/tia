@@ -24,8 +24,8 @@ CYAN='\033[0;36m'
 NC='\033[0m' # No Color
 
 # Preset agent groups
-ALL_AGENTS="coordinator,mistral,analyst,creative,chair,recorder,semem,mfr-semantic,data,prolog,demo"
-MFR_AGENTS="coordinator,mistral,analyst,creative,chair,recorder,mfr-semantic,data,prolog,demo"
+ALL_AGENTS="coordinator,mistral,analyst,creative,chair,recorder,semem,mfr-semantic,data,prolog,executor,demo"
+MFR_AGENTS="coordinator,mistral,analyst,creative,chair,recorder,mfr-semantic,data,prolog,executor,demo"
 DEBATE_AGENTS="chair,recorder,mistral,analyst,creative"
 BASIC_AGENTS="mistral,data,prolog,demo"
 
@@ -40,6 +40,12 @@ if [ -f ".env" ]; then
   set +a
   echo ""
 fi
+
+# Enable logging defaults if not already set
+: "${LOG_FILE:=logs/agents.log}"
+: "${LOG_LEVEL:=info}"
+export LOG_FILE
+export LOG_LEVEL
 
 # Determine which agents to start
 if [ -n "$1" ]; then
@@ -77,6 +83,7 @@ if [ -n "$1" ]; then
       echo "  mfr-semantic - MFR semantic constraint agent"
       echo "  data        - SPARQL knowledge query agent"
       echo "  prolog      - Tau-Prolog logic agent"
+      echo "  executor    - Plan execution agent (requires MISTRAL_API_KEY)"
       echo "  chair       - Debate facilitator (requires MISTRAL_API_KEY)"
       echo "  recorder    - Meeting recorder (requires SEMEM_AUTH_TOKEN)"
       echo "  demo        - Simple demo bot"
@@ -103,6 +110,7 @@ if [ -z "$MISTRAL_API_KEY" ] || [ "$MISTRAL_API_KEY" = "your_mistral_api_key_her
   echo "   Mistral-based agents will be skipped"
   echo "   Set MISTRAL_API_KEY in .env file to enable:"
   echo "   - mistral, analyst, creative, chair agents"
+  echo "   - executor agent"
   echo "   Get your API key from: https://console.mistral.ai/"
   echo ""
   WARNINGS=$((WARNINGS + 1))

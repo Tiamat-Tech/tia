@@ -63,6 +63,12 @@ const AGENT_DEFINITIONS = {
     command: "node src/services/data-agent.js",
     description: "Data agent (SPARQL-backed)",
     env: { AGENT_PROFILE: "data" }
+  },
+  executor: {
+    command: "node src/services/executor-agent.js",
+    description: "Plan execution agent (Prolog preparation)",
+    requiredEnv: ["MISTRAL_API_KEY"],
+    env: { AGENT_PROFILE: "executor" }
   }
 };
 
@@ -97,12 +103,14 @@ function startAgent(agentName, { command, requiredEnv = [], description }) {
     return;
   }
 
+  const logFile = process.env.LOG_FILE || `logs/${agentName}.log`;
   console.log(`Starting agent "${agentName}" (${description || "agent"}): ${command}`);
   const child = spawn(command, {
     shell: true,
     stdio: "inherit",
     env: {
       ...process.env,
+      LOG_FILE: logFile,
       ...(AGENT_DEFINITIONS[agentName].env || {})
     }
   });

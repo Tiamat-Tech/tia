@@ -34,6 +34,8 @@ export const MFR_MESSAGE_TYPES = {
   SOLUTION_PROPOSAL: `${MFR_NS}SolutionProposal`,
   SOLUTION_VALIDATION: `${MFR_NS}SolutionValidation`,
   SOLUTION_VALIDATION_RESULT: `${MFR_NS}SolutionValidationResult`,
+  PLAN_EXECUTION_REQUEST: `${MFR_NS}PlanExecutionRequest`,
+  PLAN_EXECUTION_RESULT: `${MFR_NS}PlanExecutionResult`,
 
   // Synthesis and Explanation
   SOLUTION_SYNTHESIS_REQUEST: `${MFR_NS}SolutionSynthesisRequest`,

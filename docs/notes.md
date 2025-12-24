@@ -1,10 +1,14 @@
  DOCS_DIR=docs DOCS_OUT_DIR=docs-site node scripts/build-docs.mjs
 
 pkill -f 'node src/services'
-./start-mfr-system.sh
-./start-all-agents.sh
 
-./start-all.sh mfr
+./start-all.sh
+./stop-all.sh
+./restart-all.sh
+
+#./start-mfr-system.sh
+#./start-all-agents.sh
+#./start-all.sh mfr
 
 npm pack
 
@@ -65,6 +69,9 @@ prosodyctl adduser admin@tensegrity.it
 prosodyctl adduser mfruser@tensegrity.it
 mfrpass
 prosodyctl adduser testuser@tensegrity.it
+
+prosodyctl adduser executor@tensegrity.it
+executorpass
 
  sudo prosodyctl register mistral-analyst tensegrity.it analystpass???
 

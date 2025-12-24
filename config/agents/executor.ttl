@@ -1,0 +1,38 @@
+@prefix agent: <https://tensegrity.it/vocab/agent#> .
+@prefix foaf: <http://xmlns.com/foaf/0.1/> .
+@prefix schema: <https://schema.org/> .
+@prefix xmpp: <https://tensegrity.it/vocab/xmpp#> .
+@prefix ai: <https://tensegrity.it/vocab/ai-provider#> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+@prefix lng: <http://purl.org/stuff/lingue/> .
+@prefix mfr: <http://purl.org/stuff/mfr/> .
+
+<#executor> a agent:ConversationalAgent, agent:AIAgent, lng:Agent, mfr:ExecutionAgent ;
+  foaf:nick "Executor" ;
+  schema:identifier "executor" ;
+  dcterms:created "2025-01-12T00:00:00Z"^^xsd:dateTime ;
+  dcterms:description "Turns high-level plans into Prolog-ready execution requests" ;
+
+  lng:supports lng:HumanChat, lng:ModelNegotiation ;
+  lng:prefers lng:ModelNegotiation ;
+
+  agent:xmppAccount [
+    a xmpp:Account ;
+    xmpp:service "xmpp://tensegrity.it:5222" ;
+    xmpp:domain "tensegrity.it" ;
+    xmpp:username "executor" ;
+    xmpp:passwordKey "executor" ;
+    xmpp:resource "Executor"
+  ] ;
+
+  agent:roomJid "general@conference.tensegrity.it" ;
+
+  agent:aiProvider [
+    a ai:MistralProvider ;
+    ai:model "mistral-small-latest" ;
+    ai:apiKeyEnv "MISTRAL_API_KEY" ;
+    ai:maxTokens "600"^^xsd:integer ;
+    ai:temperature "0.2"^^xsd:decimal ;
+    ai:systemPrompt "Convert high-level plans into Prolog programs that yield concrete bindings."
+  ] .

@@ -50,6 +50,9 @@ export class CoordinatorProvider extends BaseProvider {
 
     // Solution tracking: Map<sessionId, Array<solution>>
     this.solutions = new Map();
+
+    // Pending plan executions: Map<sessionId, { solution, sender }>
+    this.pendingExecutions = new Map();
   }
 
   /**
@@ -536,6 +539,9 @@ export class CoordinatorProvider extends BaseProvider {
     if (messageType === MFR_MESSAGE_TYPES.SOLUTION_PROPOSAL) {
       return await this.handleSolutionProposal(payload, metadata);
     }
+    if (messageType === MFR_MESSAGE_TYPES.PLAN_EXECUTION_RESULT) {
+      return await this.handleExecutionResult(payload, metadata);
+    }
     return null;
   }
 
@@ -561,6 +567,76 @@ export class CoordinatorProvider extends BaseProvider {
       `[CoordinatorProvider] Received solution proposal from ${sender} for ${sessionId}`
     );
 
+    if (this.shouldExecutePlan(solution)) {
+      const interim = this.formatSolutionEntry({
+        sender,
+        solution,
+        receivedAt: new Date().toISOString()
+      });
+      await this.sendStatusMessage(interim);
+      await this.requestPlanExecution(sessionId, solution, sender);
+      return `Plan received for ${sessionId}. Executing for bindings...`;
+    }
+
+    return await this.finalizeSolution(sessionId, solution, sender);
+  }
+
+  shouldExecutePlan(solution) {
+    return Array.isArray(solution?.plan) &&
+      solution.plan.length > 0 &&
+      !solution.bindings;
+  }
+
+  async requestPlanExecution(sessionId, solution, sender) {
+    if (!this.negotiator || !this.primaryRoomJid) {
+      return;
+    }
+
+    const model = await this.modelStore.getModel(sessionId);
+    const modelTurtle = model ? await RdfUtils.serializeTurtle(model) : "";
+    const metadata = await this.modelStore.getMetadata(sessionId);
+    const problemDescription = metadata?.problemDescription || "";
+
+    this.pendingExecutions.set(sessionId, { solution, sender });
+
+    await this.negotiator.send(this.primaryRoomJid, {
+      mode: LANGUAGE_MODES.MODEL_NEGOTIATION,
+      payload: {
+        messageType: MFR_MESSAGE_TYPES.PLAN_EXECUTION_REQUEST,
+        sessionId,
+        plan: solution.plan,
+        problemDescription,
+        model: modelTurtle,
+        timestamp: new Date().toISOString()
+      },
+      summary: `Plan execution request for ${sessionId}`
+    });
+  }
+
+  async handleExecutionResult(payload, metadata = {}) {
+    const sessionId = payload?.sessionId || metadata?.sessionId;
+    if (!sessionId) {
+      return null;
+    }
+
+    const pending = this.pendingExecutions.get(sessionId);
+    if (!pending) {
+      return null;
+    }
+
+    this.pendingExecutions.delete(sessionId);
+
+    const updatedSolution = {
+      ...pending.solution,
+      bindings: payload?.bindings || [],
+      executionQuery: payload?.query || null,
+      executionError: payload?.error || null
+    };
+
+    return await this.finalizeSolution(sessionId, updatedSolution, pending.sender);
+  }
+
+  async finalizeSolution(sessionId, solution, sender) {
     const existing = this.solutions.get(sessionId) || [];
     existing.push({
       sender,
@@ -586,45 +662,60 @@ export class CoordinatorProvider extends BaseProvider {
     if (solutions.length === 0) return;
 
     const lines = ["", "=== SOLUTION ===", ""];
-
     solutions.forEach((entry, index) => {
-      const solution = entry.solution;
-      const sender = entry.sender;
-
-      if (solutions.length > 1) {
-        lines.push(`Solution #${index + 1} (from ${sender}):`);
-      } else {
-        lines.push(`Solution from ${sender}:`);
-      }
-
-      if (solution.message) {
-        lines.push(`  ${solution.message}`);
-      }
-
-      if (Array.isArray(solution.plan) && solution.plan.length > 0) {
-        lines.push(`  Plan steps:`);
-        solution.plan.forEach((step, i) => {
-          lines.push(`    ${i + 1}. ${step}`);
-        });
-      }
-
-      if (Array.isArray(solution.satisfiesGoals) && solution.satisfiesGoals.length > 0) {
-        lines.push(`  Achieves goals:`);
-        solution.satisfiesGoals.forEach((g) => {
-          const status = g.satisfied ? "✓" : "✗";
-          lines.push(`    ${status} ${g.goal}`);
-        });
-      }
-
-      if (solution.success === false) {
-        lines.push(`  Status: ⚠️  ${solution.message || "Failed to generate solution"}`);
-      }
-
+      lines.push(this.formatSolutionEntry(entry, { index, total: solutions.length }));
       lines.push("");
     });
 
-    const message = lines.join("\n");
-    await this.sendStatusMessage(message);
+    await this.sendStatusMessage(lines.join("\n"));
+  }
+
+  formatSolutionEntry(entry, { index = 0, total = 1 } = {}) {
+    const solution = entry.solution;
+    const sender = entry.sender;
+    const lines = [];
+
+    if (total > 1) {
+      lines.push(`Solution #${index + 1} (from ${sender}):`);
+    } else {
+      lines.push(`Solution from ${sender}:`);
+    }
+
+    if (solution.message) {
+      lines.push(`  ${solution.message}`);
+    }
+
+    if (Array.isArray(solution.plan) && solution.plan.length > 0) {
+      lines.push(`  Plan steps:`);
+      solution.plan.forEach((step, i) => {
+        lines.push(`    ${i + 1}. ${step}`);
+      });
+    }
+
+    if (Array.isArray(solution.bindings) && solution.bindings.length > 0) {
+      lines.push(`  Bindings:`);
+      solution.bindings.forEach((binding, i) => {
+        lines.push(`    ${i + 1}. ${binding}`);
+      });
+    }
+
+    if (solution.executionError) {
+      lines.push(`  Execution error: ${solution.executionError}`);
+    }
+
+    if (Array.isArray(solution.satisfiesGoals) && solution.satisfiesGoals.length > 0) {
+      lines.push(`  Achieves goals:`);
+      solution.satisfiesGoals.forEach((g) => {
+        const status = g.satisfied ? "✓" : "✗";
+        lines.push(`    ${status} ${g.goal}`);
+      });
+    }
+
+    if (solution.success === false) {
+      lines.push(`  Status: ⚠️  ${solution.message || "Failed to generate solution"}`);
+    }
+
+    return lines.join("\n");
   }
 
   /**

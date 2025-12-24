@@ -4,6 +4,7 @@ import { createMentionDetector } from "../agents/core/mention-detector.js";
 import { defaultCommandParser } from "../agents/core/command-parser.js";
 import { PrologProvider } from "../agents/providers/prolog-provider.js";
 import logger from "../lib/logger-lite.js";
+import { xml } from "@xmpp/client";
 import { loadAgentProfile } from "../agents/profile-loader.js";
 import { loadSystemConfig } from "../lib/system-config.js";
 import { LingueNegotiator, LANGUAGE_MODES } from "../lib/lingue/index.js";
@@ -121,6 +122,57 @@ if (profile.supportsLingueMode(LANGUAGE_MODES.MODEL_NEGOTIATION)) {
           },
           summary: `Solution proposal from ${BOT_NICKNAME} for ${payload?.sessionId}`
         });
+        return null;
+      } else if (messageType === MFR_MESSAGE_TYPES.PLAN_EXECUTION_REQUEST) {
+        const sessionId = payload?.sessionId;
+        const program = payload?.program;
+        const query = payload?.query;
+        if (!sessionId || !program || !query) {
+          logger.debug?.("[PrologAgent] Plan execution request missing sessionId/program/query");
+          return null;
+        }
+
+        const targetRoom = roomJid || stanza?.attrs?.from?.split("/")?.[0];
+        if (!targetRoom) {
+          logger.warn?.("[PrologAgent] Cannot determine target room for plan execution result");
+          return null;
+        }
+
+        logger.info?.(`[PrologAgent] Executing plan program for session ${sessionId}`);
+        if (negotiator?.xmppClient) {
+          await negotiator.xmppClient.send(
+            xml(
+              "message",
+              { to: targetRoom, type: "groupchat" },
+              xml("body", {}, `Prolog: executing plan for ${sessionId}`)
+            )
+          );
+        }
+        const bindings = await provider.runProgramQuery(program, query);
+
+        await negotiator.send(targetRoom, {
+          mode: LANGUAGE_MODES.MODEL_NEGOTIATION,
+          payload: {
+            messageType: MFR_MESSAGE_TYPES.PLAN_EXECUTION_RESULT,
+            sessionId,
+            bindings,
+            query,
+            timestamp: new Date().toISOString()
+          },
+          summary: `Plan execution result from ${BOT_NICKNAME} for ${sessionId}`
+        });
+
+        if (negotiator?.xmppClient) {
+          const count = Array.isArray(bindings) ? bindings.length : 0;
+          await negotiator.xmppClient.send(
+            xml(
+              "message",
+              { to: targetRoom, type: "groupchat" },
+              xml("body", {}, `Prolog: sent execution result (${count} binding(s)) for ${sessionId}`)
+            )
+          );
+        }
+
         return null;
       } else {
         return null;

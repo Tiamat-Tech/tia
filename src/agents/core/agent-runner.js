@@ -30,6 +30,7 @@ export class AgentRunner {
     const resolvedNickname = profileConfig.nickname || nickname;
 
     this.nickname = resolvedNickname;
+    this.profile = profile || null;
     this.provider = provider;
     this.negotiator = negotiator;
     this.mentionDetector =
@@ -66,6 +67,14 @@ export class AgentRunner {
         reply
       });
       if (handled) return;
+    }
+
+    if (this.isHelpRequest(body)) {
+      const description = this.getHelpDescription();
+      if (description) {
+        await reply(description);
+      }
+      return;
     }
 
     const senderIsAgent = this.isAgentSender(sender);
@@ -134,6 +143,28 @@ export class AgentRunner {
   shouldRequireHumanAddress() {
     if (!this.maxAgentRounds || this.maxAgentRounds < 1) return false;
     return this.agentRoundCount >= this.maxAgentRounds;
+  }
+
+  isHelpRequest(body) {
+    if (!body || !this.nickname) return false;
+    const trimmed = body.trim().toLowerCase();
+    const nick = this.nickname.toLowerCase();
+    if (!trimmed || !nick) return false;
+    if (trimmed === `${nick} help` || trimmed === `help ${nick}`) return true;
+    const escaped = nick.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    const pattern = new RegExp(`^@?${escaped}\\s+help$|^help\\s+@?${escaped}$`, "i");
+    return pattern.test(body.trim());
+  }
+
+  getHelpDescription() {
+    const description = this.profile?.metadata?.description;
+    if (description) {
+      return `${this.nickname}: ${description}`;
+    }
+    if (this.profile?.identifier) {
+      return `${this.nickname}: ${this.profile.identifier} agent`;
+    }
+    return this.nickname ? `${this.nickname}: agent` : null;
   }
 }
 

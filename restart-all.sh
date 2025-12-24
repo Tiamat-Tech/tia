@@ -29,5 +29,11 @@ echo ""
 echo -e "${BLUE}=== Starting agents ===${NC}"
 echo ""
 
+# Ensure logging defaults
+: "${LOG_FILE:=logs/agents.log}"
+: "${LOG_LEVEL:=info}"
+export LOG_FILE
+export LOG_LEVEL
+
 # Start with same arguments passed to this script
 ./start-all.sh "$@"

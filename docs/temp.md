@@ -4,12 +4,19 @@ The data flow looks like this:
 
  [![dataflow diagram](dataflow.png)](dataflow.svg)
 
-the inter-agent comms happen in a set of MUCs - general, mfr-construct, mfr-reason, mfr-validate
+See [Architecture Overview](docs/mfr-architecture-overview.md)
+
+The inter-agent comms happen in a set of MUCs - general, mfr-construct, mfr-reason, mfr-validate
 
 most of these messages are sent as minimal text + not-visible RDF payload, just a few human-readably notifications.
 
-TODO :
+See [Architecture Overview](docs/mfr-architecture-overview.md)
 
+Expand these :
+
+* what is the purpose of SHACL validation in the system?
+* where and how are JSON messages used?
+* where and how are RDF messages used?
 * brief overview of the vocabs used in the system (with links to vocabs/*)
 * brief overview of how lingue works
 * walkthrough of an mfr run

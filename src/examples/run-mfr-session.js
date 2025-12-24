@@ -166,17 +166,17 @@ async function runMfrSession(problemDescription) {
             }
           }
 
-          // Check for solution (avoid false positives like "Solution request broadcast")
+          // Check for final solution (avoid interim status like "Plan received")
           const lowerBody = body.toLowerCase();
           const isSolutionRequest =
             lowerBody.includes("solution request") ||
             lowerBody.includes("request solutions") ||
             lowerBody.includes("waiting for agent solutions");
-          const looksLikeSolution =
-            /\b(solution|schedule|plan|allocation)\b/i.test(body) &&
-            !isSolutionRequest;
+          const isFinalSolution =
+            lowerBody.includes("mfr session complete") ||
+            lowerBody.includes("=== solution ===");
 
-          if (sender === "Coordinator" && looksLikeSolution) {
+          if (sender === "Coordinator" && isFinalSolution && !isSolutionRequest) {
             solution = body;
             console.log("\n✅ Solution received!");
 
