@@ -65,6 +65,31 @@ mfr-start Schedule appointments for patients. Alice takes warfarin, Bob takes as
 
 The `mfr-start` command skips the debate phase and goes directly to entity discovery (existing behavior - no changes).
 
+### What Currently Responds
+
+**Phase 1 (Current Implementation):**
+- ✅ **Coordinator** - Manages the debate session, broadcasts issue, enforces timeout
+- ✅ **Chair** - Detects debate start, tracks positions/arguments, reports consensus
+- ✅ **Humans** - Can contribute positions and arguments during the 60-second window
+- ❌ **Other agents (Mistral, Data, Prolog)** - Do NOT automatically participate yet (Phase 3 work)
+
+**How to participate as a human:**
+```
+Position: I recommend Data agent for grounding drug names to Wikidata
+Support: Prolog excels at constraint satisfaction for scheduling
+Objection: We should avoid Mistral for medical facts due to hallucination risk
+```
+
+**Check consensus:**
+```
+Chair: tool consensus
+```
+
+Or check debate status:
+```
+Chair: status
+```
+
 ---
 
 ## Overview
@@ -367,16 +392,18 @@ Requesting contributions from agreed-upon agents: Data, Prolog, MFR-Semantic
 1. ✅ Added `TOOL_SELECTION_DEBATE` phase to MFR constants
 2. ✅ Added `mfr-debate` command to Coordinator (feature flag: `MFR_ENABLE_DEBATE`)
 3. ✅ Coordinator formats debate issue and sends to general room
-4. ✅ Chair agent participates using existing IBIS detection
-5. ✅ Added tool extraction methods to Chair (`extractToolRecommendations()`, `detectToolConsensus()`)
-6. ✅ 60-second timeout with fallback to all agents
-7. ✅ Zero breaking changes - existing `mfr-start` workflow unchanged
+4. ✅ Chair agent responds to all messages to detect debate issues (`respondToAll: true`)
+5. ✅ Chair agent participates using existing IBIS detection
+6. ✅ Added tool extraction methods to Chair (`extractToolRecommendations()`, `detectToolConsensus()`)
+7. ✅ 60-second timeout with fallback to all agents
+8. ✅ Zero breaking changes - existing `mfr-start` workflow unchanged
 
 **Files Modified:**
 - `src/lib/mfr/constants.js` - New phase and transitions
 - `src/agents/providers/coordinator-provider.js` - Debate session management
 - `src/services/coordinator-agent.js` - Feature flag integration
 - `src/agents/providers/chair-provider.js` - Tool extraction and consensus detection
+- `src/services/chair-agent.js` - Added `respondToAll: true` to detect debate issues
 - `test/mfr-debate.integration.test.js` - Comprehensive test suite (10/10 tests passing)
 
 **Deliverable:** ✅ Chair can track debate, humans can guide tool selection, automated timeout

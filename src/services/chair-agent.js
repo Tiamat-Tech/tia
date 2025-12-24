@@ -69,6 +69,7 @@ const runner = new AgentRunner({
   mentionDetector: createMentionDetector(BOT_NICKNAME, [BOT_NICKNAME]),
   commandParser: defaultCommandParser,
   allowSelfMessages: false,
+  respondToAll: true,  // Chair needs to see all messages to detect debate issues
   maxAgentRounds: systemConfig.maxAgentRounds,
   agentRoster,
   logger
