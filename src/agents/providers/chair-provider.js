@@ -39,20 +39,34 @@ export class ChairProvider {
 
   async handle({ content, rawMessage, metadata }) {
     const text = content || rawMessage || "";
+    const lower = text.toLowerCase();
+
+    // Check for MFR debate initiation FIRST (before general IBIS detection)
+    // This ensures Coordinator's debate issue gets explicit response
+    if (lower.includes("which tools and agents should we use") ||
+        lower.includes("available agents:") ||
+        (lower.startsWith("issue:") && lower.includes("tools"))) {
+      this.currentIssue = text.replace(/^issue:\s*/i, "").trim() || text;
+      this.positions = [];
+      this.arguments = [];
+      return `Debate started. Issue: ${this.currentIssue}\nPlease provide Positions and Arguments.`;
+    }
+
+    // Check for explicit debate start commands
+    if (lower.includes("start debate") || lower.startsWith("issue:") || lower.startsWith("i:")) {
+      this.currentIssue = text.replace(/^(issue|i):\s*/i, "").trim() || text;
+      this.positions = [];
+      this.arguments = [];
+      return `Debate started. Issue: ${this.currentIssue}\nPlease provide Positions and Arguments.`;
+    }
+
+    // General IBIS structure detection (for position/argument contributions)
     const structure = detectIBISStructure(text);
 
     if (structure.confidence >= 0.5 && (structure.issues.length || structure.positions.length || structure.arguments.length)) {
       this.updateState(structure, text, metadata.sender);
       const summary = summarizeIBIS(structure);
       return `Noted. ${summary}`;
-    }
-
-    const lower = text.toLowerCase();
-    if (lower.includes("start debate") || lower.startsWith("issue:") || lower.startsWith("i:")) {
-      this.currentIssue = text.replace(/^(issue|i):\s*/i, "").trim() || text;
-      this.positions = [];
-      this.arguments = [];
-      return `Debate started. Issue: ${this.currentIssue}\nPlease provide Positions and Arguments.`;
     }
 
     if (lower.includes("status") || lower.includes("consensus") || lower.includes("summary")) {

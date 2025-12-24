@@ -402,9 +402,12 @@ Requesting contributions from agreed-upon agents: Data, Prolog, MFR-Semantic
 - `src/lib/mfr/constants.js` - New phase and transitions
 - `src/agents/providers/coordinator-provider.js` - Debate session management
 - `src/services/coordinator-agent.js` - Feature flag integration
-- `src/agents/providers/chair-provider.js` - Tool extraction and consensus detection
+- `src/agents/providers/chair-provider.js` - Tool extraction, consensus detection, and MFR-specific debate detection
 - `src/services/chair-agent.js` - Added `respondToAll: true` to detect debate issues
 - `test/mfr-debate.integration.test.js` - Comprehensive test suite (10/10 tests passing)
+
+**Key Implementation Detail:**
+The Chair now checks for MFR debate patterns ("which tools and agents should we use", "available agents:") BEFORE general IBIS detection. This ensures the Coordinator's debate issue gets the explicit "Debate started. Issue: ..." response instead of just "Noted. Issue: ..."
 
 **Deliverable:** ✅ Chair can track debate, humans can guide tool selection, automated timeout
 
