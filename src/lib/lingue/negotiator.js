@@ -28,6 +28,24 @@ export class LingueNegotiator {
     return this.state.getActiveMode(peerJid);
   }
 
+  async announceModeChange({ roomJid, peerJid, mode }) {
+    if (!this.xmppClient || !roomJid || !mode) return;
+    const modeLabel = mode.startsWith(LINGUE_NS)
+      ? mode.slice(LINGUE_NS.length)
+      : mode;
+    const body = `Lingue mode set to ${modeLabel} for ${peerJid}`;
+    await this.xmppClient.send(
+      xml("message", { to: roomJid, type: "groupchat" }, xml("body", {}, body))
+    );
+  }
+
+  async setActiveMode(peerJid, mode, context = {}) {
+    const current = this.state.getActiveMode(peerJid);
+    if (current === mode) return;
+    this.state.setActiveMode(peerJid, mode);
+    await this.announceModeChange({ roomJid: context.roomJid, peerJid, mode });
+  }
+
   async offerExchange(peerJid, modes = []) {
     this.state.offer(peerJid, modes);
 
@@ -37,7 +55,7 @@ export class LingueNegotiator {
   }
 
   async acceptMode(peerJid, mode) {
-    this.state.setActiveMode(peerJid, mode);
+    await this.setActiveMode(peerJid, mode);
 
     if (!this.xmppClient) return;
     const stanza = createAcceptStanza(peerJid, mode);
@@ -65,7 +83,7 @@ export class LingueNegotiator {
       const accepted = this.selectSupportedMode(modes);
 
       if (accepted) {
-        this.state.setActiveMode(stanza.attrs.from, accepted);
+        await this.setActiveMode(stanza.attrs.from, accepted, context);
         if (this.xmppClient) {
           const reply = createAcceptStanza(stanza.attrs.from, accepted);
           await this.xmppClient.send(reply);
@@ -79,7 +97,7 @@ export class LingueNegotiator {
       const modeNode = accept.getChild("mode");
       const mode = accept.attrs.mode || modeNode?.getText();
       if (mode) {
-        this.state.setActiveMode(stanza.attrs.from, mode);
+        await this.setActiveMode(stanza.attrs.from, mode, context);
       }
       return true;
     }

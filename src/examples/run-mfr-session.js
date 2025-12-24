@@ -104,7 +104,12 @@ async function runMfrSession(problemDescription) {
       await xmpp.send(xml(
         "presence",
         { to: `${COORDINATOR_ROOM}/${NICKNAME}` },
-        xml("x", { xmlns: "http://jabber.org/protocol/muc" })
+        xml(
+          "x",
+          { xmlns: "http://jabber.org/protocol/muc" },
+          // Avoid receiving MUC history so we don't parse stale solutions.
+          xml("history", { maxchars: "0", maxstanzas: "0", seconds: "0" })
+        )
       ));
     });
 

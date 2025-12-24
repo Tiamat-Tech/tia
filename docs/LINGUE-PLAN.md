@@ -12,6 +12,8 @@ Integrate complete Lingue protocol support into TIA, enabling structured agent-t
 
 ## Current State
 
+**Note**: The Lingue negotiator and handlers are implemented in `src/lib/lingue/`, and MFR-specific modes (ModelFirstRDF, ModelNegotiation, ShaclValidation) are already used by coordinator and agent services. Some checklist items below are therefore partially complete even if the plan still lists them as pending.
+
 ### Existing Infrastructure ✅
 - Basic disco#info responder (`src/lib/lingue-capabilities.js`)
 - IBIS RDF handling (`src/lib/ibis-rdf.js`, `src/lib/lingue-store.js`)

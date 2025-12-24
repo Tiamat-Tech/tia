@@ -181,10 +181,7 @@ Schedule [entities] with [constraints].
 
 **Example**:
 ```
-Schedule meetings for team members.
-Alice is only available in mornings.
-Bob needs 2-hour slots.
-Carol can't meet before Bob.
+Schedule meetings for team members. Alice is only available in mornings. Bob needs 2-hour slots. Carol can't meet before Bob.
 ```
 
 ### Pattern 2: Resource Allocation
