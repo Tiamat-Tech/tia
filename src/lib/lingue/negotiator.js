@@ -122,7 +122,7 @@ export class LingueNegotiator {
 export function createOfferStanza(to, modes = []) {
   return xml(
     "message",
-    { to, type: "chat" },
+    { to, type: "groupchat" },
     xml(
       OFFER_ELEMENT,
       { xmlns: LINGUE_NS },
@@ -134,7 +134,7 @@ export function createOfferStanza(to, modes = []) {
 export function createAcceptStanza(to, mode) {
   return xml(
     "message",
-    { to, type: "chat" },
+    { to, type: "groupchat" },
     xml(ACCEPT_ELEMENT, { xmlns: LINGUE_NS, mode })
   );
 }

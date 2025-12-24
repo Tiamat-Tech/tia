@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>MCP chat troubleshooting (2025-12-21)</title>
+    <style>
+      body { margin: 0; padding: 48px 20px; font-family: "Helvetica Neue", Arial, sans-serif; background: #f7f4ef; color: #1f1b16; }
+      main { max-width: 920px; margin: 0 auto; background: #fffdf9; padding: 48px; border: 1px solid #e3d8c7; box-shadow: 6px 8px 0 #e3d8c7; }
+      h1, h2, h3 { font-weight: 600; margin-top: 2rem; }
+      pre { background: #1f1b16; color: #f7f4ef; padding: 16px; overflow: auto; }
+      code { font-family: "SFMono-Regular", ui-monospace, Menlo, Monaco, Consolas, monospace; }
+      a { color: #8a3b12; }
+      img { max-width: 100%; height: auto; }
+      table { border-collapse: collapse; width: 100%; }
+      th, td { border: 1px solid #e3d8c7; padding: 8px; }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>MCP chat troubleshooting (2025-12-21)</h1>
+<h2>Current status</h2>
+<ul>
+<li><code>tia-chat</code> MCP server now auto-builds a profile when <code>AGENT_PROFILE</code> is unset; it registers as <code>mcp-###</code> and joins <code>MUC_ROOM</code> (default <code>general@conference.tensegrity.it</code>).</li>
+<li><code>autoConnectXmpp</code> temporary client is stopped before <code>XmppRoomAgent</code> starts to avoid XMPP resource conflict.</li>
+<li><code>XmppRoomAgent</code> logs when sending group messages: <code>Sending group message to &lt;room&gt; as &lt;nick&gt;</code>.</li>
+<li>MCP server logs show registration/connect/join, but group messages still not visible in the room.</li>
+<li>Added buffering of incoming messages and a new MCP tool <code>getRecentMessages</code>.</li>
+</ul>
+<h2>Files changed</h2>
+<ul>
+<li><code>src/mcp/servers/tia-mcp-server.js</code><ul>
+<li>Default profile no longer <code>mistral</code>; random <code>mcp-###</code> profile built.</li>
+<li>Stops auto-connect client before starting <code>XmppRoomAgent</code>.</li>
+<li>Exposes <code>getRecentMessages</code> via MCP.</li>
+</ul>
+</li>
+<li><code>src/lib/xmpp-room-agent.js</code><ul>
+<li>Logs when sending group message.</li>
+</ul>
+</li>
+<li><code>src/mcp/chat-adapter.js</code><ul>
+<li>Records incoming messages into a ring buffer (default 50) and exposes <code>getRecentMessages</code>.</li>
+</ul>
+</li>
+<li><code>src/mcp/tool-definitions.js</code><ul>
+<li>Adds <code>getRecentMessages(limit?)</code> MCP tool.</li>
+</ul>
+</li>
+</ul>
+<h2>Repro context</h2>
+<ul>
+<li>MCP tool used: <code>sendMessage</code> with text (example: &quot;Hello Chair&quot;).</li>
+<li>Registration logs example:<ul>
+<li><code>Connected as mcp-583@tensegrity.it/mcp-583</code></li>
+<li><code>Joining room general@conference.tensegrity.it as mcp-583</code></li>
+<li><code>Joined room general@conference.tensegrity.it as mcp-583</code></li>
+</ul>
+</li>
+<li>Issue: no message appears in the MUC even though <code>sendMessage</code> returns <code>sent: true</code>.</li>
+</ul>
+<h2>Next checks</h2>
+<ul>
+<li>Restart MCP server to ensure updated code is running.</li>
+<li>Look for the send log line: <code>Sending group message to general@conference.tensegrity.it as mcp-###</code>.</li>
+<li>If the line is missing, the server is not on updated code.</li>
+<li>If the line is present but message still missing, inspect XMPP server logs / MUC permissions or stanza filtering.</li>
+<li>Use <code>getRecentMessages</code> to verify inbound messages are captured by MCP server.</li>
+</ul>
+
+    </main>
+  </body>
+</html>

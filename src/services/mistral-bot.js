@@ -6,7 +6,14 @@ import { MistralProvider } from "../agents/providers/mistral-provider.js";
 import logger from "../lib/logger-lite.js";
 import { loadAgentProfile } from "../agents/profile-loader.js";
 import { LingueNegotiator, LANGUAGE_MODES, featuresForModes } from "../lib/lingue/index.js";
-import { HumanChatHandler, IBISTextHandler } from "../lib/lingue/handlers/index.js";
+import {
+  HumanChatHandler,
+  IBISTextHandler,
+  ModelFirstRdfHandler,
+  ModelNegotiationHandler
+} from "../lib/lingue/handlers/index.js";
+import { MFR_CONTRIBUTION_TYPES, MFR_MESSAGE_TYPES } from "../lib/mfr/constants.js";
+import { xml } from "@xmpp/client";
 import { InMemoryHistoryStore } from "../lib/history/index.js";
 import { loadAgentRoster } from "../agents/profile-roster.js";
 import { loadSystemConfig } from "../lib/system-config.js";
@@ -59,6 +66,7 @@ const provider = new MistralProvider({
   logger
 });
 
+let negotiator = null;
 const handlers = {};
 if (profile.supportsLingueMode(LANGUAGE_MODES.HUMAN_CHAT)) {
   handlers[LANGUAGE_MODES.HUMAN_CHAT] = new HumanChatHandler({ logger });
@@ -67,7 +75,99 @@ if (profile.supportsLingueMode(LANGUAGE_MODES.IBIS_TEXT)) {
   handlers[LANGUAGE_MODES.IBIS_TEXT] = new IBISTextHandler({ logger });
 }
 
-const negotiator = new LingueNegotiator({
+const modelFirstRdfHandler = profile.supportsLingueMode(LANGUAGE_MODES.MODEL_FIRST_RDF)
+  ? new ModelFirstRdfHandler({ logger })
+  : null;
+
+if (profile.supportsLingueMode(LANGUAGE_MODES.MODEL_NEGOTIATION)) {
+  handlers[LANGUAGE_MODES.MODEL_NEGOTIATION] = new ModelNegotiationHandler({
+    logger,
+    onPayload: async ({ payload, roomJid, stanza }) => {
+      const messageType = payload?.messageType;
+      if (!messageType) {
+        return null;
+      }
+
+      const sessionId = payload?.sessionId;
+      const targetRoom = roomJid || stanza?.attrs?.from?.split("/")?.[0];
+
+      if (messageType === MFR_MESSAGE_TYPES.MODEL_CONTRIBUTION_REQUEST) {
+        if (!sessionId) {
+          logger.warn?.("[MistralBot] MFR contribution request missing sessionId");
+          return null;
+        }
+
+        if (!targetRoom) {
+          logger.warn?.("[MistralBot] Cannot determine target room for MFR contribution");
+          return null;
+        }
+
+        logger.info?.(`[MistralBot] Generating MFR contribution for session ${sessionId}`);
+        const rdf = await provider.handleMfrContributionRequest(payload);
+        if (rdf && rdf.trim() && modelFirstRdfHandler && negotiator?.xmppClient) {
+          logger.info?.(`[MistralBot] Sending ${rdf.length} bytes of RDF to ${targetRoom}`);
+          const contributionStanza = modelFirstRdfHandler.createStanza(
+            targetRoom,
+            rdf,
+            `MFR contribution from ${BOT_NICKNAME}`,
+            { metadata: { sessionId } }
+          );
+          await negotiator.xmppClient.send(contributionStanza);
+        } else {
+          logger.warn?.(`[MistralBot] No RDF generated or missing handler (rdf=${!!rdf}, handler=${!!modelFirstRdfHandler})`);
+        }
+
+        if (payload.requestedContributions?.includes(MFR_CONTRIBUTION_TYPES.ACTION)) {
+          const actions = await provider.extractActions(payload.problemDescription);
+          if (actions.length > 0 && negotiator?.xmppClient) {
+            await negotiator.send(targetRoom, {
+              mode: LANGUAGE_MODES.MODEL_NEGOTIATION,
+              payload: {
+                messageType: MFR_MESSAGE_TYPES.ACTION_SCHEMA,
+                sessionId,
+                actions,
+                timestamp: new Date().toISOString()
+              },
+              summary: `Action schema from ${BOT_NICKNAME} for ${sessionId}`
+            });
+          }
+        }
+
+        return null;
+      }
+
+      if (messageType === MFR_MESSAGE_TYPES.SESSION_COMPLETE) {
+        if (!sessionId || !targetRoom) {
+          logger.warn?.("[MistralBot] SessionComplete missing sessionId or target room");
+          return null;
+        }
+
+        const solution = Array.isArray(payload.solutions) ? payload.solutions[0] : payload.solution;
+        if (!solution) {
+          logger.warn?.("[MistralBot] SessionComplete missing solution payload");
+          return null;
+        }
+
+        const explanation = await provider.explainSolution(solution, payload.model || "");
+        if (!explanation || !explanation.trim()) {
+          return null;
+        }
+
+        await negotiator.xmppClient.send(
+          xml("message", { to: targetRoom, type: "groupchat" },
+            xml("body", {}, `Solution explanation: ${explanation}`)
+          )
+        );
+
+        return null;
+      }
+
+      return null;
+    }
+  });
+}
+
+negotiator = new LingueNegotiator({
   profile,
   handlers,
   logger

@@ -1,0 +1,209 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>MCP Integration Plan</title>
+    <style>
+      body { margin: 0; padding: 48px 20px; font-family: "Helvetica Neue", Arial, sans-serif; background: #f7f4ef; color: #1f1b16; }
+      main { max-width: 920px; margin: 0 auto; background: #fffdf9; padding: 48px; border: 1px solid #e3d8c7; box-shadow: 6px 8px 0 #e3d8c7; }
+      h1, h2, h3 { font-weight: 600; margin-top: 2rem; }
+      pre { background: #1f1b16; color: #f7f4ef; padding: 16px; overflow: auto; }
+      code { font-family: "SFMono-Regular", ui-monospace, Menlo, Monaco, Consolas, monospace; }
+      a { color: #8a3b12; }
+      img { max-width: 100%; height: auto; }
+      table { border-collapse: collapse; width: 100%; }
+      th, td { border: 1px solid #e3d8c7; padding: 8px; }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>MCP Integration Plan</h1>
+<blockquote>
+<p><strong>Status</strong>: Planning Phase
+<strong>Updated</strong>: 2025-02-14
+<strong>Goal</strong>: Add MCP client/server bridges for TIA agents and expose MCP capabilities via RDF profiles</p>
+</blockquote>
+<h2>Overview</h2>
+<p>Implement two MCP bridges:</p>
+<ul>
+<li><strong>MCP Client Bridge</strong>: TIA agent connects to MCP servers, loads tool metadata, and reflects capabilities into the agent profile (<code>vocabs/mcp-ontology.ttl</code>).</li>
+<li><strong>MCP Server Bridge</strong>: TIA agent exposes core chat/Lingue facilities as MCP tools, backed by XMPP MUC operations.</li>
+</ul>
+<p>For testing, create a <strong>simple MCP server</strong> that exposes a remote SPARQL store as tools and publishes endpoint metadata that the MCP client can ingest into a TIA profile.</p>
+<h2>Design Principles</h2>
+<ul>
+<li>Modular, DI-friendly classes in <code>src/mcp/</code></li>
+<li>No direct coupling to XMPP internals; rely on thin adapters</li>
+<li>Profile metadata derives from MCP tool schemas (via <code>mcp-ontology.ttl</code>)</li>
+<li>Keep non-network logic testable with fixtures</li>
+</ul>
+<hr>
+<h2>Phase 1: Planning &amp; Vocabulary Mapping</h2>
+<p><strong>Objective</strong>: Define RDF mapping from MCP tool metadata into TIA profiles.</p>
+<p><strong>Work</strong>:</p>
+<ul>
+<li>Review <code>vocabs/mcp-ontology.ttl</code> and define mapping rules.</li>
+<li>Draft profile extensions for MCP tool capabilities:<ul>
+<li><code>mcp:Tool</code></li>
+<li><code>mcp:hasTool</code></li>
+<li><code>mcp:hasEndpoint</code></li>
+<li><code>mcp:parameters</code> (as a literal or blank node)</li>
+</ul>
+</li>
+<li>Identify how tool schemas map to RDF labels/description.</li>
+</ul>
+<p><strong>Outputs</strong>:</p>
+<ul>
+<li>Document mapping in this plan.</li>
+<li>Add helper functions stubbed in <code>src/mcp/</code>.</li>
+</ul>
+<p><strong>Success Criteria</strong>:</p>
+<ul>
+<li>Clear schema mapping for tool metadata → RDF profile fields.</li>
+</ul>
+<p><strong>Mapping Notes</strong>:</p>
+<ul>
+<li>MCP tools map to <code>profile.mcp.tools</code> entries with <code>{ name, description, inputSchema, endpoints }</code>.</li>
+<li>Endpoints come from tool <code>_meta.tia.endpoints</code> or <code>_meta.endpoints</code>, stored in <code>profile.mcp.endpoints</code>.</li>
+<li>Profile RDF adds <code>mcp:Client</code> type, <code>mcp:hasCapability</code>, and <code>mcp:providesTool</code> / <code>mcp:providesResource</code> / <code>mcp:providesPrompt</code> nodes.</li>
+</ul>
+<hr>
+<h2>Phase 2: MCP Client Bridge</h2>
+<p><strong>Objective</strong>: Create MCP client bridge that connects to an MCP server and exposes tools to TIA agent.</p>
+<p><strong>Module Structure</strong>:</p>
+<pre><code>src/mcp/
+├── client-bridge.js      # MCP client wrapper
+├── profile-mapper.js     # Tool metadata → RDF profile
+├── tool-registry.js      # Normalize and store tool metadata
+└── index.js
+</code></pre>
+<p><strong>Key Interfaces</strong>:</p>
+<pre><code class="language-javascript">export class McpClientBridge {
+  constructor({ client, profile, mapper, logger })
+  async connect()
+  async listTools()
+  async callTool(name, args)
+  async populateProfile()
+}
+</code></pre>
+<p><strong>Integration Points</strong>:</p>
+<ul>
+<li><code>AgentProfile</code> gains <code>mcp</code> metadata section or uses <code>custom</code> namespace.</li>
+<li><code>loadAgentProfile()</code> optionally merges MCP metadata from a server.</li>
+</ul>
+<p><strong>Tests</strong>:</p>
+<ul>
+<li>Mock MCP server and verify tool metadata mapping.</li>
+</ul>
+<p><strong>Success Criteria</strong>:</p>
+<ul>
+<li>Tool metadata parsed and stored.</li>
+<li>Client can call tools.</li>
+</ul>
+<hr>
+<h2>Phase 3: MCP Server Bridge (TIA)</h2>
+<p><strong>Objective</strong>: Expose TIA agent capabilities as MCP tools.</p>
+<p><strong>Tools to Expose</strong>:</p>
+<ul>
+<li><code>sendMessage</code> (groupchat or direct)</li>
+<li><code>fetchLingueSummary</code> (IBIS detection)</li>
+<li><code>offerLingueMode</code> (initiate negotiation)</li>
+<li><code>getProfile</code> (agent profile as Turtle)</li>
+</ul>
+<p><strong>Module Structure</strong>:</p>
+<pre><code>src/mcp/
+├── server-bridge.js
+├── tool-definitions.js
+└── chat-adapter.js
+</code></pre>
+<p><strong>Integration Points</strong>:</p>
+<ul>
+<li>XMPP adapter for sending messages</li>
+<li>Lingue negotiator hooks</li>
+</ul>
+<p><strong>Tests</strong>:</p>
+<ul>
+<li>Local MCP client calls against a mock XMPP adapter</li>
+</ul>
+<p><strong>Success Criteria</strong>:</p>
+<ul>
+<li>MCP server exposes tools and routes requests to XMPP/Lingue.</li>
+</ul>
+<hr>
+<h2>Phase 4: SPARQL MCP Test Server</h2>
+<p><strong>Objective</strong>: Provide a simple MCP server exposing SPARQL endpoints.</p>
+<p><strong>Behavior</strong>:</p>
+<ul>
+<li>Tools: <code>sparqlQuery</code>, <code>sparqlUpdate</code></li>
+<li>Metadata: endpoint URLs added to tool schema and profile mapping</li>
+<li>Config: endpoints from env or config file</li>
+</ul>
+<p><strong>Files</strong>:</p>
+<ul>
+<li><code>src/mcp/servers/sparql-server.js</code></li>
+<li><code>config/mcp/sparql.json</code> (or <code>.env</code>)</li>
+</ul>
+<p><strong>Success Criteria</strong>:</p>
+<ul>
+<li>MCP client lists SPARQL tools and stores endpoints in profile.</li>
+</ul>
+<hr>
+<h2>Phase 5: Docs &amp; Examples</h2>
+<p><strong>Objective</strong>: Document usage for MCP client/server and SPARQL server test.</p>
+<p><strong>Docs</strong>:</p>
+<ul>
+<li><code>docs/mcp-client.md</code></li>
+<li><code>docs/mcp-server.md</code></li>
+<li>README update</li>
+</ul>
+<p><strong>Examples</strong>:</p>
+<ul>
+<li><code>src/examples/mcp-client-demo.js</code></li>
+<li><code>src/examples/mcp-sparql-server.js</code></li>
+</ul>
+<hr>
+<h2>Progress Tracking</h2>
+<h3>Phase 1: Planning &amp; Mapping ⬜</h3>
+<ul>
+<li><input checked="" disabled="" type="checkbox"> Review <code>vocabs/mcp-ontology.ttl</code></li>
+<li><input checked="" disabled="" type="checkbox"> Define RDF mapping for tool metadata</li>
+<li><input checked="" disabled="" type="checkbox"> Add mapping notes to this plan</li>
+</ul>
+<h3>Phase 2: MCP Client Bridge ⬜</h3>
+<ul>
+<li><input checked="" disabled="" type="checkbox"> Implement client bridge</li>
+<li><input checked="" disabled="" type="checkbox"> Implement profile mapper</li>
+<li><input checked="" disabled="" type="checkbox"> Implement tool registry</li>
+<li><input checked="" disabled="" type="checkbox"> Add tests</li>
+</ul>
+<h3>Phase 3: MCP Server Bridge (TIA) ⬜</h3>
+<ul>
+<li><input checked="" disabled="" type="checkbox"> Implement server bridge</li>
+<li><input checked="" disabled="" type="checkbox"> Define tools and adapters</li>
+<li><input disabled="" type="checkbox"> Add tests</li>
+</ul>
+<h3>Phase 4: SPARQL MCP Test Server ⬜</h3>
+<ul>
+<li><input checked="" disabled="" type="checkbox"> Implement SPARQL server</li>
+<li><input checked="" disabled="" type="checkbox"> Configure endpoints</li>
+<li><input disabled="" type="checkbox"> Add tests</li>
+</ul>
+<h3>Phase 5: Docs &amp; Examples ⬜</h3>
+<ul>
+<li><input checked="" disabled="" type="checkbox"> Add MCP docs</li>
+<li><input checked="" disabled="" type="checkbox"> Add examples</li>
+<li><input checked="" disabled="" type="checkbox"> Update README</li>
+</ul>
+<hr>
+<h2>Open Questions</h2>
+<ol>
+<li>Should MCP metadata be stored in <code>AgentProfile.custom</code> or as a first-class <code>mcp</code> property?</li>
+<li>How should tool schemas map to RDF nodes (flattened vs. nested blank nodes)?</li>
+<li>Should the MCP client auto-refresh tools on reconnect?</li>
+<li>How to represent multiple MCP servers in a single TIA profile?</li>
+</ol>
+
+    </main>
+  </body>
+</html>

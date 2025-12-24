@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>agent-dev-prompt</title>
+    <style>
+      body { margin: 0; padding: 48px 20px; font-family: "Helvetica Neue", Arial, sans-serif; background: #f7f4ef; color: #1f1b16; }
+      main { max-width: 920px; margin: 0 auto; background: #fffdf9; padding: 48px; border: 1px solid #e3d8c7; box-shadow: 6px 8px 0 #e3d8c7; }
+      h1, h2, h3 { font-weight: 600; margin-top: 2rem; }
+      pre { background: #1f1b16; color: #f7f4ef; padding: 16px; overflow: auto; }
+      code { font-family: "SFMono-Regular", ui-monospace, Menlo, Monaco, Consolas, monospace; }
+      a { color: #8a3b12; }
+      img { max-width: 100%; height: auto; }
+      table { border-collapse: collapse; width: 100%; }
+      th, td { border: 1px solid #e3d8c7; padding: 8px; }
+    </style>
+  </head>
+  <body>
+    <main>
+      <p>You are a coding agent updating tia-agents. Read the following files before making changes:</p>
+<ul>
+<li><code>docs/agents.md</code> (capabilities and commands)</li>
+<li><code>docs/testing.md</code> (env/tests)</li>
+<li><code>docs/mcp.md</code> (MCP endpoints and XMPP debug)</li>
+<li><code>docs/server.md</code> (systemd/runtime)</li>
+<li><code>docs/debating-society.md</code> (Chair/Recorder behavior)</li>
+<li><code>config/agents/*.ttl</code> for the agent you are modifying (XMPP creds, nick/resource, roomJid, provider settings)</li>
+<li><code>vocabs/lingue.ttl</code> for Lingue vocabulary references</li>
+<li><code>src/agents/core/*</code> (agent runner, mention detector, command parser)</li>
+<li>Provider files under <code>src/agents/providers/*</code> relevant to the agent</li>
+<li>Start scripts (<code>start-all-agents.sh</code>, <code>start-debate-agents.sh</code>)</li>
+<li>The agent service file in <code>src/services/&lt;agent&gt;.js</code></li>
+<li><code>src/lib/history/*</code> if you need per-agent conversation context</li>
+</ul>
+<p>Procedure to create a new agent:</p>
+<ol>
+<li>Add a profile file under <code>config/agents/&lt;name&gt;.ttl</code> with XMPP service/domain/username/passwordKey/resource and roomJid; keep XMPP passwords in <code>config/agents/secrets.json</code> and API keys/tokens in <code>.env</code>.</li>
+<li>If you need a new behavior, add a provider under <code>src/agents/providers/</code> implementing <code>handle({command, content, metadata, ...})</code>.</li>
+<li>Wire the agent entry point in <code>src/services/&lt;name&gt;.js</code> using <code>AgentRunner</code>, the provider, <code>createMentionDetector(nickname)</code>, and <code>defaultCommandParser</code>. Do not hardcode nick/resource; load from the profile.</li>
+<li>If the agent is Lingue-capable, add <code>LingueNegotiator</code> + handlers based on <code>profile.supportsLingueMode()</code> and pass <code>negotiator</code> into the runner.</li>
+<li>Add a start script if needed or register the agent in <code>run-all-agents.js</code> with <code>AGENT_PROFILE=&lt;name&gt;</code>.</li>
+<li>Update docs if behavior is user-facing; add tests where feasible (Vitest for profile loading/logic).</li>
+<li>Ensure XMPP usernames/resources remain distinct; do not fall back to &quot;bot&quot;.</li>
+</ol>
+<p>Lingue checklist:</p>
+<ul>
+<li>Add <code>lng:supports</code>, <code>lng:prefers</code>, and <code>lng:profile</code> to the agent profile.</li>
+<li>Use <code>LingueNegotiator</code> in the service file with handlers for supported modes.</li>
+<li>Keep MUC messages human-readable via <code>summary</code> in structured payloads.</li>
+</ul>
+<h2>Custom Agent API (library usage)</h2>
+<p>Minimal setup using the exported API:</p>
+<pre><code class="language-javascript">import {
+  AgentRunner,
+  loadAgentProfile,
+  createMentionDetector,
+  LingueNegotiator,
+  LINGUE,
+  Handlers,
+  InMemoryHistoryStore
+} from &quot;tia-agents&quot;;
+
+class EchoProvider {
+  async handle({ content, reply }) {
+    await reply(`Echo: ${content}`);
+  }
+}
+
+const profile = await loadAgentProfile(&quot;demo&quot;);
+const xmppConfig = profile.toConfig().xmpp;
+
+const negotiator = new LingueNegotiator({
+  profile,
+  handlers: {
+    [LINGUE.LANGUAGE_MODES.HUMAN_CHAT]: new Handlers.HumanChatHandler()
+  }
+});
+
+const runner = new AgentRunner({
+  xmppConfig,
+  roomJid: profile.roomJid,
+  nickname: profile.nickname,
+  provider: new EchoProvider(),
+  negotiator,
+  mentionDetector: createMentionDetector(profile.nickname),
+  historyStore: new InMemoryHistoryStore({ maxEntries: 40 })
+});
+
+await runner.start();
+</code></pre>
+<p>Notes:</p>
+<ul>
+<li>Profiles are RDF-based; see <code>config/agents/*.ttl</code> and <code>config/agents/secrets.json</code>.</li>
+<li>For Mistral providers, pass <code>historyStore</code> into the provider to keep context across API calls.</li>
+</ul>
+
+    </main>
+  </body>
+</html>

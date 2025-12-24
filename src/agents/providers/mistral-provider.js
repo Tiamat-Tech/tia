@@ -183,6 +183,53 @@ Respond with ONLY the JSON array, no other text.`;
   }
 
   /**
+   * Extract actions from problem description
+   * @param {string} problemDescription - Natural language problem
+   * @returns {Promise<Array<Object>>} Extracted actions
+   */
+  async extractActions(problemDescription) {
+    try {
+      const prompt = `Extract actions from this problem description.
+Return ONLY a JSON array of actions with preconditions and effects.
+
+Problem: ${problemDescription}
+
+Format:
+[
+  {
+    "name": "ActionName",
+    "description": "short description",
+    "parameters": ["param1", "param2"],
+    "preconditions": ["precondition1", "precondition2"],
+    "effects": ["effect1", "effect2"]
+  }
+]
+
+Respond with ONLY the JSON array, no other text.`;
+
+      const response = await this.client.chat.complete({
+        model: this.model,
+        messages: [{ role: "user", content: prompt }],
+        maxTokens: 500,
+        temperature: 0.3
+      });
+
+      const content = response.choices[0]?.message?.content?.trim();
+
+      const jsonMatch = content.match(/```(?:json)?\s*([\s\S]*?)\s*```/) ||
+                       content.match(/(\[[\s\S]*\])/);
+      const jsonText = jsonMatch ? jsonMatch[1] : content;
+
+      const actions = JSON.parse(jsonText);
+      this.logger.debug?.(`[MistralProvider] Extracted ${actions.length} actions`);
+      return actions;
+    } catch (error) {
+      this.logger.error?.(`[MistralProvider] Action extraction error: ${error.message}`);
+      return [];
+    }
+  }
+
+  /**
    * Generate RDF representation of entities
    * @param {Array<Object>} entities - Extracted entities
    * @param {string} sessionId - MFR session ID
@@ -204,16 +251,13 @@ Respond with ONLY the JSON array, no other text.`;
     ];
 
     entities.forEach((entity, index) => {
-      const entityId = `entity-${index + 1}`;
+      const entityId = `entity-${this.slugify(this.nickname)}-${index + 1}`;
       const entityUri = `<${MFR_NS}${sessionId}/${entityId}>`;
 
       lines.push(`${entityUri} a mfr:Entity ;`);
       lines.push(`  rdf:type mfr:Entity ;`);
       lines.push(`  schema:name "${entity.name}" ;`);
-
-      if (entity.type) {
-        lines.push(`  mfr:entityType "${entity.type}" ;`);
-      }
+      lines.push(`  mfr:entityType "${entity.type || entity.name}" ;`);
 
       if (entity.description) {
         lines.push(`  rdfs:comment "${entity.description}" ;`);
@@ -244,7 +288,7 @@ Respond with ONLY the JSON array, no other text.`;
     ];
 
     goals.forEach((goal, index) => {
-      const goalId = `goal-${index + 1}`;
+      const goalId = `goal-${this.slugify(this.nickname)}-${index + 1}`;
       const goalUri = `<${MFR_NS}${sessionId}/${goalId}>`;
 
       lines.push(`${goalUri} a mfr:Goal ;`);
@@ -259,6 +303,14 @@ Respond with ONLY the JSON array, no other text.`;
     });
 
     return lines.join('\n');
+  }
+
+  slugify(value) {
+    return String(value || "")
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-+|-+$/g, "")
+      .replace(/--+/g, "-") || "agent";
   }
 
   /**

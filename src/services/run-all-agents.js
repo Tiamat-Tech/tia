@@ -14,6 +14,11 @@ const AGENT_DEFINITIONS = {
     description: "Semem MCP-backed agent",
     env: { AGENT_PROFILE: "semem" }
   },
+  "mfr-semantic": {
+    command: "node src/services/mfr-semantic-agent.js",
+    description: "MFR semantic constraint agent",
+    env: { AGENT_PROFILE: "mfr-semantic" }
+  },
   mistral: {
     command: "node src/services/mistral-bot.js",
     description: "Mistral API-backed bot",

@@ -1,0 +1,23 @@
+@prefix sh: <http://www.w3.org/ns/shacl#> .
+@prefix kia: <http://purl.org/stuff/kia#> .
+
+kia:ProtocolNegotiationShape
+    a sh:NodeShape ;
+    sh:targetClass kia:ProtocolNegotiation ;
+    sh:property [
+        sh:path kia:hasInitialProtocol ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:class kia:Protocol ;
+    ] ;
+    sh:property [
+        sh:path kia:targetProtocol ;
+        sh:minCount 1 ;
+        sh:class kia:Protocol ;
+    ] ;
+    sh:property [
+        sh:path kia:negotiationState ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:class kia:NegotiationState ;
+    ] .

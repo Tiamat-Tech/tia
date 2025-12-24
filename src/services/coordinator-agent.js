@@ -146,7 +146,10 @@ if (profile.supportsLingueMode(LANGUAGE_MODES.MODEL_NEGOTIATION)) {
       logger.debug(
         `Received negotiation message from ${from}: ${payload.messageType}`
       );
-      return null; // Coordinator typically broadcasts, doesn't respond to negotiation
+      return await provider.handleNegotiationPayload(payload, {
+        ...metadata,
+        sender: from
+      });
     }
   });
 }

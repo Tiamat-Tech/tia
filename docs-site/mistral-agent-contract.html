@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Mistral Agent Contract (MFR)</title>
+    <style>
+      body { margin: 0; padding: 48px 20px; font-family: "Helvetica Neue", Arial, sans-serif; background: #f7f4ef; color: #1f1b16; }
+      main { max-width: 920px; margin: 0 auto; background: #fffdf9; padding: 48px; border: 1px solid #e3d8c7; box-shadow: 6px 8px 0 #e3d8c7; }
+      h1, h2, h3 { font-weight: 600; margin-top: 2rem; }
+      pre { background: #1f1b16; color: #f7f4ef; padding: 16px; overflow: auto; }
+      code { font-family: "SFMono-Regular", ui-monospace, Menlo, Monaco, Consolas, monospace; }
+      a { color: #8a3b12; }
+      img { max-width: 100%; height: auto; }
+      table { border-collapse: collapse; width: 100%; }
+      th, td { border: 1px solid #e3d8c7; padding: 8px; }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>Mistral Agent Contract (MFR)</h1>
+<p>This document defines the expected behavior of the Mistral (Natural Language) agent during Model-First Reasoning (MFR) sessions.</p>
+<h2>Role Summary</h2>
+<p>The Mistral agent interprets user problem descriptions, extracts initial entities and goals, and provides final natural-language explanations of solutions.</p>
+<h2>Inputs</h2>
+<ul>
+<li><code>mfr:ModelContributionRequest</code> messages.</li>
+<li>Problem description text in the request payload.</li>
+<li>Optional solution objects for explanation.</li>
+</ul>
+<h2>Outputs</h2>
+<ul>
+<li>RDF/Turtle contributions in <code>lng:ModelFirstRDF</code> mode.</li>
+<li>Natural language summaries in <code>lng:HumanChat</code> mode.</li>
+</ul>
+<h2>Required Lingue Modes</h2>
+<ul>
+<li><code>lng:ModelNegotiation</code> to receive protocol messages.</li>
+<li><code>lng:ModelFirstRDF</code> to return RDF contributions.</li>
+<li><code>lng:HumanChat</code> for explanations and user interaction.</li>
+</ul>
+<h2>Contribution Responsibilities</h2>
+<h3>Problem Interpretation</h3>
+<ul>
+<li>Extract core entities and goals from the problem description.</li>
+<li>Emit <code>mfr:Entity</code> and <code>mfr:Goal</code> nodes.</li>
+</ul>
+<h3>Goal Identification</h3>
+<ul>
+<li>Represent goals with clear labels and optional priorities.</li>
+<li>Ensure goals are traceable to the original problem.</li>
+</ul>
+<h3>Action Schema Emission</h3>
+<ul>
+<li>When action definitions are requested, emit a structured <code>mfr:ActionSchema</code> payload.</li>
+<li>Include action name, parameters, preconditions, and effects for downstream logic agents.</li>
+</ul>
+<h2>Explanation Responsibilities</h2>
+<ul>
+<li>Given a solution object and model summary, provide a concise explanation.</li>
+<li>Keep explanations grounded in the model and constraints.</li>
+</ul>
+<h2>Negotiation Responsibilities</h2>
+<ul>
+<li>On <code>mfr:SessionComplete</code>, generate a natural language explanation and post it to the MUC.</li>
+</ul>
+<h2>Message Expectations</h2>
+<h3>Input Payload</h3>
+<ul>
+<li><code>sessionId</code></li>
+<li><code>problemDescription</code></li>
+<li><code>requestedContributions</code></li>
+</ul>
+<h3>Output Payload</h3>
+<ul>
+<li>Turtle RDF with <code>mfr:Entity</code> and <code>mfr:Goal</code> nodes.</li>
+<li>Include <code>sessionId</code> metadata in the Lingue stanza.</li>
+</ul>
+<h2>Error Handling</h2>
+<ul>
+<li>If extraction fails, return a minimal goal summary rather than silence.</li>
+<li>If explanation generation fails, return a brief fallback message.</li>
+</ul>
+<h2>Configuration Sources</h2>
+<ul>
+<li>XMPP account from RDF profile + <code>config/agents/secrets.json</code>.</li>
+<li>Mistral API key and model from <code>.env</code> or profile configuration.</li>
+</ul>
+<h2>Success Criteria</h2>
+<ul>
+<li>At least one goal contribution when the problem includes an objective.</li>
+<li>Final explanation is concise and refers to the explicit model.</li>
+</ul>
+
+    </main>
+  </body>
+</html>

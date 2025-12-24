@@ -1,0 +1,323 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Model-First Reasoning Multi-Agent Architecture</title>
+    <style>
+      body { margin: 0; padding: 48px 20px; font-family: "Helvetica Neue", Arial, sans-serif; background: #f7f4ef; color: #1f1b16; }
+      main { max-width: 920px; margin: 0 auto; background: #fffdf9; padding: 48px; border: 1px solid #e3d8c7; box-shadow: 6px 8px 0 #e3d8c7; }
+      h1, h2, h3 { font-weight: 600; margin-top: 2rem; }
+      pre { background: #1f1b16; color: #f7f4ef; padding: 16px; overflow: auto; }
+      code { font-family: "SFMono-Regular", ui-monospace, Menlo, Monaco, Consolas, monospace; }
+      a { color: #8a3b12; }
+      img { max-width: 100%; height: auto; }
+      table { border-collapse: collapse; width: 100%; }
+      th, td { border: 1px solid #e3d8c7; padding: 8px; }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>Model-First Reasoning Multi-Agent Architecture</h1>
+<h2>Executive Summary</h2>
+<p>This document outlines an architecture for implementing Model-First Reasoning (MFR) in a multi-agent system, leveraging RDF ontologies and the Lingue language negotiation framework.</p>
+<p><strong>Key Innovation</strong>: Separating problem modeling from problem solving across specialized agents, with explicit RDF-based model construction preceding any reasoning phase.</p>
+<h2>Core Concepts</h2>
+<h3>Model-First Reasoning (MFR)</h3>
+<p>MFR is a two-phase paradigm:</p>
+<ol>
+<li><p><strong>Phase 1: Model Construction</strong> - Explicitly define:</p>
+<ul>
+<li>Entities (objects in the problem space)</li>
+<li>State Variables (mutable properties)</li>
+<li>Actions (transformations with preconditions/effects)</li>
+<li>Constraints (invariants that must hold)</li>
+</ul>
+</li>
+<li><p><strong>Phase 2: Constrained Reasoning</strong> - All reasoning operates strictly within the defined model</p>
+</li>
+</ol>
+<h3>Why MFR for Multi-Agent Systems?</h3>
+<ul>
+<li><strong>Shared Understanding</strong>: All agents work from the same explicit model</li>
+<li><strong>Verifiable Solutions</strong>: Constraints are checkable against the model</li>
+<li><strong>Reduced Hallucinations</strong>: Explicit representation prevents implicit assumptions</li>
+<li><strong>Compositional Expertise</strong>: Different agents contribute their specialized knowledge to model construction</li>
+<li><strong>Interpretability</strong>: Model + reasoning trace = auditable decision process</li>
+</ul>
+<h2>Architecture Components</h2>
+<h3>1. Ontology Stack</h3>
+<pre><code>┌─────────────────────────────────────┐
+│   Domain-Specific Ontologies        │
+│   (Medical, Logistics, Finance)     │
+├─────────────────────────────────────┤
+│   MFR Problem Model Ontology        │
+│   (Entities, Actions, Constraints)  │
+├─────────────────────────────────────┤
+│   Lingue Communication Ontology     │
+│   (Agents, Profiles, Exchanges)     │
+├─────────────────────────────────────┤
+│   MCP Tool Integration Ontology     │
+│   (External capabilities)           │
+└─────────────────────────────────────┘
+</code></pre>
+<h3>2. Agent Roles in MFR</h3>
+<h4><strong>Coordinator Agent</strong></h4>
+<ul>
+<li>Orchestrates model construction</li>
+<li>Manages negotiation protocol</li>
+<li>Validates final model with SHACL</li>
+<li>Synthesizes multi-agent solutions</li>
+</ul>
+<h4><strong>Knowledge Query Agent</strong> (e.g., Data)</h4>
+<ul>
+<li>Contributes entity definitions</li>
+<li>Grounds entities in external knowledge bases (Wikidata)</li>
+<li>Identifies state variables from domain knowledge</li>
+<li>Validates entity relationships</li>
+</ul>
+<h4><strong>Semantic Reasoning Agent</strong> (e.g., MFR Semantic)</h4>
+<ul>
+<li>Contributes constraint definitions</li>
+<li>Validates ontological consistency</li>
+<li>Performs semantic alignment</li>
+<li>Checks logical coherence</li>
+</ul>
+<h4><strong>Logical Reasoning Agent</strong> (e.g., Prolog)</h4>
+<ul>
+<li>Defines action preconditions and effects</li>
+<li>Contributes logical constraints</li>
+<li>Validates state transitions</li>
+<li>Performs rule-based inference</li>
+</ul>
+<h4><strong>Natural Language Agent</strong> (e.g., Mistral)</h4>
+<ul>
+<li>Interprets user problem descriptions</li>
+<li>Extracts initial entities and goals</li>
+<li>Explains solutions in natural language</li>
+<li>Mediates human-machine communication</li>
+</ul>
+<h3>3. Protocol Flow</h3>
+<pre><code>User Request
+     ↓
+┌─────────────────────────────────────┐
+│  PHASE 1: Collaborative Model       │
+│           Construction              │
+└─────────────────────────────────────┘
+     ↓
+1. Problem Interpretation (NL Agent)
+     ↓
+2. Entity Discovery (Knowledge Agent)
+     ↓
+3. Constraint Identification (Semantic Agent)
+     ↓
+4. Action Definition (Logic Agent)
+     ↓
+5. Model Merge &amp; Validation (Coordinator)
+     ↓
+6. Conflict Negotiation (All Agents)
+     ↓
+┌─────────────────────────────────────┐
+│  Validated Problem Model (RDF)      │
+└─────────────────────────────────────┘
+     ↓
+┌─────────────────────────────────────┐
+│  PHASE 2: Constrained Reasoning     │
+└─────────────────────────────────────┘
+     ↓
+7. Parallel Reasoning (All Agents)
+     ↓
+8. Solution Validation (Against Model)
+     ↓
+9. Synthesis &amp; Ranking (Coordinator)
+     ↓
+10. Explanation Generation (NL Agent)
+     ↓
+Response to User
+</code></pre>
+<h3>4. Lingue Integration</h3>
+<p><strong>Language Mode Negotiation</strong> ensures agents can communicate effectively:</p>
+<ul>
+<li><strong>Agent Capabilities</strong>: Each agent declares supported language modes in its Lingue profile</li>
+<li><strong>Exchange Negotiation</strong>: Coordinator finds common modes for model exchange</li>
+<li><strong>Content Negotiation</strong>: Model can be expressed in multiple serializations (Turtle, JSON-LD, etc.)</li>
+</ul>
+<p><strong>Supported Language Modes</strong>:</p>
+<ul>
+<li><code>lng:ModelFirstRDF</code> - RDF-based problem models</li>
+<li><code>lng:SparqlQuery</code> - For knowledge retrieval</li>
+<li><code>lng:PrologProgram</code> - For logical rules</li>
+<li><code>lng:HumanChat</code> - For user interaction</li>
+<li><code>lng:ModelNegotiation</code> - For collaborative construction protocol</li>
+</ul>
+<h3>5. XMPP Communication Layer</h3>
+<p><strong>Channels</strong>:</p>
+<ul>
+<li><strong>Model Construction MUC</strong>: Room for collaborative model building</li>
+<li><strong>Reasoning MUC</strong>: Room for solution generation</li>
+<li><strong>Validation MUC</strong>: Room for constraint checking</li>
+<li><strong>Coordination Direct Messages</strong>: For coordinator-agent communication</li>
+</ul>
+<p><strong>Message Types</strong>:</p>
+<ul>
+<li><code>mfr:ModelContributionRequest</code></li>
+<li><code>mfr:EntityProposal</code></li>
+<li><code>mfr:ConstraintProposal</code></li>
+<li><code>mfr:ActionDefinition</code></li>
+<li><code>mfr:ModelValidationResult</code></li>
+<li><code>mfr:SolutionProposal</code></li>
+</ul>
+<h2>Implementation Strategy</h2>
+<h3>Phase 1: Foundation (Week 1-2)</h3>
+<ol>
+<li><strong>Define MFR Ontology</strong> (see <code>mfr-ontology.ttl</code>)</li>
+<li><strong>Extend Lingue</strong> with MFR language modes</li>
+<li><strong>Create SHACL Shapes</strong> for validation</li>
+<li><strong>Update Agent Profiles</strong> with MFR capabilities</li>
+</ol>
+<h3>Phase 2: Coordinator Development (Week 3-4)</h3>
+<ol>
+<li><p><strong>Model Construction Service</strong></p>
+<ul>
+<li>Parse incoming requests</li>
+<li>Broadcast to specialized agents</li>
+<li>Collect contributions</li>
+<li>Merge RDF graphs</li>
+</ul>
+</li>
+<li><p><strong>Validation Service</strong></p>
+<ul>
+<li>SHACL validation</li>
+<li>Conflict detection</li>
+<li>Negotiation protocol</li>
+</ul>
+</li>
+</ol>
+<h3>Phase 3: Agent Enhancement (Week 5-6)</h3>
+<ol>
+<li><p><strong>Update Existing Agents</strong></p>
+<ul>
+<li>Add model contribution handlers</li>
+<li>Implement constrained reasoning</li>
+<li>Add model-aware response generation</li>
+</ul>
+</li>
+<li><p><strong>Testing</strong></p>
+<ul>
+<li>Unit tests per agent</li>
+<li>Integration tests across agents</li>
+<li>End-to-end scenario tests</li>
+</ul>
+</li>
+</ol>
+<h3>Phase 4: Optimization (Week 7-8)</h3>
+<ol>
+<li><p><strong>Performance Tuning</strong></p>
+<ul>
+<li>Model caching</li>
+<li>Incremental validation</li>
+<li>Parallel reasoning</li>
+</ul>
+</li>
+<li><p><strong>Monitoring &amp; Observability</strong></p>
+<ul>
+<li>Model construction metrics</li>
+<li>Constraint violation tracking</li>
+<li>Solution quality metrics</li>
+</ul>
+</li>
+</ol>
+<h2>Example Scenarios</h2>
+<h3>Scenario 1: Medical Appointment Scheduling</h3>
+<p><strong>Problem</strong>: Schedule appointments considering drug interactions</p>
+<p><strong>Model Construction</strong>:</p>
+<ul>
+<li>Data agent: Retrieves drug entities from Wikidata</li>
+<li>MFR Semantic agent: Identifies interaction constraints from medical ontologies</li>
+<li>Prolog agent: Defines scheduling actions with temporal constraints</li>
+<li>Mistral agent: Extracts patient preferences and requirements</li>
+</ul>
+<p><strong>Reasoning</strong>:</p>
+<ul>
+<li>Each agent proposes schedules respecting their constraints</li>
+<li>Coordinator validates all proposals against full model</li>
+<li>Solutions ranked by optimality criteria</li>
+</ul>
+<h3>Scenario 2: Supply Chain Optimization</h3>
+<p><strong>Problem</strong>: Optimize delivery routes with multiple constraints</p>
+<p><strong>Model Construction</strong>:</p>
+<ul>
+<li>Data agent: Retrieves location, product, and vehicle entities</li>
+<li>MFR Semantic agent: Defines capacity, timing, and regulatory constraints</li>
+<li>Prolog agent: Models route actions and state transitions</li>
+<li>Mistral agent: Interprets business priorities</li>
+</ul>
+<p><strong>Reasoning</strong>:</p>
+<ul>
+<li>Logic agent generates feasible routes</li>
+<li>Knowledge agent validates against real-world data</li>
+<li>Semantic agent checks compliance</li>
+<li>Solutions synthesized and explained</li>
+</ul>
+<h3>Scenario 3: Financial Risk Assessment</h3>
+<p><strong>Problem</strong>: Evaluate investment portfolio risk</p>
+<p><strong>Model Construction</strong>:</p>
+<ul>
+<li>Data agent: Retrieves asset data and market information</li>
+<li>MFR Semantic agent: Defines regulatory and risk constraints</li>
+<li>Prolog agent: Models portfolio rebalancing actions</li>
+<li>Mistral agent: Interprets user risk preferences</li>
+</ul>
+<p><strong>Reasoning</strong>:</p>
+<ul>
+<li>Parallel risk calculations by multiple agents</li>
+<li>Constraint validation against regulatory requirements</li>
+<li>Scenario analysis and explanation</li>
+</ul>
+<h2>Benefits</h2>
+<h3>For Users</h3>
+<ul>
+<li>More reliable answers with fewer errors</li>
+<li>Transparent reasoning process</li>
+<li>Verifiable constraint adherence</li>
+</ul>
+<h3>For Developers</h3>
+<ul>
+<li>Clear separation of concerns</li>
+<li>Reusable problem models</li>
+<li>Easier debugging (model vs reasoning)</li>
+</ul>
+<h3>For the System</h3>
+<ul>
+<li>Better agent coordination</li>
+<li>Reduced redundant computation</li>
+<li>Scalable to new domains</li>
+</ul>
+<h2>Future Extensions</h2>
+<ol>
+<li><strong>Learning from Models</strong>: Agents learn common patterns in problem models</li>
+<li><strong>Model Reuse</strong>: Build library of reusable domain models</li>
+<li><strong>Incremental Refinement</strong>: Users can iteratively refine models</li>
+<li><strong>Visual Model Editing</strong>: GUI for model inspection and modification</li>
+<li><strong>Federated Reasoning</strong>: Distribute reasoning across multiple systems</li>
+</ol>
+<h2>References</h2>
+<ul>
+<li>Model-First Reasoning paper: <code>2512.14474v1.pdf</code></li>
+<li>Lingue specification: <code>vocabs/lingue.ttl</code></li>
+<li>Existing agent implementations: <code>config/agents/*.ttl</code></li>
+<li>XMPP integration: <code>docs/lingue-integration.md</code></li>
+</ul>
+<h2>Getting Started</h2>
+<ol>
+<li>Review the ontology definitions in <code>mfr-ontology.ttl</code></li>
+<li>Examine the implementation examples in <code>mfr-implementation-examples.js</code></li>
+<li>Study the agent configuration updates in <code>mfr-agent-configs.ttl</code></li>
+<li>Follow the deployment guide for testing</li>
+</ol>
+<h2>Contact &amp; Support</h2>
+<p>For questions or contributions, refer to your project documentation and the MFR research paper included in this package.</p>
+
+    </main>
+  </body>
+</html>

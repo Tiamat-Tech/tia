@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Coordinator Agent Contract (MFR)</title>
+    <style>
+      body { margin: 0; padding: 48px 20px; font-family: "Helvetica Neue", Arial, sans-serif; background: #f7f4ef; color: #1f1b16; }
+      main { max-width: 920px; margin: 0 auto; background: #fffdf9; padding: 48px; border: 1px solid #e3d8c7; box-shadow: 6px 8px 0 #e3d8c7; }
+      h1, h2, h3 { font-weight: 600; margin-top: 2rem; }
+      pre { background: #1f1b16; color: #f7f4ef; padding: 16px; overflow: auto; }
+      code { font-family: "SFMono-Regular", ui-monospace, Menlo, Monaco, Consolas, monospace; }
+      a { color: #8a3b12; }
+      img { max-width: 100%; height: auto; }
+      table { border-collapse: collapse; width: 100%; }
+      th, td { border: 1px solid #e3d8c7; padding: 8px; }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>Coordinator Agent Contract (MFR)</h1>
+<p>This document defines the expected behavior of the Coordinator agent during Model-First Reasoning (MFR) sessions.</p>
+<h2>Role Summary</h2>
+<p>The Coordinator orchestrates the MFR protocol, manages session state, validates the merged model, requests solutions, and returns the final synthesized response.</p>
+<h2>Inputs</h2>
+<ul>
+<li>User request in the primary room (MUC).</li>
+<li>MFR model contributions (RDF/Turtle) from other agents.</li>
+<li>Optional conflict resolution or validation feedback from agents.</li>
+</ul>
+<h2>Outputs</h2>
+<ul>
+<li>MFR protocol messages:<ul>
+<li><code>mfr:ModelContributionRequest</code></li>
+<li><code>mfr:ModelValidationResult</code></li>
+<li><code>mfr:SolutionRequest</code></li>
+<li><code>mfr:SessionComplete</code></li>
+</ul>
+</li>
+<li>Human-readable status updates in the primary room.</li>
+<li>Final solution summary and explanation to the user.</li>
+</ul>
+<h2>Required Lingue Modes</h2>
+<ul>
+<li><code>lng:ModelNegotiation</code> for protocol messages.</li>
+<li><code>lng:ModelFirstRDF</code> for RDF contributions.</li>
+<li><code>lng:HumanChat</code> for user-visible updates.</li>
+</ul>
+<h2>Phase Responsibilities</h2>
+<h3>1. Problem Interpretation</h3>
+<ul>
+<li>Accept <code>mfr-start &lt;problem&gt;</code> commands in the primary room.</li>
+<li>Create a session ID and initialize session state.</li>
+<li>Broadcast <code>mfr:ModelContributionRequest</code> with the session ID and problem text.</li>
+</ul>
+<h3>2. Model Construction</h3>
+<ul>
+<li>Collect RDF contributions from agents.</li>
+<li>Track contributions by agent and session.</li>
+<li>Trigger merge when the contribution window ends or sufficient data arrives.</li>
+</ul>
+<h3>3. Model Merge &amp; Validation</h3>
+<ul>
+<li>Merge RDF graphs into a single model.</li>
+<li>Validate the model using SHACL shapes.</li>
+<li>If validation fails, enter conflict negotiation and request fixes.</li>
+</ul>
+<h3>4. Constrained Reasoning</h3>
+<ul>
+<li>Broadcast <code>mfr:SolutionRequest</code> with the validated model.</li>
+<li>Collect solution proposals from agents.</li>
+<li>Perform solution ranking or synthesis when multiple proposals exist.</li>
+</ul>
+<h3>5. Completion</h3>
+<ul>
+<li>Emit <code>mfr:SessionComplete</code> with the final solution payload.</li>
+<li>Provide a concise human-readable summary in the primary room.</li>
+</ul>
+<h2>Message Expectations</h2>
+<h3>Contribution Request</h3>
+<p>Payload:</p>
+<ul>
+<li><code>sessionId</code></li>
+<li><code>problemDescription</code></li>
+<li><code>requestedContributions</code> (entity, constraint, action, goal)</li>
+</ul>
+<h3>Contribution Response</h3>
+<ul>
+<li><code>lng:ModelFirstRDF</code> payload in Turtle.</li>
+<li>Include <code>sessionId</code> metadata.</li>
+</ul>
+<h3>Solution Request</h3>
+<ul>
+<li><code>sessionId</code></li>
+<li><code>model</code> (Turtle)</li>
+</ul>
+<h3>Session Complete</h3>
+<ul>
+<li><code>sessionId</code></li>
+<li><code>solutions</code> (array or single synthesized solution)</li>
+</ul>
+<h2>Error Handling</h2>
+<ul>
+<li>If a session stalls, emit a timeout status in the primary room.</li>
+<li>If validation fails, include a clear SHACL summary and next steps.</li>
+<li>If no solutions arrive, report a reasoned failure status.</li>
+</ul>
+<h2>Configuration Sources</h2>
+<ul>
+<li>XMPP account and rooms from RDF profile + <code>config/agents/secrets.json</code>.</li>
+<li>SHACL shapes path from RDF profile.</li>
+<li>Timeout values from RDF profile.</li>
+</ul>
+<h2>Success Criteria</h2>
+<ul>
+<li>All contribution requests are sent to the primary room and relevant MFR rooms.</li>
+<li>Validated model is produced or a validation report is returned.</li>
+<li>Final response includes both the structured result and a human-readable explanation.</li>
+</ul>
+
+    </main>
+  </body>
+</html>

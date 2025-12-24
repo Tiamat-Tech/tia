@@ -76,6 +76,7 @@ export class MfrShaclValidator {
    * @returns {Object} Violation details
    */
   extractViolation(resultNode, reportDataset) {
+    const resultId = this.getResultId(resultNode);
     const violation = {
       message: null,
       path: null,
@@ -83,13 +84,41 @@ export class MfrShaclValidator {
       resultSeverity: "Violation",
       sourceConstraintComponent: null,
       sourceShape: null,
-      value: null
+      value: null,
+      details: [],
+      resultId
     };
+
+    if (resultNode) {
+      if (resultNode.message) {
+        violation.message = this.normalizeTerm(resultNode.message);
+      }
+      if (resultNode.path) {
+        violation.path = this.normalizeTerm(resultNode.path);
+      }
+      if (resultNode.focusNode) {
+        violation.focusNode = this.normalizeTerm(resultNode.focusNode);
+      }
+      if (resultNode.severity) {
+        violation.resultSeverity = this.normalizeTerm(resultNode.severity);
+      }
+      if (resultNode.sourceConstraintComponent) {
+        violation.sourceConstraintComponent = this.normalizeTerm(
+          resultNode.sourceConstraintComponent
+        );
+      }
+      if (resultNode.sourceShape) {
+        violation.sourceShape = this.normalizeTerm(resultNode.sourceShape);
+      }
+      if (resultNode.value) {
+        violation.value = this.normalizeTerm(resultNode.value);
+      }
+    }
 
     // Extract message
     const messages = RdfUtils.extractValues(
       reportDataset,
-      resultNode.value,
+      resultNode?.value,
       "http://www.w3.org/ns/shacl#resultMessage"
     );
     if (messages.length > 0) {
@@ -99,7 +128,7 @@ export class MfrShaclValidator {
     // Extract path
     const paths = RdfUtils.extractValues(
       reportDataset,
-      resultNode.value,
+      resultNode?.value,
       "http://www.w3.org/ns/shacl#resultPath"
     );
     if (paths.length > 0) {
@@ -109,7 +138,7 @@ export class MfrShaclValidator {
     // Extract focus node
     const focusNodes = RdfUtils.extractValues(
       reportDataset,
-      resultNode.value,
+      resultNode?.value,
       "http://www.w3.org/ns/shacl#focusNode"
     );
     if (focusNodes.length > 0) {
@@ -119,7 +148,7 @@ export class MfrShaclValidator {
     // Extract severity
     const severities = RdfUtils.extractValues(
       reportDataset,
-      resultNode.value,
+      resultNode?.value,
       "http://www.w3.org/ns/shacl#resultSeverity"
     );
     if (severities.length > 0) {
@@ -136,7 +165,7 @@ export class MfrShaclValidator {
     // Extract source constraint component
     const components = RdfUtils.extractValues(
       reportDataset,
-      resultNode.value,
+      resultNode?.value,
       "http://www.w3.org/ns/shacl#sourceConstraintComponent"
     );
     if (components.length > 0) {
@@ -146,7 +175,7 @@ export class MfrShaclValidator {
     // Extract source shape
     const shapes = RdfUtils.extractValues(
       reportDataset,
-      resultNode.value,
+      resultNode?.value,
       "http://www.w3.org/ns/shacl#sourceShape"
     );
     if (shapes.length > 0) {
@@ -156,14 +185,99 @@ export class MfrShaclValidator {
     // Extract value
     const values = RdfUtils.extractValues(
       reportDataset,
-      resultNode.value,
+      resultNode?.value,
       "http://www.w3.org/ns/shacl#value"
     );
     if (values.length > 0) {
       violation.value = values[0];
     }
 
+    if (resultId) {
+      violation.details = this.extractResultDetails(reportDataset, resultId);
+      if (!violation.message && violation.details.length > 0) {
+        const detail = violation.details[0];
+        violation.message = `${detail.predicate} ${detail.object}`;
+      }
+    }
+
+    if (violation.sourceShape && (!violation.path || !violation.message)) {
+      violation.shapeDetails = this.describeShape(violation.sourceShape);
+    }
+
     return violation;
+  }
+
+  normalizeTerm(term) {
+    if (!term) return null;
+    if (typeof term === "string") return term;
+    if (typeof term === "object") {
+      if (typeof term.value === "string") return term.value;
+      if (typeof term.id === "string") return term.id;
+      if (term.termType && typeof term.toString === "function") {
+        return term.toString();
+      }
+    }
+    return String(term);
+  }
+
+  getResultId(resultNode) {
+    if (!resultNode) return null;
+    if (resultNode.value) return resultNode.value;
+    if (resultNode.id) return resultNode.id;
+    if (resultNode.term && resultNode.term.value) return resultNode.term.value;
+    return null;
+  }
+
+  extractResultDetails(reportDataset, resultId) {
+    const details = [];
+    for (const quad of reportDataset) {
+      if (quad.subject?.value === resultId) {
+        details.push({
+          predicate: quad.predicate?.value,
+          object:
+            quad.object?.termType === "Literal"
+              ? quad.object.value
+              : quad.object?.value
+        });
+      }
+    }
+    return details;
+  }
+
+  describeShape(shapeId) {
+    if (!this.shapesGraph || !shapeId) {
+      return {};
+    }
+
+    const SHACL = "http://www.w3.org/ns/shacl#";
+    const details = {
+      path: null,
+      message: null,
+      minCount: null,
+      maxCount: null,
+      class: null,
+      datatype: null
+    };
+
+    const path = RdfUtils.extractValues(this.shapesGraph, shapeId, `${SHACL}path`);
+    if (path.length > 0) details.path = path[0];
+
+    const message = RdfUtils.extractValues(this.shapesGraph, shapeId, `${SHACL}message`);
+    if (message.length > 0) details.message = message[0];
+
+    const minCount = RdfUtils.extractValues(this.shapesGraph, shapeId, `${SHACL}minCount`);
+    if (minCount.length > 0) details.minCount = minCount[0];
+
+    const maxCount = RdfUtils.extractValues(this.shapesGraph, shapeId, `${SHACL}maxCount`);
+    if (maxCount.length > 0) details.maxCount = maxCount[0];
+
+    const shapeClass = RdfUtils.extractValues(this.shapesGraph, shapeId, `${SHACL}class`);
+    if (shapeClass.length > 0) details.class = shapeClass[0];
+
+    const datatype = RdfUtils.extractValues(this.shapesGraph, shapeId, `${SHACL}datatype`);
+    if (datatype.length > 0) details.datatype = datatype[0];
+
+    return details;
   }
 
   /**
@@ -174,13 +288,18 @@ export class MfrShaclValidator {
   async validateCompleteness(model) {
     const report = await this.validate(model);
 
-    const completenessViolations = report.violations.filter((v) =>
+    const nonInfoViolations = report.violations.filter(
+      (v) => v.resultSeverity !== "Info"
+    );
+    const completenessViolations = nonInfoViolations.filter((v) =>
       this.isCompletenessViolation(v)
     );
+    const effectiveConforms = nonInfoViolations.length === 0;
 
     return {
       ...report,
-      status: report.conforms
+      conforms: effectiveConforms,
+      status: effectiveConforms
         ? VALIDATION_STATUS.VALID
         : completenessViolations.length > 0
           ? VALIDATION_STATUS.INCOMPLETE
@@ -216,8 +335,8 @@ export class MfrShaclValidator {
    * @returns {boolean} True if completeness violation
    */
   isCompletenessViolation(violation) {
-    const message = (violation.message || "").toLowerCase();
-    const component = (violation.sourceConstraintComponent || "").toLowerCase();
+    const message = String(violation.message || "").toLowerCase();
+    const component = String(violation.sourceConstraintComponent || "").toLowerCase();
 
     return (
       component.includes("mincount") ||
@@ -253,28 +372,103 @@ export class MfrShaclValidator {
       return "Model validation passed - no violations detected.";
     }
 
-    const lines = [
-      `Model validation failed with ${validationReport.violations.length} violation(s):`,
-      ""
-    ];
+    // Filter to show only actual violations (errors), not warnings or info
+    const errors = validationReport.violations.filter(v => {
+      const severity = this.normalizeTerm(v.resultSeverity);
+      return severity === "Violation" || severity === "http://www.w3.org/ns/shacl#Violation";
+    });
 
-    validationReport.violations.forEach((v, index) => {
-      lines.push(`${index + 1}. ${v.message || "Constraint violation"}`);
+    const warnings = validationReport.violations.filter(v => {
+      const severity = this.normalizeTerm(v.resultSeverity);
+      return severity === "Warning" || severity === "http://www.w3.org/ns/shacl#Warning";
+    });
+
+    const infos = validationReport.violations.filter(v => {
+      const severity = this.normalizeTerm(v.resultSeverity);
+      return severity === "Info" || severity === "http://www.w3.org/ns/shacl#Info";
+    });
+
+    // Only show errors in detail
+    const lines = [];
+    if (errors.length > 0) {
+      lines.push(`Model validation failed with ${errors.length} error(s):`);
+      lines.push("");
+    } else {
+      lines.push(`Model validation passed (${warnings.length} warning(s), ${infos.length} info)`);
+      return lines.join("\n");
+    }
+
+    errors.forEach((v, index) => {
+      const messageText = this.normalizeTerm(v.message);
+      let safeMessage = "Constraint violation";
+      if (messageText && messageText !== "[object Object]") {
+        safeMessage = messageText;
+      } else if (v.path) {
+        safeMessage = `Constraint violation on ${this.normalizeTerm(v.path)}`;
+      } else if (v.sourceShape) {
+        safeMessage = `Constraint violation in shape ${this.normalizeTerm(v.sourceShape)}`;
+      }
+      lines.push(`${index + 1}. ${safeMessage}`);
 
       if (v.path) {
-        lines.push(`   Property: ${v.path}`);
+        lines.push(`   Property: ${String(v.path)}`);
       }
 
       if (v.focusNode) {
-        lines.push(`   Focus Node: ${v.focusNode}`);
+        lines.push(`   Focus Node: ${String(v.focusNode)}`);
       }
 
       if (v.value) {
-        lines.push(`   Value: ${v.value}`);
+        lines.push(`   Value: ${String(v.value)}`);
       }
 
       if (v.resultSeverity !== "Violation") {
-        lines.push(`   Severity: ${v.resultSeverity}`);
+        lines.push(`   Severity: ${String(v.resultSeverity)}`);
+      }
+
+      if (v.sourceConstraintComponent) {
+        lines.push(`   Constraint: ${String(v.sourceConstraintComponent)}`);
+      }
+
+      if (v.sourceShape) {
+        lines.push(`   Shape: ${String(v.sourceShape)}`);
+      }
+
+      if (v.shapeDetails) {
+        const shapeParts = [];
+        if (v.shapeDetails.path) shapeParts.push(`path=${v.shapeDetails.path}`);
+        if (v.shapeDetails.minCount) shapeParts.push(`minCount=${v.shapeDetails.minCount}`);
+        if (v.shapeDetails.maxCount) shapeParts.push(`maxCount=${v.shapeDetails.maxCount}`);
+        if (v.shapeDetails.class) shapeParts.push(`class=${v.shapeDetails.class}`);
+        if (v.shapeDetails.datatype) shapeParts.push(`datatype=${v.shapeDetails.datatype}`);
+        if (v.shapeDetails.message) shapeParts.push(`message=${v.shapeDetails.message}`);
+        if (shapeParts.length > 0) {
+          lines.push(`   Shape details: ${shapeParts.join(", ")}`);
+        }
+      }
+
+      if (v.details && v.details.length > 0) {
+        const detailLines = v.details.slice(0, 5).map(
+          (detail) => `   Detail: ${detail.predicate} -> ${detail.object}`
+        );
+        lines.push(...detailLines);
+      } else if (v.resultId) {
+        lines.push(`   Result node: ${v.resultId}`);
+      }
+
+      const onlyTypeDetail =
+        v.details &&
+        v.details.length === 1 &&
+        v.details[0].predicate ===
+          "http://www.w3.org/1999/02/22-rdf-syntax-ns#type";
+      if (
+        !v.message &&
+        !v.path &&
+        !v.focusNode &&
+        !v.value &&
+        (v.details.length === 0 || onlyTypeDetail)
+      ) {
+        lines.push("   Detail: No SHACL result fields available in report.");
       }
 
       lines.push("");

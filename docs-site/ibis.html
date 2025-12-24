@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>IBIS & Lingue Overview</title>
+    <style>
+      body { margin: 0; padding: 48px 20px; font-family: "Helvetica Neue", Arial, sans-serif; background: #f7f4ef; color: #1f1b16; }
+      main { max-width: 920px; margin: 0 auto; background: #fffdf9; padding: 48px; border: 1px solid #e3d8c7; box-shadow: 6px 8px 0 #e3d8c7; }
+      h1, h2, h3 { font-weight: 600; margin-top: 2rem; }
+      pre { background: #1f1b16; color: #f7f4ef; padding: 16px; overflow: auto; }
+      code { font-family: "SFMono-Regular", ui-monospace, Menlo, Monaco, Consolas, monospace; }
+      a { color: #8a3b12; }
+      img { max-width: 100%; height: auto; }
+      table { border-collapse: collapse; width: 100%; }
+      th, td { border: 1px solid #e3d8c7; padding: 8px; }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>IBIS &amp; Lingue Overview</h1>
+<p>This project can detect and surface IBIS (Issue-Based Information System) structures in chat when Lingue is enabled. IBIS identifies Issues, Positions, and Arguments in text and can emit short summaries in the MUC or DMs.</p>
+<h2>What users see</h2>
+<ul>
+<li>When Lingue is enabled, bots (Mistral, Semem) listen for Issue/Position/Argument patterns.</li>
+<li>If confidence is high, the bot posts a short IBIS-style summary alongside its normal reply.</li>
+<li>In DMs, the summary is sent privately; in MUC, the summary is sent to the room.</li>
+</ul>
+<h2>How to trigger</h2>
+<ul>
+<li>Mention the bot with Issue/Position/Argument language, e.g.:<ul>
+<li>“Issue: How should we handle authentication? I propose OAuth2 because it is standard, but the downside is complexity.”</li>
+<li>“Position: Use X. Argument: It’s faster.”</li>
+</ul>
+</li>
+<li>Shorthand labels also work:<ul>
+<li><code>I:</code> / <code>Issue:</code> for issues</li>
+<li><code>P:</code> / <code>Position:</code> for positions</li>
+<li><code>A:</code> / <code>Arg:</code> / <code>Argument:</code> for arguments</li>
+<li><code>S:</code> / <code>Support:</code> for supporting arguments</li>
+<li><code>O:</code> / <code>Objection:</code> / <code>Oppose:</code> for objections</li>
+</ul>
+</li>
+<li><code>A:</code> is neutral by default; the detector infers support vs objection from nearby words (e.g., “because” → support, “however” → objection).</li>
+<li>Lingue runs automatically when <code>LINGUE_ENABLED=true</code> (default).</li>
+</ul>
+<h2>Configuration</h2>
+<ul>
+<li><code>.env</code>:<ul>
+<li><code>LINGUE_ENABLED=true</code> (default; set to <code>false</code> to disable)</li>
+<li><code>LINGUE_CONFIDENCE_MIN</code> (default <code>0.5</code>; raise to reduce summary frequency)</li>
+</ul>
+</li>
+<li>Bots use these envs:<ul>
+<li>Mistral bot: <code>src/services/mistral-bot.js</code></li>
+<li>Semem agent: <code>src/services/semem-agent.js</code></li>
+</ul>
+</li>
+</ul>
+<h2>Under the hood</h2>
+<ul>
+<li>Detection functions live in <code>src/lib/ibis-detect.js</code>.</li>
+<li>Summaries are generated via <code>summarizeIBIS</code> and posted when confidence ≥ <code>LINGUE_CONFIDENCE_MIN</code>.</li>
+<li>IBIS structures can be converted to RDF/Turtle via <code>src/lib/ibis-rdf.js</code>, though chat bots only emit the text summary.</li>
+</ul>
+<h2>Testing IBIS</h2>
+<ul>
+<li>Unit test: <code>test/ibis.test.js</code> (runs with <code>npm test</code>).</li>
+<li>Quick demo: try the sample text above with Mistral or Semem in a MUC (with Lingue enabled) and watch for the IBIS summary message.</li>
+</ul>
+
+    </main>
+  </body>
+</html>

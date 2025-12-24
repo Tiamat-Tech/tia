@@ -30,6 +30,7 @@ The design goal is a clean, library-ready architecture that supports both deploy
 - [MCP client guide](docs/mcp-client.md)
 - [MCP server guide](docs/mcp-server.md)
 - [MFR Room Setup](MFR_ROOM_SETUP.md) - Model-First Reasoning multi-room configuration (**requires Prosody setup**)
+- [MFR agent contracts](docs/mfr-agent-contracts.md) - Expected MFR behaviors per agent
 - [API reference](docs/api-reference.md)
 - [Testing & env](docs/testing.md)
 - [Server deployment](docs/server.md)
@@ -50,6 +51,7 @@ The design goal is a clean, library-ready architecture that supports both deploy
 - **Coordinator** — MFR (Model-First Reasoning) orchestrator for multi-agent problem solving.
 - **Mistral** — AI chat agent backed by Mistral API with Lingue/IBIS summaries.
 - **Semem** — MCP-backed knowledge agent for `tell/ask/augment` flows.
+- **MFR Semantic** — Constraint-focused agent for MFR model construction.
 - **Data** — SPARQL knowledge query agent for Wikidata, DBpedia, and custom endpoints. [Guide](docs/data-agent.md)
 - **Demo** — Minimal chat bot for quick XMPP smoke checks.
 - **Chair** — Debate facilitator/Moderator agent.
@@ -59,10 +61,10 @@ The design goal is a clean, library-ready architecture that supports both deploy
 
 ## Quick Start: Running Agents
 
-The `start-all.sh` script provides a unified way to start all agents or specific subsets:
+The `start-all.sh` script provides a unified way to start agents or specific subsets. By default it starts the MFR suite.
 
 ```bash
-# Start all available agents
+# Start the default MFR suite (same as `./start-all.sh mfr`)
 ./start-all.sh
 
 # Start MFR (Model-First Reasoning) system
@@ -87,7 +89,7 @@ AGENTS=mistral,data,prolog ./start-all.sh
 3. For MFR system: Configure Prosody MUC rooms (see [MFR Room Setup](MFR_ROOM_SETUP.md))
 
 **Agent Presets:**
-- `mfr` - MFR system (full suite): coordinator, mistral, analyst, creative, chair, recorder, semem, data, prolog, demo
+- `mfr` - MFR system (full suite): coordinator, mistral, analyst, creative, chair, recorder, mfr-semantic, data, prolog, demo
 - `debate` - Debate system: chair, recorder, mistral, analyst, creative
 - `basic` - Basic agents: mistral, data, prolog, demo
 
@@ -243,6 +245,7 @@ See templates for:
 - 🔧 [Provider Guide](docs/provider-guide.md) - Creating custom providers
 - 📖 [API Reference](docs/api-reference.md) - Complete API documentation
 - 📁 [Templates](templates/) - Example configurations and code
+- 🌐 GitHub Pages site (generated from `docs/` via `scripts/build-docs.mjs` with `DOCS_DIR` and `DOCS_OUT_DIR`)
 
 ## Custom Agent API
 

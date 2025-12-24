@@ -1,0 +1,749 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Lingue Protocol Integration Plan</title>
+    <style>
+      body { margin: 0; padding: 48px 20px; font-family: "Helvetica Neue", Arial, sans-serif; background: #f7f4ef; color: #1f1b16; }
+      main { max-width: 920px; margin: 0 auto; background: #fffdf9; padding: 48px; border: 1px solid #e3d8c7; box-shadow: 6px 8px 0 #e3d8c7; }
+      h1, h2, h3 { font-weight: 600; margin-top: 2rem; }
+      pre { background: #1f1b16; color: #f7f4ef; padding: 16px; overflow: auto; }
+      code { font-family: "SFMono-Regular", ui-monospace, Menlo, Monaco, Consolas, monospace; }
+      a { color: #8a3b12; }
+      img { max-width: 100%; height: auto; }
+      table { border-collapse: collapse; width: 100%; }
+      th, td { border: 1px solid #e3d8c7; padding: 8px; }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>Lingue Protocol Integration Plan</h1>
+<blockquote>
+<p><strong>Status</strong>: Planning Phase
+<strong>Updated</strong>: 2024-12-19
+<strong>Goal</strong>: Full Lingue protocol support with modular, NPM-ready architecture</p>
+</blockquote>
+<h2>Overview</h2>
+<p>Integrate complete Lingue protocol support into TIA, enabling structured agent-to-agent communication with language negotiation capabilities. The system will support XMPP-based capability discovery, profile exchange, and multi-modal communication (HumanChat, IBISText, PrologProgram, AgentProfileExchange).</p>
+<p><strong>Primary Goal</strong>: Make TIA agents fully Lingue-capable and prepare the codebase for release as an NPM library with clear, modular interfaces.</p>
+<h2>Current State</h2>
+<h3>Existing Infrastructure ✅</h3>
+<ul>
+<li>Basic disco#info responder (<code>src/lib/lingue-capabilities.js</code>)</li>
+<li>IBIS RDF handling (<code>src/lib/ibis-rdf.js</code>, <code>src/lib/lingue-store.js</code>)</li>
+<li>Lingue exchange utilities (<code>src/lib/lingue-exchange.js</code>)</li>
+<li>IBIS detection in providers (MistralProvider)</li>
+<li>RDF profile system with capability support (COMPLETED)</li>
+</ul>
+<h3>Gaps to Address ❌</h3>
+<ul>
+<li>Agent profiles don&#39;t declare Lingue capabilities in RDF</li>
+<li>No language mode negotiation protocol</li>
+<li>No ASK/TELL exchange implementation beyond basic IBIS</li>
+<li>Missing Prolog and profile exchange modes</li>
+<li>Hardcoded feature URIs (don&#39;t match current Lingue spec)</li>
+<li>Not structured for library consumption</li>
+</ul>
+<h2>Architecture Principles</h2>
+<h3>1. Modularity</h3>
+<p>Every component must have:</p>
+<ul>
+<li>Clear, documented interface</li>
+<li>Minimal dependencies</li>
+<li>Constructor-based dependency injection</li>
+<li>Testable in isolation</li>
+<li>No tight coupling to XMPP internals</li>
+</ul>
+<h3>2. NPM Library Readiness</h3>
+<pre><code class="language-javascript">// Target consumer usage
+import { AgentRunner, LingueNegotiator, createProfile } from &#39;@tia/agents&#39;;
+
+const profile = createProfile({
+  nickname: &quot;MyAgent&quot;,
+  supports: [lng.HumanChat, lng.IBISText],
+  prefers: lng.HumanChat,
+  xmpp: { /* config */ }
+});
+
+const negotiator = new LingueNegotiator({
+  profile,
+  handlers: {
+    &#39;lng:HumanChat&#39;: humanChatHandler,
+    &#39;lng:IBISText&#39;: ibisHandler
+  }
+});
+
+const runner = new AgentRunner({ profile, negotiator });
+await runner.start();
+</code></pre>
+<h3>3. Standards Compliance</h3>
+<ul>
+<li>Use exact Lingue ontology URIs from <code>http://purl.org/stuff/lingue/</code> - local copies of vocabs are in /home/danny/hyperdata/tia/vocabs</li>
+<li>Follow XEP-0030 (disco#info) and XEP-0045 (MUC) standards</li>
+<li>Support all defined language modes per Lingue spec</li>
+<li>Implement ASK/TELL semantics correctly</li>
+</ul>
+<hr>
+<h2>Implementation Phases</h2>
+<h3>Phase 1: Profile Extension (RDF Schema) 🎯</h3>
+<p><strong>Objective</strong>: Extend agent RDF profiles with Lingue capability declarations</p>
+<p><strong>Files to Modify</strong>:</p>
+<ul>
+<li><code>config/agents/*.ttl</code> - Add lng:supports, lng:prefers, lng:understands</li>
+<li><code>src/agents/profile/agent-profile.js</code> - Add Lingue property accessors</li>
+<li><code>src/agents/profile-loader.js</code> - Parse Lingue properties from RDF</li>
+</ul>
+<p><strong>New Vocabulary in Profiles</strong>:</p>
+<pre><code class="language-turtle">@prefix lng: &lt;http://purl.org/stuff/lingue/&gt; .
+@prefix ibis: &lt;https://vocab.methodandstructure.com/ibis#&gt; .
+
+&lt;#mistral&gt; a agent:ConversationalAgent, lng:Agent ;
+  foaf:nick &quot;Mistral&quot; ;
+
+  # Lingue capabilities
+  lng:supports lng:HumanChat, lng:IBISText, lng:AgentProfileExchange ;
+  lng:prefers lng:HumanChat ;
+  lng:understands ibis: ;
+  lng:profile &lt;#mistral-lingue-profile&gt; ;
+
+  # XMPP and provider config...
+
+&lt;#mistral-lingue-profile&gt; a lng:Profile ;
+  lng:availability lng:Process ;
+  lng:in [ a lng:Interface ; rdfs:label &quot;XMPP MUC text&quot; ] ;
+  lng:out [ a lng:Interface ; rdfs:label &quot;XMPP MUC text + IBIS RDF&quot; ] ;
+  lng:dependsOn [ a lng:Environment ; rdfs:label &quot;XMPP/Prosody&quot; ] ;
+  lng:alang &quot;JavaScript&quot; .
+</code></pre>
+<p><strong>Implementation Steps</strong>:</p>
+<ol>
+<li>Update <code>PREFIXES</code> in <code>profile-loader.js</code> to include <code>lng:</code> and <code>ibis:</code></li>
+<li>Add extraction functions:<ul>
+<li><code>extractLingueCapabilities(dataset, subject)</code></li>
+<li><code>extractLingueProfile(dataset, subject)</code></li>
+</ul>
+</li>
+<li>Extend <code>AgentProfile</code> class with Lingue properties</li>
+<li>Update all 5 agent profiles (mistral, semem, demo, chair, recorder)</li>
+</ol>
+<p><strong>Tests</strong>: <code>test/lingue-profile-loading.test.js</code></p>
+<p><strong>Success Criteria</strong>:</p>
+<ul>
+<li><input disabled="" type="checkbox"> All profiles parse with Lingue metadata</li>
+<li><input disabled="" type="checkbox"> <code>profile.lingue.supports</code> contains Set of mode URIs</li>
+<li><input disabled="" type="checkbox"> Tests pass for all 5 agents</li>
+</ul>
+<p><strong>Progress</strong>: ⬜ Not started</p>
+<hr>
+<h3>Phase 2: Negotiation Protocol Module 🎯</h3>
+<p><strong>Objective</strong>: Create modular, testable language negotiation system</p>
+<p><strong>New Module Structure</strong>:</p>
+<pre><code>src/lib/lingue/
+├── index.js                      # Main exports
+├── negotiator.js                 # LingueNegotiator class
+├── constants.js                  # URIs, MIME types, feature lists
+├── discovery.js                  # Disco#info utilities
+├── offer-accept.js               # Negotiation state machine
+├── exchange-router.js            # Route messages by mode
+└── payload-handlers.js           # Base handler interfaces
+</code></pre>
+<p><strong>Key Interface</strong>:</p>
+<pre><code class="language-javascript">export class LingueNegotiator {
+  constructor({ profile, xmppClient, handlers, logger })
+
+  async discover(peerJid)           // Get peer capabilities
+  async offerExchange(peerJid, modes) // Propose structured mode
+  async acceptMode(peerJid, mode)   // Accept negotiation
+  async send(peerJid, { mode, payload, summary }) // Send structured msg
+  async handleStanza(stanza)        // Route incoming negotiation
+}
+</code></pre>
+<p><strong>Constants</strong> (<code>constants.js</code>):</p>
+<pre><code class="language-javascript">export const LINGUE_NS = &#39;http://purl.org/stuff/lingue/&#39;;
+
+export const LANGUAGE_MODES = {
+  HUMAN_CHAT: `${LINGUE_NS}HumanChat`,
+  IBIS_TEXT: `${LINGUE_NS}IBISText`,
+  PROLOG: `${LINGUE_NS}PrologProgram`,
+  PROFILE_EXCHANGE: `${LINGUE_NS}AgentProfileExchange`
+};
+
+export const FEATURES = {
+  LANG_HUMAN_CHAT: `${LINGUE_NS}feature/lang/human-chat`,
+  LANG_IBIS_TEXT: `${LINGUE_NS}feature/lang/ibis-text`,
+  // ...
+};
+</code></pre>
+<p><strong>Tests</strong>: <code>test/lingue-negotiation.test.js</code>, <code>test/lingue-discovery.test.js</code></p>
+<p><strong>Success Criteria</strong>:</p>
+<ul>
+<li><input disabled="" type="checkbox"> Full offer/accept flow works</li>
+<li><input disabled="" type="checkbox"> Discovery parses disco#info correctly</li>
+<li><input disabled="" type="checkbox"> State machine handles all transitions</li>
+<li><input disabled="" type="checkbox"> All tests pass with mocked XMPP</li>
+</ul>
+<p><strong>Progress</strong>: ⬜ Not started</p>
+<hr>
+<h3>Phase 3: Payload Handlers 🎯</h3>
+<p><strong>Objective</strong>: Implement handlers for each Lingue language mode</p>
+<p><strong>Handler Interface</strong>:</p>
+<pre><code class="language-javascript">export class LanguageModeHandler {
+  constructor({ mode, mimeType, logger })
+  createStanza(to, payload, summary)  // Build outgoing XMPP stanza
+  parseStanza(stanza)                  // Extract payload from stanza
+  validate(payload)                    // Optional validation
+}
+</code></pre>
+<p><strong>Implementations</strong>:</p>
+<ol>
+<li><p><strong>HumanChatHandler</strong> (<code>handlers/human-chat.js</code>)</p>
+<ul>
+<li>Simple text messages</li>
+<li>MIME: <code>text/plain</code></li>
+</ul>
+</li>
+<li><p><strong>IBISTextHandler</strong> (<code>handlers/ibis-text.js</code>)</p>
+<ul>
+<li>Plain text + optional Turtle CDATA</li>
+<li>Reuses <code>ibis-rdf.js</code> utilities</li>
+<li>MIME: <code>text/plain</code> with <code>text/turtle</code> attachment</li>
+</ul>
+</li>
+<li><p><strong>PrologProgramHandler</strong> (<code>handlers/prolog.js</code>)</p>
+<ul>
+<li>Prolog clauses in CDATA</li>
+<li>MIME: <code>text/x-prolog</code></li>
+<li>Stub execution (future: tau-prolog integration)</li>
+</ul>
+</li>
+<li><p><strong>ProfileExchangeHandler</strong> (<code>handlers/profile-exchange.js</code>)</p>
+<ul>
+<li>Uses <code>profileToTurtle()</code> and <code>parseAgentProfile()</code></li>
+<li>MIME: <code>text/turtle</code></li>
+</ul>
+</li>
+</ol>
+<p><strong>Tests</strong>: <code>test/lingue-handlers/*.test.js</code> (one per handler)</p>
+<p><strong>Success Criteria</strong>:</p>
+<ul>
+<li><input disabled="" type="checkbox"> All 4 handlers implemented</li>
+<li><input disabled="" type="checkbox"> Round-trip tests pass (create → parse → verify)</li>
+<li><input disabled="" type="checkbox"> Integration with existing IBIS utilities works</li>
+</ul>
+<p><strong>Progress</strong>: ⬜ Not started</p>
+<hr>
+<h3>Phase 4: AgentRunner Integration 🎯</h3>
+<p><strong>Objective</strong>: Wire negotiation layer into agent message flow</p>
+<p><strong>Modify</strong>: <code>src/agents/core/agent-runner.js</code></p>
+<p><strong>New Constructor</strong>:</p>
+<pre><code class="language-javascript">export class AgentRunner {
+  constructor({
+    profile,          // NEW: AgentProfile (not separate xmpp/nickname)
+    provider,
+    negotiator = null, // NEW: Optional LingueNegotiator
+    mentionDetector,
+    commandParser,
+    allowSelfMessages = false,
+    respondToAll = false,
+    logger = console
+  })
+}
+</code></pre>
+<p><strong>Message Routing</strong>:</p>
+<pre><code class="language-javascript">async handleMessage({ body, sender, type, roomJid, reply, stanza }) {
+  // NEW: Check Lingue negotiation first
+  if (this.negotiator &amp;&amp; await this.negotiator.handleStanza(stanza)) {
+    return; // Handled by negotiation layer
+  }
+
+  // Existing message handling...
+}
+</code></pre>
+<p><strong>Backward Compatibility</strong>:</p>
+<ul>
+<li>Extract xmppConfig, nickname, roomJid from <code>profile.toConfig()</code></li>
+<li>Negotiator is optional (agents work without it)</li>
+</ul>
+<p><strong>Tests</strong>: <code>test/agent-runner-lingue.test.js</code></p>
+<p><strong>Success Criteria</strong>:</p>
+<ul>
+<li><input disabled="" type="checkbox"> AgentRunner accepts profile + negotiator</li>
+<li><input disabled="" type="checkbox"> Messages route correctly (negotiation vs regular)</li>
+<li><input disabled="" type="checkbox"> Backward compatible with existing agents</li>
+<li><input disabled="" type="checkbox"> Integration tests pass</li>
+</ul>
+<p><strong>Progress</strong>: ⬜ Not started</p>
+<hr>
+<h3>Phase 5: Service File Updates 🎯</h3>
+<p><strong>Objective</strong>: Enable Lingue in production agent services</p>
+<p><strong>Pattern for Each Service</strong>:</p>
+<pre><code class="language-javascript">import { loadAgentProfile } from &quot;../agents/profile-loader.js&quot;;
+import { LingueNegotiator } from &quot;../lib/lingue/index.js&quot;;
+import { HumanChatHandler, IBISTextHandler } from &quot;../lib/lingue/handlers/index.js&quot;;
+
+const profile = await loadAgentProfile(profileName);
+
+// Create handlers based on profile capabilities
+const handlers = {};
+if (profile.supportsLingueMode(&#39;lng:HumanChat&#39;)) {
+  handlers[&#39;lng:HumanChat&#39;] = new HumanChatHandler();
+}
+if (profile.supportsLingueMode(&#39;lng:IBISText&#39;)) {
+  handlers[&#39;lng:IBISText&#39;] = new IBISTextHandler();
+}
+
+const negotiator = new LingueNegotiator({
+  profile,
+  xmppClient: null, // Set by AgentRunner
+  handlers
+});
+
+const runner = new AgentRunner({ profile, provider, negotiator });
+</code></pre>
+<p><strong>Files to Update</strong>:</p>
+<ul>
+<li><code>src/services/mistral-bot.js</code> - HumanChat + IBISText</li>
+<li><code>src/services/semem-agent.js</code> - + ProfileExchange</li>
+<li><code>src/services/chair-agent.js</code> - HumanChat + IBISText</li>
+<li><code>src/services/recorder-agent.js</code> - All modes</li>
+<li><code>src/services/demo-bot.js</code> - HumanChat only (minimal example)</li>
+</ul>
+<p><strong>Tests</strong>: Integration tests with disco#info requests</p>
+<p><strong>Success Criteria</strong>:</p>
+<ul>
+<li><input disabled="" type="checkbox"> All agents respond to disco#info with correct features</li>
+<li><input disabled="" type="checkbox"> Mistral/Chair support IBISText</li>
+<li><input disabled="" type="checkbox"> Semem supports ProfileExchange</li>
+<li><input disabled="" type="checkbox"> All agents start without errors</li>
+</ul>
+<p><strong>Progress</strong>: ⬜ Not started</p>
+<hr>
+<h3>Phase 6: NPM Library Preparation 🎯</h3>
+<p><strong>Objective</strong>: Structure code for external library consumption</p>
+<p><strong>Main Exports</strong> (<code>src/index.js</code>):</p>
+<pre><code class="language-javascript">// Core
+export { AgentRunner } from &#39;./agents/core/agent-runner.js&#39;;
+export { AgentProfile, XmppConfig } from &#39;./agents/profile/index.js&#39;;
+export { loadAgentProfile, profileToTurtle } from &#39;./agents/profile-loader.js&#39;;
+
+// Lingue
+export { LingueNegotiator } from &#39;./lib/lingue/index.js&#39;;
+export * as LINGUE from &#39;./lib/lingue/constants.js&#39;;
+export * as Handlers from &#39;./lib/lingue/handlers/index.js&#39;;
+
+// Utilities
+export { XmppRoomAgent } from &#39;./lib/xmpp-room-agent.js&#39;;
+export { createMentionDetector } from &#39;./agents/core/mention-detector.js&#39;;
+
+// Provider base
+export { BaseProvider } from &#39;./agents/providers/base-provider.js&#39;;
+</code></pre>
+<p><strong>Package.json</strong>:</p>
+<pre><code class="language-json">{
+  &quot;name&quot;: &quot;@tia/agents&quot;,
+  &quot;version&quot;: &quot;1.0.0&quot;,
+  &quot;type&quot;: &quot;module&quot;,
+  &quot;main&quot;: &quot;./src/index.js&quot;,
+  &quot;exports&quot;: {
+    &quot;.&quot;: &quot;./src/index.js&quot;,
+    &quot;./core&quot;: &quot;./src/agents/core/index.js&quot;,
+    &quot;./lingue&quot;: &quot;./src/lib/lingue/index.js&quot;,
+    &quot;./providers&quot;: &quot;./src/agents/providers/index.js&quot;
+  },
+  &quot;peerDependencies&quot;: {
+    &quot;@xmpp/client&quot;: &quot;^0.13.x&quot;
+  }
+}
+</code></pre>
+<p><strong>Example</strong> (<code>examples/minimal-agent.js</code>):</p>
+<pre><code class="language-javascript">import { AgentRunner, loadAgentProfile, LingueNegotiator, LINGUE, Handlers } from &#39;@tia/agents&#39;;
+
+class EchoProvider {
+  async handle({ content, reply }) {
+    await reply(`Echo: ${content}`);
+  }
+}
+
+const profile = await loadAgentProfile(&#39;my-agent&#39;);
+
+const runner = new AgentRunner({
+  profile,
+  provider: new EchoProvider(),
+  negotiator: new LingueNegotiator({
+    profile,
+    handlers: {
+      [LINGUE.LANGUAGE_MODES.HUMAN_CHAT]: new Handlers.HumanChatHandler()
+    }
+  })
+});
+
+await runner.start();
+</code></pre>
+<p><strong>New Files</strong>:</p>
+<ul>
+<li><code>src/providers/base-provider.js</code> - Interface documentation</li>
+<li><code>examples/</code> - Working examples</li>
+<li><code>README-NPM.md</code> - Library usage guide</li>
+</ul>
+<p><strong>Tests</strong>: <code>test/npm-exports.test.js</code></p>
+<p><strong>Success Criteria</strong>:</p>
+<ul>
+<li><input disabled="" type="checkbox"> Clean export structure</li>
+<li><input disabled="" type="checkbox"> Examples run successfully</li>
+<li><input disabled="" type="checkbox"> Documented provider interface</li>
+<li><input disabled="" type="checkbox"> No internal dependencies exposed</li>
+</ul>
+<p><strong>Progress</strong>: ⬜ Not started</p>
+<hr>
+<h3>Phase 7: Documentation Updates 🎯</h3>
+<p><strong>Objective</strong>: Complete documentation for library users and developers</p>
+<p><strong>Files to Update/Create</strong>:</p>
+<ol>
+<li><p><strong><code>docs/agent-dev-prompt.md</code></strong> ⬅ CRITICAL UPDATE</p>
+<ul>
+<li>Add Lingue protocol section</li>
+<li>Document profile Lingue properties</li>
+<li>Negotiation examples</li>
+<li>Updated agent creation procedure</li>
+</ul>
+</li>
+<li><p><strong><code>README.md</code></strong></p>
+<ul>
+<li>Library usage section</li>
+<li>Link to examples</li>
+<li>Lingue protocol support highlights</li>
+</ul>
+</li>
+<li><p><strong><code>docs/lingue-integration.md</code></strong> (NEW)</p>
+<ul>
+<li>Complete Lingue protocol guide</li>
+<li>Capability advertisement</li>
+<li>Negotiation flows</li>
+<li>Handler implementation</li>
+<li>ASK/TELL semantics</li>
+</ul>
+</li>
+<li><p><strong><code>docs/api-reference.md</code></strong> (NEW)</p>
+<ul>
+<li>Full API documentation</li>
+<li>All exported classes/functions</li>
+<li>TypeScript-style signatures</li>
+</ul>
+</li>
+<li><p><strong><code>CHANGELOG.md</code></strong></p>
+<ul>
+<li>Document all changes</li>
+<li>Migration guide</li>
+</ul>
+</li>
+</ol>
+<p><strong>Tests</strong>: Documentation examples should be runnable</p>
+<p><strong>Success Criteria</strong>:</p>
+<ul>
+<li><input disabled="" type="checkbox"> agent-dev-prompt.md updated</li>
+<li><input disabled="" type="checkbox"> Complete API reference</li>
+<li><input disabled="" type="checkbox"> Working examples in docs</li>
+<li><input disabled="" type="checkbox"> Clear migration guide</li>
+</ul>
+<p><strong>Progress</strong>: ⬜ Not started</p>
+<hr>
+<h2>Progress Tracking</h2>
+<h3>Completed ✅</h3>
+<ul>
+<li>RDF profile system (from previous plan)</li>
+<li>Basic IBIS detection and RDF utilities</li>
+<li>XMPP room agent infrastructure</li>
+</ul>
+<h3>Phase 1: Profile Extension ⬜</h3>
+<ul>
+<li><input checked="" disabled="" type="checkbox"> Update profile-loader.js with lng: prefix</li>
+<li><input checked="" disabled="" type="checkbox"> Add Lingue property extraction functions</li>
+<li><input checked="" disabled="" type="checkbox"> Extend AgentProfile class with lingue properties</li>
+<li><input checked="" disabled="" type="checkbox"> Convert all 5 .ttl profiles with Lingue metadata</li>
+<li><input checked="" disabled="" type="checkbox"> Write and pass profile loading tests</li>
+</ul>
+<h3>Phase 2: Negotiation Module ⬜</h3>
+<ul>
+<li><input checked="" disabled="" type="checkbox"> Create src/lib/lingue/ directory structure</li>
+<li><input checked="" disabled="" type="checkbox"> Implement constants.js</li>
+<li><input checked="" disabled="" type="checkbox"> Implement negotiator.js core class</li>
+<li><input checked="" disabled="" type="checkbox"> Implement discovery.js (disco#info)</li>
+<li><input checked="" disabled="" type="checkbox"> Implement offer-accept.js (state machine)</li>
+<li><input checked="" disabled="" type="checkbox"> Write and pass unit tests</li>
+</ul>
+<h3>Phase 3: Payload Handlers ⬜</h3>
+<ul>
+<li><input checked="" disabled="" type="checkbox"> Implement HumanChatHandler</li>
+<li><input checked="" disabled="" type="checkbox"> Implement IBISTextHandler</li>
+<li><input checked="" disabled="" type="checkbox"> Implement PrologProgramHandler</li>
+<li><input checked="" disabled="" type="checkbox"> Implement ProfileExchangeHandler</li>
+<li><input checked="" disabled="" type="checkbox"> Write and pass handler tests</li>
+</ul>
+<h3>Phase 4: AgentRunner Integration ⬜</h3>
+<ul>
+<li><input checked="" disabled="" type="checkbox"> Update AgentRunner constructor signature</li>
+<li><input checked="" disabled="" type="checkbox"> Add negotiation message routing</li>
+<li><input checked="" disabled="" type="checkbox"> Update handleMessage flow</li>
+<li><input checked="" disabled="" type="checkbox"> Write integration tests</li>
+</ul>
+<h3>Phase 5: Service Updates ⬜</h3>
+<ul>
+<li><input checked="" disabled="" type="checkbox"> Update mistral-bot.js</li>
+<li><input checked="" disabled="" type="checkbox"> Update semem-agent.js</li>
+<li><input checked="" disabled="" type="checkbox"> Update chair-agent.js</li>
+<li><input checked="" disabled="" type="checkbox"> Update recorder-agent.js</li>
+<li><input checked="" disabled="" type="checkbox"> Update demo-bot.js</li>
+<li><input disabled="" type="checkbox"> Test disco#info for all agents</li>
+</ul>
+<h3>Phase 6: NPM Library Prep ⬜</h3>
+<ul>
+<li><input checked="" disabled="" type="checkbox"> Create src/index.js main exports</li>
+<li><input checked="" disabled="" type="checkbox"> Document BaseProvider interface</li>
+<li><input checked="" disabled="" type="checkbox"> Create examples/ directory with working examples</li>
+<li><input checked="" disabled="" type="checkbox"> Update package.json for library mode</li>
+<li><input checked="" disabled="" type="checkbox"> Test all exports</li>
+</ul>
+<h3>Phase 7: Documentation ⬜</h3>
+<ul>
+<li><input checked="" disabled="" type="checkbox"> Update agent-dev-prompt.md</li>
+<li><input checked="" disabled="" type="checkbox"> Update README.md</li>
+<li><input checked="" disabled="" type="checkbox"> Create lingue-integration.md</li>
+<li><input checked="" disabled="" type="checkbox"> Create api-reference.md</li>
+<li><input checked="" disabled="" type="checkbox"> Update CHANGELOG.md</li>
+</ul>
+<hr>
+<h2>Testing Strategy</h2>
+<h3>Unit Tests</h3>
+<ul>
+<li>Profile loading with Lingue properties ✓ Isolation</li>
+<li>Negotiator state machine ✓ Mocked XMPP</li>
+<li>Each handler (create/parse roundtrip) ✓ Pure functions</li>
+<li>Discovery parsing ✓ Fixtures</li>
+</ul>
+<h3>Integration Tests</h3>
+<ul>
+<li>Full negotiation flow (2 agents)</li>
+<li>Message routing (negotiated vs plain)</li>
+<li>Multi-mode support</li>
+<li>Fallback behavior</li>
+</ul>
+<h3>End-to-End Tests</h3>
+<ul>
+<li>Disco#info exchange</li>
+<li>Offer/accept flow</li>
+<li>Structured message exchange</li>
+<li>MUC transparency (summaries visible)</li>
+</ul>
+<hr>
+<h2>Dependencies</h2>
+<h3>Already Installed ✅</h3>
+<ul>
+<li><code>@xmpp/client</code> - XMPP protocol</li>
+<li><code>n3</code> - Turtle parsing/writing</li>
+<li><code>rdf-ext</code> - RDF datasets</li>
+</ul>
+<h3>May Need 🔍</h3>
+<ul>
+<li><code>shacl-js</code> (optional) - Protocol shape validation</li>
+<li><code>tau-prolog</code> (optional) - Prolog execution</li>
+</ul>
+<hr>
+<h2>Success Criteria (Overall)</h2>
+<p><strong>Functional</strong>:</p>
+<ul>
+<li><input disabled="" type="checkbox"> All 5 agents are Lingue-capable</li>
+<li><input disabled="" type="checkbox"> Agents discover peer capabilities via disco#info</li>
+<li><input disabled="" type="checkbox"> Agents negotiate language modes</li>
+<li><input disabled="" type="checkbox"> Structured exchanges work (all 4 modes)</li>
+<li><input disabled="" type="checkbox"> ASK/TELL semantics implemented</li>
+</ul>
+<p><strong>Technical</strong>:</p>
+<ul>
+<li><input disabled="" type="checkbox"> Code is modular and DI-based</li>
+<li><input disabled="" type="checkbox"> Library-ready exports</li>
+<li><input disabled="" type="checkbox"> All tests pass</li>
+<li><input disabled="" type="checkbox"> Examples work out of the box</li>
+<li><input disabled="" type="checkbox"> Documentation complete</li>
+</ul>
+<hr>
+<h2>Open Questions</h2>
+<ol>
+<li><strong>Prolog Execution</strong>: Execute code or just validate/store?</li>
+<li><strong>Package Structure</strong>: Monolithic or split (@tia/agents, @tia/lingue)?</li>
+<li><strong>Session Persistence</strong>: Persist negotiated sessions across restarts?</li>
+<li><strong>Timeouts</strong>: How to handle negotiation timeouts/retries?</li>
+<li><strong>Migration</strong>: Path for existing production agents?</li>
+</ol>
+<hr>
+<h2>Related Documentation</h2>
+<ul>
+<li><a href="../../lingue/docs/lingue-protocol.md">Lingue Protocol Spec</a></li>
+<li><a href="../../lingue/docs/lingue-ontology.md">Lingue Ontology</a></li>
+<li><a href="../../lingue/vocabs/lingue.ttl">Lingue Vocabulary</a></li>
+<li><a href="./agent-dev-prompt.md">Agent Dev Prompt</a></li>
+<li><a href="../.claude/plans/woolly-tickling-whisper.md">RDF Profile Migration</a> - COMPLETED ✅</li>
+</ul>
+<hr>
+<h2>Protocol Details (Draft)</h2>
+<h3>Capability Advertisement (Disco#Info)</h3>
+<p><strong>Goal</strong>: Share Lingue support so peers can negotiate mode.</p>
+<p><strong>Disco features</strong>:</p>
+<ul>
+<li><code>http://purl.org/stuff/lingue/feature/lang/human-chat</code></li>
+<li><code>http://purl.org/stuff/lingue/feature/lang/ibis-text</code></li>
+<li><code>http://purl.org/stuff/lingue/feature/lang/prolog-program</code></li>
+<li><code>http://purl.org/stuff/lingue/feature/lang/profile-exchange</code></li>
+</ul>
+<p><strong>Identity</strong>:</p>
+<ul>
+<li>category: <code>client</code> or <code>component</code> (per agent role)</li>
+<li>type: <code>bot</code></li>
+<li>name: agent nick or configured display name</li>
+</ul>
+<p><strong>Notes</strong>:</p>
+<ul>
+<li>Feature URIs must align with the Lingue ontology.</li>
+<li>Avoid adding Lingue features unless the handler is active.</li>
+</ul>
+<h3>Negotiation Flow (Offer/Accept)</h3>
+<p><strong>Goal</strong>: Establish a language mode between two agents.</p>
+<p><strong>Proposed flow</strong>:</p>
+<ol>
+<li>Sender <code>offerExchange(peer, [modes])</code></li>
+<li>Receiver checks supported modes and replies with acceptance</li>
+<li>Both sides store <code>activeMode[peerJid] = mode</code></li>
+<li>Sender sends structured payloads using the accepted mode</li>
+</ol>
+<p><strong>State machine</strong>:</p>
+<ul>
+<li><code>idle</code> -&gt; <code>offered</code> -&gt; <code>accepted</code></li>
+<li><code>offered</code> -&gt; <code>rejected</code> (fallback to HumanChat)</li>
+<li><code>accepted</code> -&gt; <code>idle</code> (timeout or explicit end)</li>
+</ul>
+<p><strong>Timeouts</strong>:</p>
+<ul>
+<li>30s for offer acceptance (configurable)</li>
+<li>10m inactivity for mode expiration (configurable)</li>
+</ul>
+<h3>ASK/TELL Semantics (IBIS + Lingue)</h3>
+<p><strong>Goal</strong>: Standardize question/answer and assertion flow.</p>
+<p><strong>Concepts</strong>:</p>
+<ul>
+<li><code>ASK</code>: A request for information or decision</li>
+<li><code>TELL</code>: An assertion or conclusion</li>
+</ul>
+<p><strong>Mapping</strong>:</p>
+<ul>
+<li><code>ASK</code> -&gt; IBIS <code>Issue</code> or <code>Question</code></li>
+<li><code>TELL</code> -&gt; IBIS <code>Position</code> or <code>Argument</code></li>
+</ul>
+<p><strong>Rules</strong>:</p>
+<ul>
+<li>Each <code>ASK</code> should have <code>summary</code> (short human text)</li>
+<li><code>TELL</code> should include a stable identifier and a link to the related <code>ASK</code></li>
+<li>Handlers should validate RDF shape minimally (presence of type and label)</li>
+</ul>
+<hr>
+<h2>Message Formats (Draft)</h2>
+<h3>HumanChat (text/plain)</h3>
+<pre><code>&lt;message to=&quot;room@conference&quot; type=&quot;groupchat&quot;&gt;
+  &lt;body&gt;Hello everyone.&lt;/body&gt;
+&lt;/message&gt;
+</code></pre>
+<h3>IBISText (text/plain + text/turtle)</h3>
+<pre><code>&lt;message to=&quot;room@conference&quot; type=&quot;groupchat&quot;&gt;
+  &lt;body&gt;[summary] I suggest option A because...&lt;/body&gt;
+  &lt;lingue:payload mime=&quot;text/turtle&quot;&gt;&lt;![CDATA[
+    @prefix ibis: &lt;https://vocab.methodandstructure.com/ibis#&gt; .
+    _:issue a ibis:Issue ; rdfs:label &quot;Which option?&quot; .
+  ]]&gt;&lt;/lingue:payload&gt;
+&lt;/message&gt;
+</code></pre>
+<h3>PrologProgram (text/x-prolog)</h3>
+<pre><code>&lt;message to=&quot;room@conference&quot; type=&quot;groupchat&quot;&gt;
+  &lt;body&gt;[summary] Proposed ruleset.&lt;/body&gt;
+  &lt;lingue:payload mime=&quot;text/x-prolog&quot;&gt;&lt;![CDATA[
+    rule(a) :- fact(b).
+  ]]&gt;&lt;/lingue:payload&gt;
+&lt;/message&gt;
+</code></pre>
+<h3>ProfileExchange (text/turtle)</h3>
+<pre><code>&lt;message to=&quot;peer@server&quot; type=&quot;chat&quot;&gt;
+  &lt;body&gt;[summary] Agent profile.&lt;/body&gt;
+  &lt;lingue:payload mime=&quot;text/turtle&quot;&gt;&lt;![CDATA[
+    @prefix lng: &lt;http://purl.org/stuff/lingue/&gt; .
+    &lt;#agent&gt; a lng:Agent ; lng:supports lng:HumanChat .
+  ]]&gt;&lt;/lingue:payload&gt;
+&lt;/message&gt;
+</code></pre>
+<p><strong>Notes</strong>:</p>
+<ul>
+<li>Use <code>&lt;lingue:payload&gt;</code> as a single child element (custom stanza extension).</li>
+<li><code>summary</code> always included for MUC readability.</li>
+<li>Payload CDATA is optional for HumanChat and required for other modes.</li>
+</ul>
+<hr>
+<h2>Implementation Notes</h2>
+<h3>Routing Rules</h3>
+<ul>
+<li>If a stanza includes a Lingue payload, route by payload MIME.</li>
+<li>If no payload, route to HumanChat handler by default.</li>
+<li>Allow handlers to short-circuit and mark a stanza as handled.</li>
+</ul>
+<h3>Interop Guarantees</h3>
+<ul>
+<li>Maintain backwards compatibility with non-Lingue agents.</li>
+<li>For MUC rooms, preserve normal message bodies for human readability.</li>
+<li>ProfileExchange should use direct chat by default (not groupchat).</li>
+</ul>
+<h3>Logging</h3>
+<ul>
+<li>Use <code>src/lib/logger.js</code> at info level for negotiation events.</li>
+<li>Log mode switches and rejections once per peer.</li>
+</ul>
+<hr>
+<h2>Risks and Mitigations</h2>
+<ul>
+<li><strong>Spec mismatch</strong>: Validate URIs against <code>/vocabs/lingue.ttl</code> before coding.</li>
+<li><strong>State leaks</strong>: Store negotiation sessions with TTL and cleanup.</li>
+<li><strong>Handler drift</strong>: Keep handler interfaces stable; add adapters if needed.</li>
+<li><strong>MUC noise</strong>: Keep summaries short; avoid posting large Turtle in body.</li>
+</ul>
+<hr>
+<h2>Milestones (Suggested)</h2>
+<ol>
+<li><strong>RDF Profile Extension</strong> (Phase 1)</li>
+<li><strong>Negotiation Core</strong> (Phase 2)</li>
+<li><strong>Handlers + Tests</strong> (Phase 3)</li>
+<li><strong>AgentRunner Integration</strong> (Phase 4)</li>
+<li><strong>Service Updates</strong> (Phase 5)</li>
+<li><strong>Library Exports</strong> (Phase 6)</li>
+<li><strong>Documentation</strong> (Phase 7)</li>
+</ol>
+<hr>
+<h2>Checklist for Each Phase</h2>
+<p><strong>Design</strong></p>
+<ul>
+<li><input disabled="" type="checkbox"> Finalize interface and MIME choices</li>
+<li><input disabled="" type="checkbox"> Confirm vocab URIs</li>
+</ul>
+<p><strong>Build</strong></p>
+<ul>
+<li><input disabled="" type="checkbox"> Implement core module</li>
+<li><input disabled="" type="checkbox"> Add tests</li>
+</ul>
+<p><strong>Verify</strong></p>
+<ul>
+<li><input disabled="" type="checkbox"> Run example scripts</li>
+<li><input disabled="" type="checkbox"> Validate disco#info output</li>
+</ul>
+<p><strong>Document</strong></p>
+<ul>
+<li><input disabled="" type="checkbox"> Update README</li>
+<li><input disabled="" type="checkbox"> Update docs/lingue-integration.md</li>
+</ul>
+
+    </main>
+  </body>
+</html>

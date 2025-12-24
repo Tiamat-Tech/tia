@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Prolog Agent Contract (MFR)</title>
+    <style>
+      body { margin: 0; padding: 48px 20px; font-family: "Helvetica Neue", Arial, sans-serif; background: #f7f4ef; color: #1f1b16; }
+      main { max-width: 920px; margin: 0 auto; background: #fffdf9; padding: 48px; border: 1px solid #e3d8c7; box-shadow: 6px 8px 0 #e3d8c7; }
+      h1, h2, h3 { font-weight: 600; margin-top: 2rem; }
+      pre { background: #1f1b16; color: #f7f4ef; padding: 16px; overflow: auto; }
+      code { font-family: "SFMono-Regular", ui-monospace, Menlo, Monaco, Consolas, monospace; }
+      a { color: #8a3b12; }
+      img { max-width: 100%; height: auto; }
+      table { border-collapse: collapse; width: 100%; }
+      th, td { border: 1px solid #e3d8c7; padding: 8px; }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>Prolog Agent Contract (MFR)</h1>
+<p>This document defines the expected behavior of the Prolog (Logical Reasoning) agent during Model-First Reasoning (MFR) sessions.</p>
+<h2>Role Summary</h2>
+<p>The Prolog agent performs logic-first reasoning over structured models. It expects action schemas and goals to be provided explicitly (for example by a natural-language agent) and focuses on translating those into Prolog rules and action RDF.</p>
+<h2>Inputs</h2>
+<ul>
+<li><code>mfr:ModelContributionRequest</code> messages.</li>
+<li>Problem description text in the request payload.</li>
+<li>Optional validated model for solution generation.</li>
+</ul>
+<h2>Outputs</h2>
+<ul>
+<li>Action and state variable RDF in <code>lng:ModelFirstRDF</code> mode.</li>
+<li>Optional plan proposals or reasoning outputs.</li>
+</ul>
+<h2>Required Lingue Modes</h2>
+<ul>
+<li><code>lng:ModelNegotiation</code> to receive protocol messages.</li>
+<li><code>lng:ModelFirstRDF</code> to return RDF contributions.</li>
+<li><code>lng:PrologProgram</code> when exchanging Prolog rules explicitly.</li>
+</ul>
+<h2>Contribution Responsibilities</h2>
+<h3>Action Definition</h3>
+<ul>
+<li>Consume structured action schemas provided by other agents.</li>
+<li>Emit <code>mfr:Action</code> nodes with preconditions and effects derived from that schema.</li>
+</ul>
+<h3>State Variables</h3>
+<ul>
+<li>Propose relevant state variables needed for reasoning.</li>
+<li>Emit <code>mfr:StateVariable</code> nodes with labels and types.</li>
+</ul>
+<h3>Logical Constraints</h3>
+<ul>
+<li>Express action constraints or invariants as RDF annotations.</li>
+<li>Optionally attach Prolog rules that implement these constraints.</li>
+</ul>
+<h2>Solution Responsibilities</h2>
+<ul>
+<li>When asked for solutions, generate a plan that satisfies the action model.</li>
+<li>Return a concise plan proposal with supporting rationale.</li>
+</ul>
+<h2>Message Expectations</h2>
+<h3>Input Payload</h3>
+<ul>
+<li><code>sessionId</code></li>
+<li><code>problemDescription</code></li>
+<li><code>requestedContributions</code></li>
+<li>Optional <code>mfr:ActionSchema</code> payload containing structured actions</li>
+</ul>
+<h3>Output Payload</h3>
+<ul>
+<li>Turtle RDF with action and state variable definitions.</li>
+<li>Include <code>sessionId</code> metadata in the Lingue stanza.</li>
+</ul>
+<h2>Error Handling</h2>
+<ul>
+<li>If structured action schemas are missing, return a minimal fallback (or no action RDF).</li>
+<li>If reasoning is not possible, provide a minimal partial plan or explanation.</li>
+</ul>
+<h2>Configuration Sources</h2>
+<ul>
+<li>XMPP account from RDF profile + <code>config/agents/secrets.json</code>.</li>
+<li>Prolog runtime configuration from profile or <code>.env</code>.</li>
+</ul>
+<h2>Success Criteria</h2>
+<ul>
+<li>At least one action definition for action-oriented problems.</li>
+<li>State variables emitted when the problem implies changing state.</li>
+</ul>
+
+    </main>
+  </body>
+</html>

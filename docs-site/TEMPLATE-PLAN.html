@@ -1,0 +1,326 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>NPM Packaging Implementation Plan for tia-agents</title>
+    <style>
+      body { margin: 0; padding: 48px 20px; font-family: "Helvetica Neue", Arial, sans-serif; background: #f7f4ef; color: #1f1b16; }
+      main { max-width: 920px; margin: 0 auto; background: #fffdf9; padding: 48px; border: 1px solid #e3d8c7; box-shadow: 6px 8px 0 #e3d8c7; }
+      h1, h2, h3 { font-weight: 600; margin-top: 2rem; }
+      pre { background: #1f1b16; color: #f7f4ef; padding: 16px; overflow: auto; }
+      code { font-family: "SFMono-Regular", ui-monospace, Menlo, Monaco, Consolas, monospace; }
+      a { color: #8a3b12; }
+      img { max-width: 100%; height: auto; }
+      table { border-collapse: collapse; width: 100%; }
+      th, td { border: 1px solid #e3d8c7; padding: 8px; }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>NPM Packaging Implementation Plan for tia-agents</h1>
+<p><strong>Status</strong>: ✅ Completed</p>
+<h2>Goal</h2>
+<p>Make tia-agents npm-ready so external users can easily create bots using either:</p>
+<ol>
+<li><strong>Programmatic API</strong>: Import package, write custom provider, configure via code</li>
+<li><strong>Config-driven</strong>: Provide .ttl profile + secrets.json, run with minimal code</li>
+</ol>
+<h2>Key Changes Overview</h2>
+<h3>1. Package Structure &amp; Publishing</h3>
+<ul>
+<li>Create <code>.npmignore</code> to exclude internal files</li>
+<li>Update <code>package.json</code> exports, files, keywords, peer dependencies</li>
+<li>Move <code>@mistralai/mistralai</code> from dependencies → peerDependencies (optional)</li>
+<li>Version bump: 0.2.0 → 0.3.0</li>
+</ul>
+<h3>2. Enhanced Public API</h3>
+<ul>
+<li>Export DemoProvider (working example, no dependencies)</li>
+<li>Export factory functions for common patterns</li>
+<li>Add configurable profile directory support</li>
+<li>Expose command parser utilities</li>
+</ul>
+<h3>3. Templates for Quick Start</h3>
+<ul>
+<li>Create <code>templates/</code> directory with:<ul>
+<li>Profile templates (.ttl files)</li>
+<li>Provider templates (simple &amp; LLM patterns)</li>
+<li>Runnable example scripts</li>
+</ul>
+</li>
+</ul>
+<h3>4. Documentation</h3>
+<ul>
+<li>Update <code>docs/api-reference.md</code> (comprehensive API docs)</li>
+<li>Create <code>docs/quick-start.md</code> (getting started guide)</li>
+<li>Create <code>docs/provider-guide.md</code> (custom provider guide)</li>
+<li>Update main <code>README.md</code> with npm usage section</li>
+</ul>
+<hr>
+<h2>Implementation Steps</h2>
+<h3>Step 1: Create .npmignore ✅</h3>
+<p><strong>File</strong>: <code>/home/danny/hyperdata/tia/.npmignore</code></p>
+<p>Exclude from npm package:</p>
+<ul>
+<li><code>test/</code>, <code>src/services/</code>, <code>src/examples/</code>, <code>src/client/</code></li>
+<li><code>config/</code> (but include <code>templates/config/</code>)</li>
+<li>Shell scripts (<code>start-*.sh</code>)</li>
+<li>Internal docs (keep api-reference, quick-start, provider-guide)</li>
+<li><code>CLAUDE.md</code>, <code>AGENTS.md</code>, development logs</li>
+</ul>
+<h3>Step 2: Update package.json ✅</h3>
+<p><strong>File</strong>: <code>/home/danny/hyperdata/tia/package.json</code></p>
+<p>Changes:</p>
+<ol>
+<li>Bump version: <code>&quot;version&quot;: &quot;0.3.0&quot;</code></li>
+<li>Improve description: <code>&quot;XMPP agent framework with Lingue protocol and MCP integration&quot;</code></li>
+<li>Add <code>&quot;files&quot;</code> field: <code>[&quot;src/&quot;, &quot;templates/&quot;, &quot;docs/api-reference.md&quot;, &quot;docs/quick-start.md&quot;, &quot;docs/provider-guide.md&quot;, &quot;README.md&quot;, &quot;LICENSE&quot;]</code></li>
+<li>Add keywords: <code>[&quot;xmpp&quot;, &quot;jabber&quot;, &quot;chatbot&quot;, &quot;agent&quot;, &quot;ai&quot;, &quot;lingue&quot;, &quot;mcp&quot;, &quot;mistral&quot;, &quot;conversation&quot;]</code></li>
+<li>Enhance <code>&quot;exports&quot;</code>:<pre><code class="language-json">{
+  &quot;.&quot;: &quot;./src/index.js&quot;,
+  &quot;./core&quot;: &quot;./src/agents/core/index.js&quot;,
+  &quot;./lingue&quot;: &quot;./src/lib/lingue/index.js&quot;,
+  &quot;./providers&quot;: &quot;./src/agents/providers/index.js&quot;,
+  &quot;./providers/base&quot;: &quot;./src/agents/providers/base-provider.js&quot;,
+  &quot;./providers/demo&quot;: &quot;./src/agents/providers/demo-provider.js&quot;,
+  &quot;./mcp&quot;: &quot;./src/mcp/index.js&quot;,
+  &quot;./templates/*&quot;: &quot;./templates/*&quot;
+}
+</code></pre>
+</li>
+<li>Add <code>&quot;peerDependencies&quot;</code> and <code>&quot;peerDependenciesMeta&quot;</code>:<pre><code class="language-json">&quot;peerDependencies&quot;: {
+  &quot;@mistralai/mistralai&quot;: &quot;^0.4.0 || ^0.5.0&quot;
+},
+&quot;peerDependenciesMeta&quot;: {
+  &quot;@mistralai/mistralai&quot;: { &quot;optional&quot;: true }
+}
+</code></pre>
+</li>
+<li>Move <code>@mistralai/mistralai</code> from <code>dependencies</code> to <code>peerDependencies</code></li>
+<li>Add repository field if not present</li>
+</ol>
+<h3>Step 3: Enhance src/index.js ✅</h3>
+<p><strong>File</strong>: <code>/home/danny/hyperdata/tia/src/index.js</code></p>
+<p>Add exports:</p>
+<pre><code class="language-javascript">// Factory functions
+export { createAgent, createSimpleAgent } from &quot;./factories/agent-factory.js&quot;;
+
+// DemoProvider - working example
+export { DemoProvider } from &quot;./agents/providers/demo-provider.js&quot;;
+
+// Command parser utilities
+export { defaultCommandParser } from &quot;./agents/core/command-parser.js&quot;;
+
+// System config loader
+export { loadSystemConfig } from &quot;./lib/system-config.js&quot;;
+
+// Version
+export const VERSION = &quot;0.3.0&quot;;
+</code></pre>
+<h3>Step 4: Enhance Profile Loader ✅</h3>
+<p><strong>File</strong>: <code>/home/danny/hyperdata/tia/src/agents/profile-loader.js</code></p>
+<p>Modifications:</p>
+<ol>
+<li><p>Add constant near top (after imports):</p>
+<pre><code class="language-javascript">const DEFAULT_PROFILE_DIR = path.join(process.cwd(), &quot;config&quot;, &quot;agents&quot;);
+</code></pre>
+</li>
+<li><p>Update <code>loadAgentProfile()</code> function signature and directory resolution:</p>
+<pre><code class="language-javascript">export async function loadAgentProfile(name, options = {}) {
+  if (!name) return null;
+
+  const profileDir = options.profileDir ||
+                      process.env.AGENT_PROFILE_DIR ||
+                      DEFAULT_PROFILE_DIR;
+  const filePath = path.join(profileDir, `${name}.ttl`);
+  // ... rest of function unchanged
+}
+</code></pre>
+</li>
+<li><p>Update <code>loadAgentProfileWithSecrets()</code> similarly to accept <code>options.secretsPath</code></p>
+</li>
+<li><p>Add utility function at end:</p>
+<pre><code class="language-javascript">export function setDefaultProfileDir(dir) {
+  process.env.AGENT_PROFILE_DIR = dir;
+}
+</code></pre>
+</li>
+</ol>
+<h3>Step 5: Create Factory Functions ✅</h3>
+<p><strong>New File</strong>: <code>/home/danny/hyperdata/tia/src/factories/agent-factory.js</code></p>
+<p>Two factory functions:</p>
+<ol>
+<li><p><strong><code>createAgent(profileName, provider, options)</code></strong></p>
+<ul>
+<li>Loads profile from .ttl file</li>
+<li>Creates LingueNegotiator if profile supports Lingue</li>
+<li>Wires up AgentRunner with all components</li>
+<li>Options: <code>{ profileDir, secretsPath, logger, allowSelfMessages, historyStore }</code></li>
+<li>Returns AgentRunner instance ready to start</li>
+</ul>
+</li>
+<li><p><strong><code>createSimpleAgent({ xmppConfig, roomJid, nickname, provider, logger })</code></strong></p>
+<ul>
+<li>No profile file needed</li>
+<li>Simple programmatic configuration</li>
+<li>Returns AgentRunner instance ready to start</li>
+</ul>
+</li>
+</ol>
+<p>Pattern based on <code>src/services/mistral-bot.js</code> and <code>src/services/demo-bot.js</code></p>
+<h3>Step 6: Create Templates Directory ✅</h3>
+<p><strong>New Directory</strong>: <code>/home/danny/hyperdata/tia/templates/</code></p>
+<p>Structure:</p>
+<pre><code>templates/
+├── config/
+│   ├── agent-profile.ttl          # Basic agent template
+│   ├── mistral-agent.ttl          # AI/LLM agent template
+│   └── secrets.example.json       # Secrets file template
+├── providers/
+│   ├── simple-provider-template.js   # Minimal provider example
+│   └── llm-provider-template.js      # LLM integration pattern
+└── scripts/
+    ├── basic-agent.js             # Config-driven example
+    └── programmatic-agent.js      # Programmatic API example
+</code></pre>
+<p><strong>Content Guidelines</strong>:</p>
+<ul>
+<li><code>agent-profile.ttl</code>: Minimal valid profile with XMPP + room</li>
+<li><code>mistral-agent.ttl</code>: Profile with AI provider configuration</li>
+<li><code>secrets.example.json</code>: Shows structure with placeholder passwords</li>
+<li><code>simple-provider-template.js</code>: Extends BaseProvider, shows handle() pattern</li>
+<li><code>llm-provider-template.js</code>: Shows pattern from MistralProvider (API calls, history, error handling)</li>
+<li><code>basic-agent.js</code>: Uses <code>createAgent()</code> with profile file</li>
+<li><code>programmatic-agent.js</code>: Uses <code>createSimpleAgent()</code> with inline config</li>
+</ul>
+<h3>Step 7: Create Documentation ✅</h3>
+<h4>File: <code>docs/quick-start.md</code></h4>
+<p>Sections:</p>
+<ol>
+<li>Installation: <code>npm install tia-agents</code></li>
+<li>Two approaches overview</li>
+<li>Quick example - Config-driven (copy templates, run script)</li>
+<li>Quick example - Programmatic (import, create, start)</li>
+<li>Next steps (link to api-reference, provider-guide)</li>
+</ol>
+<h4>File: <code>docs/provider-guide.md</code></h4>
+<p>Sections:</p>
+<ol>
+<li>Provider interface explanation</li>
+<li>BaseProvider contract (<code>handle()</code> method)</li>
+<li>DemoProvider walkthrough (full code + explanation)</li>
+<li>Creating custom provider (step-by-step)</li>
+<li>LLM integration pattern (based on MistralProvider)</li>
+<li>History store usage</li>
+<li>Error handling best practices</li>
+<li>Testing providers</li>
+</ol>
+<h4>File: <code>docs/api-reference.md</code> (update existing)</h4>
+<p>Add comprehensive docs for:</p>
+<ul>
+<li><code>createAgent()</code> factory function</li>
+<li><code>createSimpleAgent()</code> factory function</li>
+<li><code>loadAgentProfile()</code> options</li>
+<li><code>setDefaultProfileDir()</code> utility</li>
+<li><code>DemoProvider</code> class</li>
+<li>All exported classes with examples</li>
+</ul>
+<h3>Step 8: Update README.md ✅</h3>
+<p><strong>File</strong>: <code>/home/danny/hyperdata/tia/README.md</code></p>
+<p>Add new section after intro:</p>
+<pre><code class="language-markdown">## NPM Package Usage
+
+Install via npm:
+```bash
+npm install tia-agents
+</code></pre>
+<h3>Quick Start - Config-Driven</h3>
+<ol>
+<li>Copy templates from <code>node_modules/tia-agents/templates/</code></li>
+<li>Customize <code>config/agents/mybot.ttl</code> and <code>config/agents/secrets.json</code></li>
+<li>Create script:</li>
+</ol>
+<pre><code class="language-javascript">import { createAgent, DemoProvider } from &quot;tia-agents&quot;;
+
+const runner = await createAgent(&quot;mybot&quot;, new DemoProvider());
+await runner.start();
+</code></pre>
+<h3>Quick Start - Programmatic</h3>
+<pre><code class="language-javascript">import { createSimpleAgent, DemoProvider } from &quot;tia-agents&quot;;
+
+const runner = await createSimpleAgent({
+  xmppConfig: {
+    service: &quot;xmpp://localhost:5222&quot;,
+    domain: &quot;xmpp&quot;,
+    username: &quot;mybot&quot;,
+    password: &quot;secret&quot;
+  },
+  roomJid: &quot;general@conference.xmpp&quot;,
+  nickname: &quot;MyBot&quot;,
+  provider: new DemoProvider()
+});
+
+await runner.start();
+</code></pre>
+<p>For detailed docs, see:</p>
+<ul>
+<li><a href="./docs/quick-start.md">Quick Start Guide</a></li>
+<li><a href="./docs/api-reference.md">API Reference</a></li>
+<li><a href="./docs/provider-guide.md">Provider Guide</a></li>
+</ul>
+<pre><code>
+---
+
+## Critical Files Summary
+
+1. **package.json** - Publishing config, exports, peer deps
+2. **src/index.js** - Public API surface
+3. **src/agents/profile-loader.js** - Config directory flexibility
+4. **src/factories/agent-factory.js** - NEW - Simplifies setup
+5. **.npmignore** - NEW - Controls published files
+6. **templates/** - NEW - User templates and examples
+7. **docs/quick-start.md** - NEW - Getting started
+8. **docs/provider-guide.md** - NEW - Custom providers
+9. **docs/api-reference.md** - ENHANCE - Complete API
+10. **README.md** - ENHANCE - Add npm usage section
+
+---
+
+## Backward Compatibility
+
+✅ **No breaking changes for internal code**
+- All existing services work unchanged
+- Profile loader defaults to `config/agents/` (same as before)
+- New options are additive only
+
+⚠️ **One breaking change for external users** (if any exist)
+- MistralProvider users must install `@mistralai/mistralai` as peer dependency
+- Clearly document in migration notes
+
+---
+
+## Testing Checklist
+
+Before publishing:
+1. `npm pack --dry-run` - Verify package contents
+2. `node -e &quot;import(&#39;tia-agents&#39;).then(m =&gt; console.log(Object.keys(m)))&quot;` - Test exports
+3. `npm test` - Run full test suite
+4. Test templates work: copy to temp project, run examples
+5. Verify package size is reasonable
+6. Check all links in documentation work
+
+---
+
+## Post-Implementation
+
+1. Update CHANGELOG.md
+2. Tag release: `git tag v0.3.0`
+3. Publish: `npm publish` (or `npm publish --dry-run` first)
+4. Create GitHub release with notes
+5. Update any external documentation/wiki
+</code></pre>
+
+    </main>
+  </body>
+</html>

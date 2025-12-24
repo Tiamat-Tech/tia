@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Server Setup (systemd)</title>
+    <style>
+      body { margin: 0; padding: 48px 20px; font-family: "Helvetica Neue", Arial, sans-serif; background: #f7f4ef; color: #1f1b16; }
+      main { max-width: 920px; margin: 0 auto; background: #fffdf9; padding: 48px; border: 1px solid #e3d8c7; box-shadow: 6px 8px 0 #e3d8c7; }
+      h1, h2, h3 { font-weight: 600; margin-top: 2rem; }
+      pre { background: #1f1b16; color: #f7f4ef; padding: 16px; overflow: auto; }
+      code { font-family: "SFMono-Regular", ui-monospace, Menlo, Monaco, Consolas, monospace; }
+      a { color: #8a3b12; }
+      img { max-width: 100%; height: auto; }
+      table { border-collapse: collapse; width: 100%; }
+      th, td { border: 1px solid #e3d8c7; padding: 8px; }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>Server Setup (systemd)</h1>
+<p>This describes how to run the agents as a systemd service that starts on boot and restarts after crashes.</p>
+<h2>Unit file</h2>
+<p><code>misc/tia-agents.service</code> is provided. Key points:</p>
+<ul>
+<li><code>WorkingDirectory=/home/danny/hyperdata/tia</code></li>
+<li><code>EnvironmentFile=/home/danny/hyperdata/tia/.env</code> (optional; holds XMPP creds/API keys)</li>
+<li><code>ExecStart=/home/danny/hyperdata/tia/start-all-agents.sh</code></li>
+<li><code>Restart=on-failure</code> with <code>RestartSec=5</code></li>
+<li><code>User=danny</code></li>
+<li><code>WantedBy=multi-user.target</code></li>
+</ul>
+<h2>Install &amp; enable</h2>
+<pre><code class="language-bash">sudo cp /home/danny/hyperdata/tia/misc/tia-agents.service /etc/systemd/system/
+sudo systemctl daemon-reload
+sudo systemctl enable tia-agents.service   # start on boot
+sudo systemctl start tia-agents.service    # start now
+</code></pre>
+<h2>Check status/logs</h2>
+<pre><code class="language-bash">systemctl status tia-agents.service
+journalctl -u tia-agents.service -f
+</code></pre>
+<h2>Prereqs</h2>
+<ul>
+<li>Populate <code>/home/danny/hyperdata/tia/.env</code> (or per-agent configs in <code>config/agents/</code>) with XMPP credentials/resources and any API keys/tokens.</li>
+<li>Ensure <code>start-all-agents.sh</code> is executable.</li>
+<li>If your XMPP server doesn’t support multiple resources on one account, use distinct accounts per agent in <code>config/agents/{mistral,semem,demo}.ttl</code> and restart the service.</li>
+</ul>
+
+    </main>
+  </body>
+</html>

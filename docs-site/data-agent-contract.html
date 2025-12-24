@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Data Agent Contract (MFR)</title>
+    <style>
+      body { margin: 0; padding: 48px 20px; font-family: "Helvetica Neue", Arial, sans-serif; background: #f7f4ef; color: #1f1b16; }
+      main { max-width: 920px; margin: 0 auto; background: #fffdf9; padding: 48px; border: 1px solid #e3d8c7; box-shadow: 6px 8px 0 #e3d8c7; }
+      h1, h2, h3 { font-weight: 600; margin-top: 2rem; }
+      pre { background: #1f1b16; color: #f7f4ef; padding: 16px; overflow: auto; }
+      code { font-family: "SFMono-Regular", ui-monospace, Menlo, Monaco, Consolas, monospace; }
+      a { color: #8a3b12; }
+      img { max-width: 100%; height: auto; }
+      table { border-collapse: collapse; width: 100%; }
+      th, td { border: 1px solid #e3d8c7; padding: 8px; }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>Data Agent Contract (MFR)</h1>
+<p>This document defines the expected behavior of the Data (Knowledge Query) agent during Model-First Reasoning (MFR) sessions.</p>
+<h2>Role Summary</h2>
+<p>The Data agent grounds entities in external knowledge bases, contributes entity and relationship RDF, and enriches the model with factual links.</p>
+<h2>Inputs</h2>
+<ul>
+<li><code>mfr:ModelContributionRequest</code> messages.</li>
+<li>Problem description text in the request payload.</li>
+</ul>
+<h2>Outputs</h2>
+<ul>
+<li>RDF/Turtle contributions in <code>lng:ModelFirstRDF</code> mode.</li>
+<li>Grounded entities and relationships:<ul>
+<li><code>mfr:Entity</code></li>
+<li><code>mfr:Relationship</code></li>
+<li>Optional <code>owl:sameAs</code>, <code>rdfs:label</code>, <code>rdfs:comment</code></li>
+</ul>
+</li>
+</ul>
+<h2>Required Lingue Modes</h2>
+<ul>
+<li><code>lng:ModelNegotiation</code> to receive protocol messages.</li>
+<li><code>lng:ModelFirstRDF</code> to return RDF contributions.</li>
+</ul>
+<h2>Contribution Responsibilities</h2>
+<h3>Entity Discovery</h3>
+<ul>
+<li>Extract named entities from the problem description.</li>
+<li>Emit <code>mfr:Entity</code> nodes with labels and <code>mfr:contributedBy</code>.</li>
+</ul>
+<h3>Entity Grounding</h3>
+<ul>
+<li>For each entity, attempt grounding to a public knowledge base (e.g., Wikidata).</li>
+<li>Emit <code>owl:sameAs</code> links and, when available, type hints.</li>
+</ul>
+<h3>Relationship Discovery</h3>
+<ul>
+<li>For grounded entities, query for a small set of relevant relationships.</li>
+<li>Emit <code>mfr:Relationship</code> nodes with subject/predicate/object hints.</li>
+</ul>
+<h2>Message Expectations</h2>
+<h3>Input Payload</h3>
+<ul>
+<li><code>sessionId</code></li>
+<li><code>problemDescription</code></li>
+<li><code>requestedContributions</code></li>
+</ul>
+<h3>Output Payload</h3>
+<ul>
+<li>Turtle RDF with <code>@prefix mfr:</code> and relevant ontology prefixes.</li>
+<li>Include <code>sessionId</code> metadata in the Lingue stanza.</li>
+</ul>
+<h2>Error Handling</h2>
+<ul>
+<li>If grounding fails, emit ungrounded entities with <code>mfr:groundingStatus &quot;ungrounded&quot;</code>.</li>
+<li>If the external endpoint is unavailable, return a partial contribution (entities only).</li>
+</ul>
+<h2>Configuration Sources</h2>
+<ul>
+<li>XMPP account from RDF profile + <code>config/agents/secrets.json</code>.</li>
+<li>SPARQL endpoint and extraction model from RDF profile.</li>
+<li>External API keys from <code>.env</code> (referenced by profile fields).</li>
+</ul>
+<h2>Success Criteria</h2>
+<ul>
+<li>At least one entity contribution for a non-empty problem description.</li>
+<li>Grounding links for common entities when the knowledge endpoint is reachable.</li>
+<li>RDF payload is valid Turtle and includes <code>mfr:contributedBy</code>.</li>
+</ul>
+
+    </main>
+  </body>
+</html>

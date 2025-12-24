@@ -1,7 +1,7 @@
 import dotenv from "dotenv";
 import { AgentRunner } from "../agents/core/agent-runner.js";
 import { createMentionDetector } from "../agents/core/mention-detector.js";
-import { createPrefixedCommandParser, defaultCommandParser } from "../agents/core/command-parser.js";
+import { defaultCommandParser } from "../agents/core/command-parser.js";
 import { PrologProvider } from "../agents/providers/prolog-provider.js";
 import logger from "../lib/logger-lite.js";
 import { loadAgentProfile } from "../agents/profile-loader.js";
@@ -69,26 +69,63 @@ if (profile.supportsLingueMode(LANGUAGE_MODES.PROLOG_PROGRAM)) {
 const modelFirstRdfHandler = profile.supportsLingueMode(LANGUAGE_MODES.MODEL_FIRST_RDF)
   ? new ModelFirstRdfHandler({ logger })
   : null;
-if (modelFirstRdfHandler) {
-  handlers[LANGUAGE_MODES.MODEL_FIRST_RDF] = modelFirstRdfHandler;
-}
 
 if (profile.supportsLingueMode(LANGUAGE_MODES.MODEL_NEGOTIATION)) {
   handlers[LANGUAGE_MODES.MODEL_NEGOTIATION] = new ModelNegotiationHandler({
     logger,
     onPayload: async ({ payload, roomJid, stanza }) => {
       const messageType = payload?.messageType;
-      if (messageType !== MFR_MESSAGE_TYPES.MODEL_CONTRIBUTION_REQUEST) {
+      if (!messageType) {
         return null;
       }
 
       const sessionId = payload?.sessionId;
-      if (!sessionId) {
-        logger.warn?.("[PrologAgent] MFR contribution request missing sessionId");
+      let rdf = "";
+      if (messageType === MFR_MESSAGE_TYPES.MODEL_CONTRIBUTION_REQUEST) {
+        if (!sessionId) {
+          logger.warn?.("[PrologAgent] MFR contribution request missing sessionId");
+          return null;
+        }
+
+        rdf = await provider.handleMfrContributionRequest(payload);
+      } else if (messageType === MFR_MESSAGE_TYPES.ACTION_SCHEMA) {
+        if (!sessionId) {
+          logger.warn?.("[PrologAgent] Action schema missing sessionId");
+          return null;
+        }
+        rdf = await provider.handleActionSchema(payload);
+      } else if (messageType === MFR_MESSAGE_TYPES.SOLUTION_REQUEST) {
+        logger.info?.(`[PrologAgent] Received solution request for session ${payload?.sessionId}`);
+        const solution = await provider.handleSolutionRequest(payload);
+        if (!solution || !negotiator?.xmppClient) {
+          logger.warn?.(`[PrologAgent] No solution generated or client missing (solution=${!!solution})`);
+          return null;
+        }
+
+        const targetRoom = roomJid || stanza?.attrs?.from?.split("/")?.[0];
+        if (!targetRoom) {
+          logger.warn?.("[PrologAgent] Cannot determine target room for solution proposal");
+          return null;
+        }
+
+        logger.info?.(
+          `[PrologAgent] Sending solution proposal to ${targetRoom}: ${solution.message}`
+        );
+        await negotiator.send(targetRoom, {
+          mode: LANGUAGE_MODES.MODEL_NEGOTIATION,
+          payload: {
+            messageType: MFR_MESSAGE_TYPES.SOLUTION_PROPOSAL,
+            sessionId: payload?.sessionId,
+            solution,
+            timestamp: new Date().toISOString()
+          },
+          summary: `Solution proposal from ${BOT_NICKNAME} for ${payload?.sessionId}`
+        });
+        return null;
+      } else {
         return null;
       }
 
-      const rdf = await provider.handleMfrContributionRequest(payload);
       if (!rdf || !rdf.trim()) {
         return null;
       }
@@ -123,6 +160,19 @@ negotiator = new LingueNegotiator({
   logger
 });
 
+function createStrictPrefixedParser(prefixes = []) {
+  return (text) => {
+    const trimmed = (text || "").trim();
+    const lowered = trimmed.toLowerCase();
+    for (const prefix of prefixes) {
+      if (lowered.startsWith(prefix)) {
+        return defaultCommandParser(trimmed.slice(prefix.length).trim());
+      }
+    }
+    return { command: null, content: "" };
+  };
+}
+
 const runner = new AgentRunner({
   xmppConfig: XMPP_CONFIG,
   roomJid: MUC_ROOM,
@@ -130,7 +180,7 @@ const runner = new AgentRunner({
   provider,
   negotiator,
   mentionDetector: createMentionDetector(BOT_NICKNAME, [BOT_NICKNAME]),
-  commandParser: createPrefixedCommandParser([
+  commandParser: createStrictPrefixedParser([
     `${BOT_NICKNAME.toLowerCase()},`,
     `${BOT_NICKNAME.toLowerCase()}:`
   ]),

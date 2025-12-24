@@ -1,0 +1,370 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>XMPP Auto-Connect & Registration</title>
+    <style>
+      body { margin: 0; padding: 48px 20px; font-family: "Helvetica Neue", Arial, sans-serif; background: #f7f4ef; color: #1f1b16; }
+      main { max-width: 920px; margin: 0 auto; background: #fffdf9; padding: 48px; border: 1px solid #e3d8c7; box-shadow: 6px 8px 0 #e3d8c7; }
+      h1, h2, h3 { font-weight: 600; margin-top: 2rem; }
+      pre { background: #1f1b16; color: #f7f4ef; padding: 16px; overflow: auto; }
+      code { font-family: "SFMono-Regular", ui-monospace, Menlo, Monaco, Consolas, monospace; }
+      a { color: #8a3b12; }
+      img { max-width: 100%; height: auto; }
+      table { border-collapse: collapse; width: 100%; }
+      th, td { border: 1px solid #e3d8c7; padding: 8px; }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>XMPP Auto-Connect &amp; Registration</h1>
+<p>TIA provides automatic credential loading and connection management for agents. When an agent attempts to connect, it automatically loads credentials from <code>config/agents/secrets.json</code>, making deployment and configuration simpler.</p>
+<h2>Features</h2>
+<ul>
+<li><strong>Automatic credential loading</strong>: Agents load passwords from <code>secrets.json</code> automatically</li>
+<li><strong>Simplified deployment</strong>: No need to pass passwords via environment variables</li>
+<li><strong>Credential persistence</strong>: Credentials are centrally managed in <code>config/agents/secrets.json</code></li>
+<li><strong>Clear error messages</strong>: Helpful feedback when credentials are missing or invalid</li>
+</ul>
+<h2>Recommended Setup</h2>
+<p>For production use, we recommend creating accounts via <code>prosodyctl</code> on the server:</p>
+<pre><code class="language-bash"># On the Prosody server
+prosodyctl register myagent tensegrity.it mypassword123
+</code></pre>
+<p>Then add the credentials to <code>config/agents/secrets.json</code>:</p>
+<pre><code class="language-json">{
+  &quot;xmpp&quot;: {
+    &quot;myagent&quot;: &quot;mypassword123&quot;
+  }
+}
+</code></pre>
+<h2>Server Setup</h2>
+<h3>Creating Accounts via Prosodyctl</h3>
+<p>The recommended way to create accounts is via <code>prosodyctl</code> on the server:</p>
+<pre><code class="language-bash"># SSH to your Prosody server
+ssh user@tensegrity.it
+
+# Register an account
+prosodyctl register username tensegrity.it password123
+
+# Verify the account
+prosodyctl listusers tensegrity.it
+</code></pre>
+<h3>Optional: Enabling Self-Registration in Prosody</h3>
+<p>If you want to enable in-band registration (XEP-0077) for programmatic account creation:</p>
+<p>Edit <code>/etc/prosody/prosody.cfg.lua</code>:</p>
+<pre><code class="language-lua">modules_enabled = {
+    -- ... other modules ...
+    &quot;register&quot;; -- Allow users to register accounts
+}
+
+-- Allow open registration
+allow_registration = true
+
+-- Optional: Rate limiting to prevent abuse
+registration_throttle_max = 5
+registration_throttle_period = 3600  -- 1 hour
+</code></pre>
+<p>Comment out invite-only registration:</p>
+<pre><code class="language-lua">-- &quot;invites_register&quot;; -- Comment this out for open registration
+</code></pre>
+<p>Restart Prosody:</p>
+<pre><code class="language-bash">sudo prosodyctl restart
+</code></pre>
+<h2>Usage</h2>
+<h3>Basic Usage (Recommended)</h3>
+<p>Create the account on the server first, then add credentials to <code>secrets.json</code>:</p>
+<pre><code class="language-javascript">import { autoConnectXmpp } from &quot;tia-agents/lib/xmpp-auto-connect.js&quot;;
+
+// Credentials will be loaded from config/agents/secrets.json
+const { xmpp, credentials } = await autoConnectXmpp({
+  service: &quot;xmpp://tensegrity.it:5222&quot;,
+  domain: &quot;tensegrity.it&quot;,
+  username: &quot;myagent&quot;,
+  autoRegister: false // Don&#39;t attempt registration
+});
+
+console.log(`Connected as ${credentials.username}`);
+</code></pre>
+<h3>Programmatic Registration (Client-Side)</h3>
+<p>Client-side registration via XEP-0077 in-band registration is now fully supported:</p>
+<pre><code class="language-javascript">import { registerXmppAccount, generatePassword } from &quot;tia-agents/lib/xmpp-register.js&quot;;
+
+const password = generatePassword(16);
+
+const result = await registerXmppAccount({
+  service: &quot;xmpp://tensegrity.it:5222&quot;,
+  domain: &quot;tensegrity.it&quot;,
+  username: &quot;myagent&quot;,
+  password,
+  tls: { rejectUnauthorized: false }
+});
+
+console.log(result.message); // &quot;Account myagent@tensegrity.it registered successfully&quot;
+
+// Credentials will be automatically saved if using autoConnectXmpp
+</code></pre>
+<h3>Auto-Registration (Fully Automatic)</h3>
+<p>The easiest approach - automatically registers if no credentials exist:</p>
+<pre><code class="language-javascript">import { autoConnectXmpp } from &quot;tia-agents/lib/xmpp-auto-connect.js&quot;;
+
+// If no password in secrets.json, automatically registers a new account
+const { xmpp, credentials } = await autoConnectXmpp({
+  service: &quot;xmpp://tensegrity.it:5222&quot;,
+  domain: &quot;tensegrity.it&quot;,
+  username: &quot;myagent&quot;,
+  autoRegister: true // Enable auto-registration
+});
+
+if (credentials.registered) {
+  console.log(`New account created: ${credentials.username}`);
+  console.log(`Password: ${credentials.password}`);
+  console.log(&quot;Credentials saved to config/agents/secrets.json&quot;);
+}
+</code></pre>
+<h3>With XmppRoomAgent</h3>
+<pre><code class="language-javascript">import { autoConnectXmpp } from &quot;tia-agents/lib/xmpp-auto-connect.js&quot;;
+import { XmppRoomAgent } from &quot;tia-agents/lib/xmpp-room-agent.js&quot;;
+
+// First, auto-connect (registers if needed)
+const { credentials } = await autoConnectXmpp({
+  service: &quot;xmpp://tensegrity.it:5222&quot;,
+  domain: &quot;tensegrity.it&quot;,
+  username: &quot;myagent&quot;,
+  autoRegister: true
+});
+
+// Then create agent with credentials
+const agent = new XmppRoomAgent({
+  xmppConfig: {
+    service: &quot;xmpp://tensegrity.it:5222&quot;,
+    domain: &quot;tensegrity.it&quot;,
+    username: credentials.username,
+    password: credentials.password,
+    tls: { rejectUnauthorized: false }
+  },
+  roomJid: &quot;general@conference.tensegrity.it&quot;,
+  nickname: &quot;MyAgent&quot;,
+  onMessage: async (payload) =&gt; {
+    console.log(`Message from ${payload.sender}: ${payload.body}`);
+  }
+});
+
+await agent.start();
+</code></pre>
+<h3>Manual Registration</h3>
+<p>If you want to register an account manually:</p>
+<pre><code class="language-javascript">import { registerXmppAccount, generatePassword } from &quot;tia-agents/lib/xmpp-register.js&quot;;
+
+const password = generatePassword(16); // Generate secure random password
+
+const result = await registerXmppAccount({
+  service: &quot;xmpp://tensegrity.it:5222&quot;,
+  domain: &quot;tensegrity.it&quot;,
+  username: &quot;myagent&quot;,
+  password,
+  tls: { rejectUnauthorized: false }
+});
+
+console.log(result.message); // &quot;Account myagent@tensegrity.it registered successfully&quot;
+</code></pre>
+<h2>Configuration Options</h2>
+<h3><code>autoConnectXmpp(options)</code></h3>
+<table>
+<thead>
+<tr>
+<th>Option</th>
+<th>Type</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>service</code></td>
+<td>string</td>
+<td>required</td>
+<td>XMPP service URL (e.g., <code>xmpp://host:5222</code>)</td>
+</tr>
+<tr>
+<td><code>domain</code></td>
+<td>string</td>
+<td>required</td>
+<td>XMPP domain</td>
+</tr>
+<tr>
+<td><code>username</code></td>
+<td>string</td>
+<td>required</td>
+<td>Username to register/login</td>
+</tr>
+<tr>
+<td><code>password</code></td>
+<td>string</td>
+<td>optional</td>
+<td>Password (if omitted, triggers registration)</td>
+</tr>
+<tr>
+<td><code>resource</code></td>
+<td>string</td>
+<td>optional</td>
+<td>XMPP resource identifier</td>
+</tr>
+<tr>
+<td><code>tls</code></td>
+<td>object</td>
+<td><code>{rejectUnauthorized: false}</code></td>
+<td>TLS configuration</td>
+</tr>
+<tr>
+<td><code>secretsPath</code></td>
+<td>string</td>
+<td><code>config/agents/secrets.json</code></td>
+<td>Path to secrets file</td>
+</tr>
+<tr>
+<td><code>autoRegister</code></td>
+<td>boolean</td>
+<td><code>true</code></td>
+<td>Enable auto-registration</td>
+</tr>
+<tr>
+<td><code>logger</code></td>
+<td>object</td>
+<td><code>console</code></td>
+<td>Logger instance</td>
+</tr>
+</tbody></table>
+<h3><code>registerXmppAccount(options)</code></h3>
+<table>
+<thead>
+<tr>
+<th>Option</th>
+<th>Type</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>service</code></td>
+<td>string</td>
+<td>required</td>
+<td>XMPP service URL</td>
+</tr>
+<tr>
+<td><code>domain</code></td>
+<td>string</td>
+<td>required</td>
+<td>XMPP domain</td>
+</tr>
+<tr>
+<td><code>username</code></td>
+<td>string</td>
+<td>required</td>
+<td>Desired username</td>
+</tr>
+<tr>
+<td><code>password</code></td>
+<td>string</td>
+<td>required</td>
+<td>Desired password</td>
+</tr>
+<tr>
+<td><code>tls</code></td>
+<td>object</td>
+<td><code>{rejectUnauthorized: false}</code></td>
+<td>TLS configuration</td>
+</tr>
+<tr>
+<td><code>logger</code></td>
+<td>object</td>
+<td><code>console</code></td>
+<td>Logger instance</td>
+</tr>
+</tbody></table>
+<h2>Credential Storage</h2>
+<p>Registered credentials are automatically saved to <code>config/agents/secrets.json</code>:</p>
+<pre><code class="language-json">{
+  &quot;xmpp&quot;: {
+    &quot;myagent&quot;: &quot;generated-password-here&quot;,
+    &quot;anotheragent&quot;: &quot;another-password&quot;
+  }
+}
+</code></pre>
+<p>This file is <code>.gitignore</code>d to prevent credentials from being committed.</p>
+<h2>Integration Testing</h2>
+<p>Run integration tests against tensegrity.it:</p>
+<pre><code class="language-bash">RUN_TENSEGRITY_TESTS=true npm test -- xmpp-auto-register
+</code></pre>
+<p>The test suite will:</p>
+<ol>
+<li>Generate a unique test username</li>
+<li>Register the account automatically</li>
+<li>Verify credentials are saved</li>
+<li>Test reconnection using saved credentials</li>
+<li>Verify the account can join MUC rooms and send messages</li>
+<li>Test registration conflict handling</li>
+<li>Clean up test artifacts</li>
+</ol>
+<h2>Error Handling</h2>
+<p>Common errors and solutions:</p>
+<h3>Registration Not Allowed</h3>
+<pre><code>Error: Registration not allowed on this server
+</code></pre>
+<p><strong>Solution</strong>: Enable the <code>register</code> module in Prosody and set <code>allow_registration = true</code></p>
+<h3>Username Already Exists</h3>
+<pre><code>Error: Username myagent already exists
+</code></pre>
+<p><strong>Solution</strong>: Choose a different username or use the existing credentials</p>
+<h3>Server Does Not Support Registration</h3>
+<pre><code>Error: Server does not support registration
+</code></pre>
+<p><strong>Solution</strong>: The XMPP server doesn&#39;t implement XEP-0077. Register accounts manually via <code>prosodyctl</code>:</p>
+<pre><code class="language-bash">prosodyctl register myagent tensegrity.it mypassword
+</code></pre>
+<h2>Security Considerations</h2>
+<ol>
+<li><strong>Password Strength</strong>: Auto-generated passwords are 16 characters, alphanumeric</li>
+<li><strong>Secrets File</strong>: <code>config/agents/secrets.json</code> must be protected with appropriate file permissions</li>
+<li><strong>Rate Limiting</strong>: Configure <code>registration_throttle_max</code> in Prosody to prevent abuse</li>
+<li><strong>Production Use</strong>: Consider using manual registration or external authentication for production deployments</li>
+</ol>
+<h2>MCP Agent Example</h2>
+<p>The MCP agent can use auto-registration for easier deployment:</p>
+<pre><code class="language-bash"># No password needed - will auto-register
+XMPP_SERVICE=xmpp://tensegrity.it:5222 \
+XMPP_DOMAIN=tensegrity.it \
+AGENT_PROFILE=mcp-loopback \
+node src/services/mcp-loopback-agent.js
+</code></pre>
+<p>The agent will:</p>
+<ol>
+<li>Check for existing credentials in <code>config/agents/secrets.json</code></li>
+<li>If not found, register a new account</li>
+<li>Save credentials for future use</li>
+<li>Connect and join the configured MUC room</li>
+</ol>
+<h2>API Reference</h2>
+<h3>generatePassword(length)</h3>
+<p>Generates a cryptographically secure random password.</p>
+<p><strong>Parameters:</strong></p>
+<ul>
+<li><code>length</code> (number, default: 16): Password length</li>
+</ul>
+<p><strong>Returns:</strong> string - Random password</p>
+<p><strong>Example:</strong></p>
+<pre><code class="language-javascript">import { generatePassword } from &quot;tia-agents/lib/xmpp-register.js&quot;;
+
+const password = generatePassword(20);
+console.log(password); // &quot;a3B9xP2mQ7nK5fL8wR4t&quot;
+</code></pre>
+<h2>See Also</h2>
+<ul>
+<li><a href="agents.md">Agent Configuration</a> - Configuring agent profiles</li>
+<li><a href="testing.md">Testing</a> - Running integration tests</li>
+<li><a href="https://xmpp.org/extensions/xep-0077.html">XEP-0077: In-Band Registration</a> - XMPP specification</li>
+</ul>
+
+    </main>
+  </body>
+</html>

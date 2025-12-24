@@ -1,0 +1,346 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>MFR (Model-First Reasoning) Usage Guide</title>
+    <style>
+      body { margin: 0; padding: 48px 20px; font-family: "Helvetica Neue", Arial, sans-serif; background: #f7f4ef; color: #1f1b16; }
+      main { max-width: 920px; margin: 0 auto; background: #fffdf9; padding: 48px; border: 1px solid #e3d8c7; box-shadow: 6px 8px 0 #e3d8c7; }
+      h1, h2, h3 { font-weight: 600; margin-top: 2rem; }
+      pre { background: #1f1b16; color: #f7f4ef; padding: 16px; overflow: auto; }
+      code { font-family: "SFMono-Regular", ui-monospace, Menlo, Monaco, Consolas, monospace; }
+      a { color: #8a3b12; }
+      img { max-width: 100%; height: auto; }
+      table { border-collapse: collapse; width: 100%; }
+      th, td { border: 1px solid #e3d8c7; padding: 8px; }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>MFR (Model-First Reasoning) Usage Guide</h1>
+<p>This guide explains how to use the TIA Multi-Agent Model-First Reasoning system.</p>
+<h2>Overview</h2>
+<p>The MFR system enables collaborative problem-solving through a two-phase approach:</p>
+<ol>
+<li><strong>Model Construction Phase</strong>: Multiple specialized agents collaboratively build an explicit RDF model of the problem</li>
+<li><strong>Constrained Reasoning Phase</strong>: Agents generate solutions constrained by the validated model</li>
+</ol>
+<h2>Architecture</h2>
+<h3>Agents</h3>
+<ul>
+<li><strong>Coordinator</strong>: Orchestrates the MFR protocol, manages model construction, performs SHACL validation</li>
+<li><strong>Mistral</strong> (Natural Language Agent): Extracts entities and goals from natural language descriptions</li>
+<li><strong>Data</strong> (Knowledge Query Agent): Grounds entities to Wikidata URIs, discovers relationships</li>
+<li><strong>Prolog</strong> (Logical Reasoning Agent): Models actions, state variables, validates action sequences, generates plans</li>
+<li><strong>Semem</strong> (Semantic Reasoning Agent): Identifies constraints, detects conflicts, validates model consistency</li>
+</ul>
+<h3>MUC Rooms</h3>
+<p>The system uses multiple XMPP MUC rooms for phase-based communication:</p>
+<ul>
+<li><code>general@conference.tensegrity.it</code>: Primary room where coordinator receives requests</li>
+<li><code>mfr-construct@conference.tensegrity.it</code>: Model construction phase communication</li>
+<li><code>mfr-validate@conference.tensegrity.it</code>: Validation phase communication</li>
+<li><code>mfr-reason@conference.tensegrity.it</code>: Reasoning phase communication</li>
+</ul>
+<h2>Setup</h2>
+<h3>Prerequisites</h3>
+<ol>
+<li><strong>XMPP Server</strong>: Prosody or compatible XMPP server running</li>
+<li><strong>Node.js</strong>: v18+ with ESM support</li>
+<li><strong>API Keys</strong>:<ul>
+<li><code>MISTRAL_API_KEY</code>: For Mistral agent</li>
+<li><code>SEMEM_AUTH_TOKEN</code>: For Semem agent (optional)</li>
+</ul>
+</li>
+</ol>
+<h3>Installation</h3>
+<pre><code class="language-bash"># Install dependencies
+npm install
+
+# Create secrets file
+cat &gt; config/agents/secrets.json &lt;&lt;EOF
+{
+  &quot;coordinator&quot;: &quot;password1&quot;,
+  &quot;mistral&quot;: &quot;password2&quot;,
+  &quot;data&quot;: &quot;password3&quot;,
+  &quot;prolog&quot;: &quot;password4&quot;,
+  &quot;semem&quot;: &quot;password5&quot;
+}
+EOF
+
+# Set environment variables
+export MISTRAL_API_KEY=your_mistral_api_key
+export SEMEM_AUTH_TOKEN=your_semem_token  # optional
+</code></pre>
+<h3>Create MUC Rooms</h3>
+<pre><code class="language-bash"># Create the MFR MUC rooms
+node src/examples/create-mfr-rooms.js
+</code></pre>
+<p>Expected output:</p>
+<pre><code>=== Creating MFR MUC Rooms ===
+✅ Joined room: mfr-construct@conference.tensegrity.it
+✅ Joined room: mfr-validate@conference.tensegrity.it
+✅ Joined room: mfr-reason@conference.tensegrity.it
+✅ All MFR rooms created successfully!
+</code></pre>
+<h2>Running the System</h2>
+<h3>Start All Agents</h3>
+<pre><code class="language-bash"># Start the complete MFR system
+./start-mfr-system.sh
+</code></pre>
+<p>This starts:</p>
+<ul>
+<li>Coordinator agent</li>
+<li>Data agent</li>
+<li>Prolog agent</li>
+<li>Mistral agent</li>
+<li>Semem agent (if configured)</li>
+</ul>
+<p>Logs are written to <code>logs/</code> directory.</p>
+<h3>Monitor Agent Logs</h3>
+<pre><code class="language-bash"># Watch all agent activity
+tail -f logs/coordinator.log logs/mistral.log logs/data.log logs/prolog.log
+</code></pre>
+<h3>Stop All Agents</h3>
+<pre><code class="language-bash"># Kill all running agent processes
+pkill -f &#39;node src/services&#39;
+</code></pre>
+<h2>Usage Examples</h2>
+<h3>Example 1: Simple Scheduling</h3>
+<pre><code class="language-bash">node src/examples/run-mfr-session.js \
+  &quot;Schedule meetings for Alice, Bob, and Carol. Alice is only available in the morning, Bob needs 2 hours, Carol can&#39;t meet before Bob.&quot;
+</code></pre>
+<p><strong>Expected Flow</strong>:</p>
+<ol>
+<li>Coordinator receives request, starts MFR session</li>
+<li>Mistral extracts entities: Alice, Bob, Carol</li>
+<li>Data grounds entities (if they exist in Wikidata)</li>
+<li>Prolog defines scheduling actions and constraints</li>
+<li>Semem identifies temporal constraints</li>
+<li>Model is validated via SHACL</li>
+<li>Prolog generates solution plan</li>
+<li>Mistral generates natural language explanation</li>
+</ol>
+<h3>Example 2: Medical Appointment Scheduling</h3>
+<pre><code class="language-bash">node src/examples/run-mfr-session.js \
+  &quot;Schedule appointments for patients Alice, Bob, Carol. Alice takes warfarin, Bob takes aspirin, Carol takes ibuprofen. Ensure no drug interactions.&quot;
+</code></pre>
+<p><strong>Expected Flow</strong>:</p>
+<ol>
+<li>Entity extraction: patients and drugs</li>
+<li>Entity grounding: drugs linked to Wikidata</li>
+<li>Relationship discovery: drug interaction data from Wikidata</li>
+<li>Constraint identification: drug interaction constraints</li>
+<li>Action modeling: appointment scheduling with constraints</li>
+<li>Plan generation: schedule avoiding conflicts</li>
+<li>Solution explanation with safety notes</li>
+</ol>
+<h3>Example 3: Resource Allocation</h3>
+<pre><code class="language-bash">node src/examples/run-mfr-session.js \
+  &quot;Allocate 3 servers to 5 tasks: database, web, cache, worker, backup. Database needs high memory, web needs good network.&quot;
+</code></pre>
+<h3>Example 4: Interactive Testing</h3>
+<pre><code class="language-bash"># Run comprehensive integration test
+node src/examples/test-mfr-session.js
+</code></pre>
+<p>This test:</p>
+<ul>
+<li>Connects to coordinator room</li>
+<li>Submits test problem</li>
+<li>Monitors all MFR phases</li>
+<li>Reports success/failure</li>
+</ul>
+<h2>MFR Commands</h2>
+<h3>Coordinator Commands</h3>
+<p>Send these as messages in the coordinator room:</p>
+<h4>Start MFR Session</h4>
+<pre><code>Coordinator: mfr-start &lt;problem description&gt;
+</code></pre>
+<p>Example:</p>
+<pre><code>Coordinator: mfr-start Schedule 3 meetings with time constraints
+</code></pre>
+<h4>Request Contribution</h4>
+<pre><code>Coordinator: mfr-contribute &lt;session-id&gt; &lt;contribution-type&gt;
+</code></pre>
+<p>Example:</p>
+<pre><code>Coordinator: mfr-contribute abc123 EntityDiscovery
+</code></pre>
+<h4>Validate Model</h4>
+<pre><code>Coordinator: mfr-validate &lt;session-id&gt;
+</code></pre>
+<h4>Solve Problem</h4>
+<pre><code>Coordinator: mfr-solve &lt;session-id&gt;
+</code></pre>
+<h2>Protocol Flow</h2>
+<h3>Phase 1: Initialization</h3>
+<ul>
+<li>User sends problem to Coordinator</li>
+<li>Coordinator creates session, initializes state machine</li>
+<li>Broadcasts to <code>mfr-construct</code> room</li>
+</ul>
+<h3>Phase 2: Entity Discovery</h3>
+<ul>
+<li>Coordinator requests entity contributions</li>
+<li>Mistral extracts entities from problem description</li>
+<li>Data grounds entities to Wikidata URIs</li>
+<li>Contributions merged into model</li>
+</ul>
+<h3>Phase 3: Action &amp; Constraint Definition</h3>
+<ul>
+<li>Prolog extracts and models actions</li>
+<li>Semem identifies constraints</li>
+<li>All contributions added to model</li>
+</ul>
+<h3>Phase 4: Model Validation</h3>
+<ul>
+<li>Coordinator broadcasts to <code>mfr-validate</code> room</li>
+<li>SHACL validation performed</li>
+<li>Completeness checked (entities, actions, goals present)</li>
+<li>Conflicts detected by Semem</li>
+<li>If invalid, negotiation phase begins</li>
+</ul>
+<h3>Phase 5: Constrained Reasoning</h3>
+<ul>
+<li>Coordinator broadcasts validated model to <code>mfr-reason</code> room</li>
+<li>Prolog generates solution plans</li>
+<li>Semem validates solutions against constraints</li>
+<li>Coordinator ranks solutions</li>
+</ul>
+<h3>Phase 6: Solution Delivery</h3>
+<ul>
+<li>Mistral generates natural language explanation</li>
+<li>Solution sent to user in coordinator room</li>
+</ul>
+<h2>RDF Model Structure</h2>
+<p>Example model for appointment scheduling:</p>
+<pre><code class="language-turtle">@prefix mfr: &lt;http://purl.org/stuff/mfr/&gt; .
+@prefix schema: &lt;http://schema.org/&gt; .
+
+&lt;mfr:session-123/entity-1&gt; a mfr:Entity ;
+  schema:name &quot;Alice&quot; ;
+  mfr:contributedBy &quot;Mistral&quot; .
+
+&lt;mfr:session-123/action-1&gt; a mfr:Action ;
+  schema:name &quot;schedule&quot; ;
+  mfr:hasParameter &quot;patient&quot;, &quot;time&quot;, &quot;doctor&quot; ;
+  mfr:contributedBy &quot;Prolog&quot; .
+
+&lt;mfr:session-123/constraint-1&gt; a mfr:Constraint ;
+  mfr:constraintType &quot;temporal&quot; ;
+  rdfs:comment &quot;Alice only available in morning&quot; ;
+  mfr:contributedBy &quot;Semem&quot; .
+</code></pre>
+<h2>Troubleshooting</h2>
+<h3>Agents Not Responding</h3>
+<p><strong>Problem</strong>: Coordinator broadcasts contribution requests but no agents respond</p>
+<p><strong>Solutions</strong>:</p>
+<ul>
+<li>Check that all agents are running: <code>ps aux | grep node</code></li>
+<li>Verify agents joined rooms: check agent logs</li>
+<li>Ensure agent profiles have MFR capability declarations</li>
+<li>Check XMPP connectivity</li>
+</ul>
+<h3>SHACL Validation Failures</h3>
+<p><strong>Problem</strong>: Model validation fails with completeness errors</p>
+<p><strong>Solutions</strong>:</p>
+<ul>
+<li>Check that all required agents contributed (Mistral, Data, Prolog, Semem)</li>
+<li>Review SHACL shapes in <code>vocabs/mfr-shapes.ttl</code></li>
+<li>Examine merged model in coordinator logs</li>
+<li>Verify entity, action, and goal presence</li>
+</ul>
+<h3>Session Timeouts</h3>
+<p><strong>Problem</strong>: MFR sessions time out before completion</p>
+<p><strong>Solutions</strong>:</p>
+<ul>
+<li>Increase timeout in <code>run-mfr-session.js</code></li>
+<li>Check API rate limits (Mistral, Wikidata)</li>
+<li>Review agent logs for errors</li>
+<li>Simplify problem description</li>
+</ul>
+<h3>Connection Errors</h3>
+<p><strong>Problem</strong>: Agents can&#39;t connect to XMPP server</p>
+<p><strong>Solutions</strong>:</p>
+<ul>
+<li>Verify XMPP server is running: <code>prosodyctl status</code></li>
+<li>Check credentials in <code>config/agents/secrets.json</code></li>
+<li>Ensure correct service URL in agent profiles</li>
+<li>Check firewall rules</li>
+</ul>
+<h2>Advanced Usage</h2>
+<h3>Custom Agent Providers</h3>
+<p>To add a new specialized agent:</p>
+<ol>
+<li>Create provider in <code>src/agents/providers/</code></li>
+<li>Implement <code>handleMfrContributionRequest(request)</code> method</li>
+<li>Generate RDF contributions with provenance</li>
+<li>Create agent profile in <code>config/agents/</code> with MFR capabilities</li>
+<li>Update <code>start-mfr-system.sh</code> to include new agent</li>
+</ol>
+<h3>Custom SHACL Shapes</h3>
+<p>To add domain-specific validation:</p>
+<ol>
+<li>Edit <code>vocabs/mfr-shapes.ttl</code></li>
+<li>Add new shapes for your domain</li>
+<li>Reload shapes in coordinator</li>
+</ol>
+<h3>Custom Ontologies</h3>
+<p>To extend the MFR ontology:</p>
+<ol>
+<li>Edit <code>vocabs/mfr-ontology.ttl</code></li>
+<li>Add new classes and properties</li>
+<li>Update agent providers to use new vocabulary</li>
+</ol>
+<h2>Performance Optimization</h2>
+<h3>Model Caching</h3>
+<p>The ModelStore caches merged models by session ID. Configure cache size:</p>
+<pre><code class="language-javascript">const modelStore = new MfrModelStore({
+  logger,
+  maxCacheSize: 100 // number of sessions to cache
+});
+</code></pre>
+<h3>Parallel Reasoning</h3>
+<p>Enable parallel agent reasoning during contribution phase by adjusting coordinator timeout:</p>
+<pre><code class="language-javascript">const CONTRIBUTION_TIMEOUT_MS = 10000; // wait for all agents
+</code></pre>
+<h3>Incremental Validation</h3>
+<p>For large models, enable incremental validation:</p>
+<pre><code class="language-javascript">const validator = new MfrShaclValidator({
+  shapesGraph,
+  logger,
+  incrementalMode: true
+});
+</code></pre>
+<h2>Monitoring</h2>
+<h3>Session Metrics</h3>
+<p>Track session statistics:</p>
+<pre><code class="language-javascript">const stats = modelStore.getSessionStatistics(sessionId);
+// Returns: { entities, actions, constraints, contributions, contributors }
+</code></pre>
+<h3>Validation Metrics</h3>
+<p>Monitor validation performance:</p>
+<pre><code class="language-javascript">const report = await validator.validate(dataGraph);
+// report.validationTimeMs - time taken
+// report.violations.length - number of issues
+</code></pre>
+<h2>API Reference</h2>
+<p>See:</p>
+<ul>
+<li><code>docs/mfr-architecture-overview.md</code> - Architecture details</li>
+<li><code>vocabs/mfr-ontology.ttl</code> - Complete ontology</li>
+<li><code>vocabs/mfr-shapes.ttl</code> - SHACL validation shapes</li>
+<li><code>MFR_IMPLEMENTATION_SUMMARY.md</code> - Implementation summary</li>
+</ul>
+<h2>Support</h2>
+<p>For issues or questions:</p>
+<ul>
+<li>Check agent logs in <code>logs/</code> directory</li>
+<li>Review XMPP server logs</li>
+<li>Examine RDF model in coordinator logs</li>
+<li>File issues on project repository</li>
+</ul>
+
+    </main>
+  </body>
+</html>

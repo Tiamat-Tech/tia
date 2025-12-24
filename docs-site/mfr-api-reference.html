@@ -1,0 +1,739 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>MFR API Reference</title>
+    <style>
+      body { margin: 0; padding: 48px 20px; font-family: "Helvetica Neue", Arial, sans-serif; background: #f7f4ef; color: #1f1b16; }
+      main { max-width: 920px; margin: 0 auto; background: #fffdf9; padding: 48px; border: 1px solid #e3d8c7; box-shadow: 6px 8px 0 #e3d8c7; }
+      h1, h2, h3 { font-weight: 600; margin-top: 2rem; }
+      pre { background: #1f1b16; color: #f7f4ef; padding: 16px; overflow: auto; }
+      code { font-family: "SFMono-Regular", ui-monospace, Menlo, Monaco, Consolas, monospace; }
+      a { color: #8a3b12; }
+      img { max-width: 100%; height: auto; }
+      table { border-collapse: collapse; width: 100%; }
+      th, td { border: 1px solid #e3d8c7; padding: 8px; }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>MFR API Reference</h1>
+<p>Complete API documentation for the TIA Model-First Reasoning system.</p>
+<h2>Table of Contents</h2>
+<ul>
+<li><a href="#core-classes">Core Classes</a><ul>
+<li><a href="#mfrmodelstore">MfrModelStore</a></li>
+<li><a href="#mfrshaclvalidator">MfrShaclValidator</a></li>
+<li><a href="#mfrprotocolstate">MfrProtocolState</a></li>
+<li><a href="#mfrmodelmerger">MfrModelMerger</a></li>
+<li><a href="#multiroommanager">MultiRoomManager</a></li>
+<li><a href="#rdfutils">RdfUtils</a></li>
+<li><a href="#shapesloader">ShapesLoader</a></li>
+</ul>
+</li>
+<li><a href="#agent-providers">Agent Providers</a><ul>
+<li><a href="#coordinatorprovider">CoordinatorProvider</a></li>
+<li><a href="#mistralprovider-mfr-methods">MistralProvider MFR Methods</a></li>
+<li><a href="#dataprovider-mfr-methods">DataProvider MFR Methods</a></li>
+<li><a href="#prologprovider-mfr-methods">PrologProvider MFR Methods</a></li>
+<li><a href="#sememprovider-mfr-methods">SememProvider MFR Methods</a></li>
+</ul>
+</li>
+<li><a href="#lingue-handlers">Lingue Handlers</a><ul>
+<li><a href="#modelfirstrdfhandler">ModelFirstRdfHandler</a></li>
+<li><a href="#modelnegotiationhandler">ModelNegotiationHandler</a></li>
+<li><a href="#shaclvalidationhandler">ShaclValidationHandler</a></li>
+</ul>
+</li>
+<li><a href="#constants">Constants</a></li>
+</ul>
+<hr>
+<h2>Core Classes</h2>
+<h3>MfrModelStore</h3>
+<p>Manages problem models and agent contributions with provenance tracking.</p>
+<p><strong>Location</strong>: <code>src/lib/mfr/model-store.js</code></p>
+<h4>Constructor</h4>
+<pre><code class="language-javascript">new MfrModelStore(options)
+</code></pre>
+<p><strong>Parameters</strong>:</p>
+<ul>
+<li><code>options.logger</code> (Object): Logger instance</li>
+</ul>
+<p><strong>Example</strong>:</p>
+<pre><code class="language-javascript">import { MfrModelStore } from &#39;./src/lib/mfr/model-store.js&#39;;
+
+const store = new MfrModelStore({ logger: console });
+</code></pre>
+<h4>Methods</h4>
+<h5>createModel(problemId, problemDescription)</h5>
+<p>Creates a new problem model.</p>
+<p><strong>Parameters</strong>:</p>
+<ul>
+<li><code>problemId</code> (String): Unique session identifier</li>
+<li><code>problemDescription</code> (String): Natural language problem description</li>
+</ul>
+<p><strong>Returns</strong>: Promise<void></p>
+<p><strong>Throws</strong>: Error if problemId already exists</p>
+<p><strong>Example</strong>:</p>
+<pre><code class="language-javascript">await store.createModel(&#39;session-123&#39;, &#39;Schedule three meetings...&#39;);
+</code></pre>
+<h5>addContribution(problemId, agentId, contributionRdf, metadata)</h5>
+<p>Adds an agent&#39;s RDF contribution to the model.</p>
+<p><strong>Parameters</strong>:</p>
+<ul>
+<li><code>problemId</code> (String): Session identifier</li>
+<li><code>agentId</code> (String): Contributing agent identifier</li>
+<li><code>contributionRdf</code> (String): RDF in Turtle format</li>
+<li><code>metadata</code> (Object, optional): Contribution metadata</li>
+</ul>
+<p><strong>Returns</strong>: Promise<void></p>
+<p><strong>Example</strong>:</p>
+<pre><code class="language-javascript">const rdf = `
+  @prefix mfr: &lt;http://purl.org/stuff/mfr/&gt; .
+  &lt;#entity1&gt; a mfr:Entity .
+`;
+await store.addContribution(&#39;session-123&#39;, &#39;MistralAgent&#39;, rdf, { type: &#39;EntityDiscovery&#39; });
+</code></pre>
+<h5>getModel(problemId)</h5>
+<p>Retrieves a model by ID.</p>
+<p><strong>Parameters</strong>:</p>
+<ul>
+<li><code>problemId</code> (String): Session identifier</li>
+</ul>
+<p><strong>Returns</strong>: Object|null - Model object or null if not found</p>
+<p><strong>Example</strong>:</p>
+<pre><code class="language-javascript">const model = store.getModel(&#39;session-123&#39;);
+console.log(model.problemDescription);
+console.log(model.contributions.length);
+</code></pre>
+<h5>getModelAsRdf(problemId)</h5>
+<p>Serializes model to Turtle RDF.</p>
+<p><strong>Parameters</strong>:</p>
+<ul>
+<li><code>problemId</code> (String): Session identifier</li>
+</ul>
+<p><strong>Returns</strong>: Promise<String> - Turtle RDF string</p>
+<p><strong>Example</strong>:</p>
+<pre><code class="language-javascript">const turtle = await store.getModelAsRdf(&#39;session-123&#39;);
+console.log(turtle);
+</code></pre>
+<h5>getSessionStatistics(problemId)</h5>
+<p>Gets statistics for a session.</p>
+<p><strong>Parameters</strong>:</p>
+<ul>
+<li><code>problemId</code> (String): Session identifier</li>
+</ul>
+<p><strong>Returns</strong>: Object|null - Statistics object</p>
+<p><strong>Properties</strong>:</p>
+<ul>
+<li><code>contributions</code> (Number): Total contributions</li>
+<li><code>contributors</code> (Array<String>): List of agent IDs</li>
+<li><code>entities</code> (Number): Entity count</li>
+<li><code>actions</code> (Number): Action count</li>
+<li><code>constraints</code> (Number): Constraint count</li>
+<li><code>goals</code> (Number): Goal count</li>
+</ul>
+<p><strong>Example</strong>:</p>
+<pre><code class="language-javascript">const stats = store.getSessionStatistics(&#39;session-123&#39;);
+console.log(`${stats.contributions} contributions from ${stats.contributors.length} agents`);
+</code></pre>
+<h5>deleteModel(problemId)</h5>
+<p>Deletes a model.</p>
+<p><strong>Parameters</strong>:</p>
+<ul>
+<li><code>problemId</code> (String): Session identifier</li>
+</ul>
+<p><strong>Returns</strong>: void</p>
+<hr>
+<h3>MfrShaclValidator</h3>
+<p>SHACL validation for MFR models.</p>
+<p><strong>Location</strong>: <code>src/lib/mfr/shacl-validator.js</code></p>
+<h4>Constructor</h4>
+<pre><code class="language-javascript">new MfrShaclValidator(options)
+</code></pre>
+<p><strong>Parameters</strong>:</p>
+<ul>
+<li><code>options.shapesGraph</code> (Dataset): RDF dataset containing SHACL shapes</li>
+<li><code>options.logger</code> (Object): Logger instance</li>
+</ul>
+<p><strong>Example</strong>:</p>
+<pre><code class="language-javascript">import { MfrShaclValidator } from &#39;./src/lib/mfr/shacl-validator.js&#39;;
+import { ShapesLoader } from &#39;./src/lib/mfr/shapes-loader.js&#39;;
+
+const loader = new ShapesLoader({ logger: console });
+const shapesGraph = await loader.loadShapes(&#39;./vocabs/mfr-shapes.ttl&#39;);
+const validator = new MfrShaclValidator({ shapesGraph, logger: console });
+</code></pre>
+<h4>Methods</h4>
+<h5>validate(dataGraph)</h5>
+<p>Validates an RDF model against SHACL shapes.</p>
+<p><strong>Parameters</strong>:</p>
+<ul>
+<li><code>dataGraph</code> (Dataset): RDF dataset to validate</li>
+</ul>
+<p><strong>Returns</strong>: Promise<Object> - Validation report</p>
+<p><strong>Properties</strong>:</p>
+<ul>
+<li><code>conforms</code> (Boolean): True if valid</li>
+<li><code>violations</code> (Array<Object>): List of violations</li>
+<li><code>completenessIssues</code> (Array<String>): Completeness problems</li>
+<li><code>conflicts</code> (Array<Object>): Detected conflicts</li>
+</ul>
+<p><strong>Example</strong>:</p>
+<pre><code class="language-javascript">import { RdfUtils } from &#39;./src/lib/mfr/rdf-utils.js&#39;;
+
+const modelRdf = await store.getModelAsRdf(&#39;session-123&#39;);
+const dataGraph = await RdfUtils.parseTurtle(modelRdf);
+const report = await validator.validate(dataGraph);
+
+if (report.conforms) {
+  console.log(&#39;Model is valid!&#39;);
+} else {
+  console.log(`Found ${report.violations.length} violations`);
+}
+</code></pre>
+<h5>detectCompletenessIssues(validationReport)</h5>
+<p>Identifies completeness issues from validation report.</p>
+<p><strong>Parameters</strong>:</p>
+<ul>
+<li><code>validationReport</code> (Object): Validation report from validate()</li>
+</ul>
+<p><strong>Returns</strong>: Array<String> - List of completeness issue descriptions</p>
+<p><strong>Example</strong>:</p>
+<pre><code class="language-javascript">const report = await validator.validate(dataGraph);
+const issues = validator.detectCompletenessIssues(report);
+issues.forEach(issue =&gt; console.log(`- ${issue}`));
+</code></pre>
+<h5>detectConflicts(validationReport)</h5>
+<p>Identifies logical conflicts from validation report.</p>
+<p><strong>Parameters</strong>:</p>
+<ul>
+<li><code>validationReport</code> (Object): Validation report from validate()</li>
+</ul>
+<p><strong>Returns</strong>: Array<Object> - List of conflicts</p>
+<p><strong>Example</strong>:</p>
+<pre><code class="language-javascript">const report = await validator.validate(dataGraph);
+const conflicts = validator.detectConflicts(report);
+conflicts.forEach(conflict =&gt; {
+  console.log(`Conflict: ${conflict.description}`);
+});
+</code></pre>
+<h5>formatViolations(validationReport)</h5>
+<p>Formats violations for human readability.</p>
+<p><strong>Parameters</strong>:</p>
+<ul>
+<li><code>validationReport</code> (Object): Validation report from validate()</li>
+</ul>
+<p><strong>Returns</strong>: String - Formatted violation text</p>
+<p><strong>Example</strong>:</p>
+<pre><code class="language-javascript">const report = await validator.validate(dataGraph);
+const formatted = validator.formatViolations(report);
+console.log(formatted);
+</code></pre>
+<hr>
+<h3>MfrProtocolState</h3>
+<p>State machine for MFR protocol orchestration.</p>
+<p><strong>Location</strong>: <code>src/lib/mfr/protocol-state.js</code></p>
+<h4>Constructor</h4>
+<pre><code class="language-javascript">new MfrProtocolState(sessionId, options)
+</code></pre>
+<p><strong>Parameters</strong>:</p>
+<ul>
+<li><code>sessionId</code> (String): Unique session identifier</li>
+<li><code>options.logger</code> (Object): Logger instance</li>
+</ul>
+<p><strong>Example</strong>:</p>
+<pre><code class="language-javascript">import { MfrProtocolState } from &#39;./src/lib/mfr/protocol-state.js&#39;;
+import { MFR_PHASES } from &#39;./src/lib/mfr/constants.js&#39;;
+
+const state = new MfrProtocolState(&#39;session-123&#39;, { logger: console });
+</code></pre>
+<h4>Properties</h4>
+<ul>
+<li><code>sessionId</code> (String): Session identifier</li>
+<li><code>phase</code> (String): Current phase</li>
+<li><code>transitions</code> (Array<Object>): Transition history</li>
+<li><code>metadata</code> (Object): Session metadata</li>
+</ul>
+<h4>Methods</h4>
+<h5>transition(toPhase, data)</h5>
+<p>Transitions to a new phase.</p>
+<p><strong>Parameters</strong>:</p>
+<ul>
+<li><code>toPhase</code> (String): Target phase (from MFR_PHASES)</li>
+<li><code>data</code> (Object, optional): Metadata for transition</li>
+</ul>
+<p><strong>Returns</strong>: void</p>
+<p><strong>Throws</strong>: Error if transition is invalid</p>
+<p><strong>Example</strong>:</p>
+<pre><code class="language-javascript">import { MFR_PHASES } from &#39;./src/lib/mfr/constants.js&#39;;
+
+state.transition(MFR_PHASES.PROBLEM_INTERPRETATION);
+state.transition(MFR_PHASES.ENTITY_DISCOVERY, { agentCount: 4 });
+</code></pre>
+<h5>canTransitionTo(phase)</h5>
+<p>Checks if transition to phase is valid.</p>
+<p><strong>Parameters</strong>:</p>
+<ul>
+<li><code>phase</code> (String): Target phase</li>
+</ul>
+<p><strong>Returns</strong>: Boolean</p>
+<p><strong>Example</strong>:</p>
+<pre><code class="language-javascript">if (state.canTransitionTo(MFR_PHASES.MODEL_VALIDATION)) {
+  state.transition(MFR_PHASES.MODEL_VALIDATION);
+}
+</code></pre>
+<h5>getValidNextPhases()</h5>
+<p>Gets list of valid next phases.</p>
+<p><strong>Returns</strong>: Array<String> - Valid phase names</p>
+<p><strong>Example</strong>:</p>
+<pre><code class="language-javascript">const nextPhases = state.getValidNextPhases();
+console.log(`Can transition to: ${nextPhases.join(&#39;, &#39;)}`);
+</code></pre>
+<h5>getPhaseHistory()</h5>
+<p>Gets chronological list of phases.</p>
+<p><strong>Returns</strong>: Array<String> - Phase names in order</p>
+<p><strong>Example</strong>:</p>
+<pre><code class="language-javascript">const history = state.getPhaseHistory();
+console.log(`Phase progression: ${history.join(&#39; → &#39;)}`);
+</code></pre>
+<h5>getDuration()</h5>
+<p>Gets total session duration in milliseconds.</p>
+<p><strong>Returns</strong>: Number - Duration in ms</p>
+<p><strong>Example</strong>:</p>
+<pre><code class="language-javascript">const durationMs = state.getDuration();
+console.log(`Session duration: ${durationMs}ms`);
+</code></pre>
+<h5>getPhaseDuration(phase)</h5>
+<p>Gets duration of a specific phase.</p>
+<p><strong>Parameters</strong>:</p>
+<ul>
+<li><code>phase</code> (String): Phase name</li>
+</ul>
+<p><strong>Returns</strong>: Number - Duration in ms (0 if not entered)</p>
+<p><strong>Example</strong>:</p>
+<pre><code class="language-javascript">const duration = state.getPhaseDuration(MFR_PHASES.ENTITY_DISCOVERY);
+console.log(`Entity discovery took ${duration}ms`);
+</code></pre>
+<h5>setMetadata(key, value) / getMetadata(key)</h5>
+<p>Store and retrieve session metadata.</p>
+<p><strong>Parameters</strong>:</p>
+<ul>
+<li><code>key</code> (String): Metadata key</li>
+<li><code>value</code> (Any): Metadata value</li>
+</ul>
+<p><strong>Returns</strong>: value for getMetadata()</p>
+<p><strong>Example</strong>:</p>
+<pre><code class="language-javascript">state.setMetadata(&#39;contributorCount&#39;, 4);
+state.setMetadata(&#39;validationAttempts&#39;, 1);
+
+console.log(`Contributors: ${state.getMetadata(&#39;contributorCount&#39;)}`);
+</code></pre>
+<h5>toJSON()</h5>
+<p>Serializes state to JSON.</p>
+<p><strong>Returns</strong>: Object - JSON-serializable state</p>
+<p><strong>Example</strong>:</p>
+<pre><code class="language-javascript">const json = state.toJSON();
+console.log(JSON.stringify(json, null, 2));
+</code></pre>
+<hr>
+<h3>RdfUtils</h3>
+<p>Utility functions for RDF manipulation.</p>
+<p><strong>Location</strong>: <code>src/lib/mfr/rdf-utils.js</code></p>
+<p>All methods are static.</p>
+<h4>Methods</h4>
+<h5>parseTurtle(turtleString)</h5>
+<p>Parses Turtle RDF to dataset.</p>
+<p><strong>Parameters</strong>:</p>
+<ul>
+<li><code>turtleString</code> (String): Turtle RDF</li>
+</ul>
+<p><strong>Returns</strong>: Promise<Dataset> - RDF dataset</p>
+<p><strong>Example</strong>:</p>
+<pre><code class="language-javascript">import { RdfUtils } from &#39;./src/lib/mfr/rdf-utils.js&#39;;
+
+const turtle = `
+  @prefix mfr: &lt;http://purl.org/stuff/mfr/&gt; .
+  &lt;#entity1&gt; a mfr:Entity .
+`;
+const dataset = await RdfUtils.parseTurtle(turtle);
+</code></pre>
+<h5>serializeTurtle(dataset)</h5>
+<p>Serializes dataset to Turtle RDF.</p>
+<p><strong>Parameters</strong>:</p>
+<ul>
+<li><code>dataset</code> (Dataset): RDF dataset</li>
+</ul>
+<p><strong>Returns</strong>: Promise<String> - Turtle RDF</p>
+<p><strong>Example</strong>:</p>
+<pre><code class="language-javascript">const turtle = await RdfUtils.serializeTurtle(dataset);
+console.log(turtle);
+</code></pre>
+<h5>mergeDatasets(datasets)</h5>
+<p>Merges multiple RDF datasets.</p>
+<p><strong>Parameters</strong>:</p>
+<ul>
+<li><code>datasets</code> (Array<Dataset>): Datasets to merge</li>
+</ul>
+<p><strong>Returns</strong>: Promise<Dataset> - Merged dataset</p>
+<p><strong>Example</strong>:</p>
+<pre><code class="language-javascript">const merged = await RdfUtils.mergeDatasets([dataset1, dataset2, dataset3]);
+</code></pre>
+<h5>queryTriples(dataset, pattern)</h5>
+<p>Queries triples by pattern.</p>
+<p><strong>Parameters</strong>:</p>
+<ul>
+<li><code>dataset</code> (Dataset): RDF dataset</li>
+<li><code>pattern</code> (Object): Query pattern<ul>
+<li><code>subject</code> (String, optional): Subject URI</li>
+<li><code>predicate</code> (String, optional): Predicate URI</li>
+<li><code>object</code> (String, optional): Object URI</li>
+</ul>
+</li>
+</ul>
+<p><strong>Returns</strong>: Array<Object> - Matching triples</p>
+<p><strong>Example</strong>:</p>
+<pre><code class="language-javascript">const entities = RdfUtils.queryTriples(dataset, {
+  predicate: &#39;http://www.w3.org/1999/02/22-rdf-syntax-ns#type&#39;,
+  object: &#39;http://purl.org/stuff/mfr/Entity&#39;
+});
+</code></pre>
+<h5>extractEntities(dataset)</h5>
+<p>Extracts all entities from model.</p>
+<p><strong>Parameters</strong>:</p>
+<ul>
+<li><code>dataset</code> (Dataset): RDF dataset</li>
+</ul>
+<p><strong>Returns</strong>: Array<Object> - Entity objects</p>
+<p><strong>Example</strong>:</p>
+<pre><code class="language-javascript">const entities = RdfUtils.extractEntities(dataset);
+entities.forEach(entity =&gt; {
+  console.log(`Entity: ${entity.uri}`);
+});
+</code></pre>
+<h5>countByType(dataset)</h5>
+<p>Counts resources by rdf:type.</p>
+<p><strong>Parameters</strong>:</p>
+<ul>
+<li><code>dataset</code> (Dataset): RDF dataset</li>
+</ul>
+<p><strong>Returns</strong>: Object - Map of type URI to count</p>
+<p><strong>Example</strong>:</p>
+<pre><code class="language-javascript">const counts = RdfUtils.countByType(dataset);
+console.log(`Entities: ${counts[&#39;http://purl.org/stuff/mfr/Entity&#39;]}`);
+console.log(`Actions: ${counts[&#39;http://purl.org/stuff/mfr/Action&#39;]}`);
+</code></pre>
+<hr>
+<h2>Agent Providers</h2>
+<h3>CoordinatorProvider</h3>
+<p>MFR orchestration provider.</p>
+<p><strong>Location</strong>: <code>src/agents/providers/coordinator-provider.js</code></p>
+<h4>Constructor</h4>
+<pre><code class="language-javascript">new CoordinatorProvider(options)
+</code></pre>
+<p><strong>Parameters</strong>:</p>
+<ul>
+<li><code>options.modelStore</code> (MfrModelStore): Model store instance</li>
+<li><code>options.validator</code> (MfrShaclValidator): SHACL validator</li>
+<li><code>options.merger</code> (MfrModelMerger): Model merger</li>
+<li><code>options.multiRoomManager</code> (MultiRoomManager): Room manager</li>
+<li><code>options.logger</code> (Object): Logger instance</li>
+</ul>
+<h4>Commands</h4>
+<h5>mfr-start <problem></h5>
+<p>Starts a new MFR session.</p>
+<p><strong>Usage</strong>: <code>Coordinator: mfr-start &lt;problem description&gt;</code></p>
+<p><strong>Example</strong>:</p>
+<pre><code>Coordinator: mfr-start Schedule three meetings for Alice, Bob, and Carol with time constraints
+</code></pre>
+<h5>mfr-contribute <sessionId></h5>
+<p>Requests contributions from agents.</p>
+<p><strong>Usage</strong>: <code>Coordinator: mfr-contribute &lt;sessionId&gt;</code></p>
+<h5>mfr-validate <sessionId></h5>
+<p>Validates the problem model.</p>
+<p><strong>Usage</strong>: <code>Coordinator: mfr-validate &lt;sessionId&gt;</code></p>
+<h5>mfr-solve <sessionId></h5>
+<p>Generates solutions for validated model.</p>
+<p><strong>Usage</strong>: <code>Coordinator: mfr-solve &lt;sessionId&gt;</code></p>
+<hr>
+<h3>MistralProvider MFR Methods</h3>
+<p>Natural language entity and goal extraction.</p>
+<p><strong>Location</strong>: <code>src/agents/providers/mistral-provider.js</code></p>
+<h4>extractEntities(problemDescription)</h4>
+<p>Extracts entities from natural language.</p>
+<p><strong>Parameters</strong>:</p>
+<ul>
+<li><code>problemDescription</code> (String): Problem text</li>
+</ul>
+<p><strong>Returns</strong>: Promise&lt;Array<Object>&gt; - Extracted entities</p>
+<p><strong>Example</strong>:</p>
+<pre><code class="language-javascript">const entities = await provider.extractEntities(
+  &#39;Schedule meetings for Alice, Bob, and Carol&#39;
+);
+// Returns: [{ name: &#39;Alice&#39;, type: &#39;person&#39; }, ...]
+</code></pre>
+<h4>extractGoals(problemDescription)</h4>
+<p>Identifies goals from problem.</p>
+<p><strong>Parameters</strong>:</p>
+<ul>
+<li><code>problemDescription</code> (String): Problem text</li>
+</ul>
+<p><strong>Returns</strong>: Promise&lt;Array<Object>&gt; - Extracted goals</p>
+<h4>generateEntityRdf(entities, sessionId)</h4>
+<p>Converts entities to RDF.</p>
+<p><strong>Parameters</strong>:</p>
+<ul>
+<li><code>entities</code> (Array<Object>): Entity objects</li>
+<li><code>sessionId</code> (String): Session ID</li>
+</ul>
+<p><strong>Returns</strong>: Promise<String> - Turtle RDF</p>
+<h4>handleMfrContributionRequest(request)</h4>
+<p>Handles MFR contribution requests.</p>
+<p><strong>Parameters</strong>:</p>
+<ul>
+<li><code>request</code> (Object): Contribution request<ul>
+<li><code>sessionId</code> (String): Session ID</li>
+<li><code>problemDescription</code> (String): Problem text</li>
+<li><code>requestedContributions</code> (Array<String>): Contribution type URIs</li>
+</ul>
+</li>
+</ul>
+<p><strong>Returns</strong>: Promise<String> - RDF contribution</p>
+<hr>
+<h3>DataProvider MFR Methods</h3>
+<p>Entity grounding and relationship discovery.</p>
+<p><strong>Location</strong>: <code>src/agents/providers/data-provider.js</code></p>
+<h4>groundEntity(entityName)</h4>
+<p>Grounds entity to Wikidata URI.</p>
+<p><strong>Parameters</strong>:</p>
+<ul>
+<li><code>entityName</code> (String): Entity name</li>
+</ul>
+<p><strong>Returns</strong>: Promise&lt;Object|null&gt; - Grounded entity with URI</p>
+<p><strong>Properties</strong>:</p>
+<ul>
+<li><code>name</code> (String): Entity name</li>
+<li><code>uri</code> (String): Wikidata URI</li>
+<li><code>label</code> (String): Wikidata label</li>
+<li><code>description</code> (String): Description</li>
+<li><code>type</code> (String): Type label</li>
+<li><code>typeUri</code> (String): Type URI</li>
+</ul>
+<p><strong>Example</strong>:</p>
+<pre><code class="language-javascript">const grounded = await provider.groundEntity(&#39;Albert Einstein&#39;);
+console.log(grounded.uri); // http://www.wikidata.org/entity/Q937
+</code></pre>
+<h4>getEntityRelationships(entityUri)</h4>
+<p>Discovers relationships for entity.</p>
+<p><strong>Parameters</strong>:</p>
+<ul>
+<li><code>entityUri</code> (String): Wikidata entity URI</li>
+</ul>
+<p><strong>Returns</strong>: Promise&lt;Array<Object>&gt; - Relationships</p>
+<h4>generateEntityRdf(entities, sessionId)</h4>
+<p>Generates RDF for grounded entities.</p>
+<p><strong>Parameters</strong>:</p>
+<ul>
+<li><code>entities</code> (Array): Entity names or objects</li>
+<li><code>sessionId</code> (String): Session ID</li>
+</ul>
+<p><strong>Returns</strong>: Promise<String> - Turtle RDF with owl:sameAs links</p>
+<hr>
+<h3>PrologProvider MFR Methods</h3>
+<p>Action modeling and planning.</p>
+<p><strong>Location</strong>: <code>src/agents/providers/prolog-provider.js</code></p>
+<h4>extractActions(problemDescription)</h4>
+<p>Extracts actions from problem.</p>
+<p><strong>Parameters</strong>:</p>
+<ul>
+<li><code>problemDescription</code> (String): Problem text</li>
+</ul>
+<p><strong>Returns</strong>: Promise&lt;Array<Object>&gt; - Actions with parameters</p>
+<p><strong>Example</strong>:</p>
+<pre><code class="language-javascript">const actions = await provider.extractActions(
+  &#39;Create agenda, schedule meetings, send invitations&#39;
+);
+// Returns: [{ name: &#39;create&#39;, parameters: [...] }, ...]
+</code></pre>
+<h4>defineActionLogic(actionName, preconditions, effects)</h4>
+<p>Defines action in Prolog.</p>
+<p><strong>Parameters</strong>:</p>
+<ul>
+<li><code>actionName</code> (String): Action name</li>
+<li><code>preconditions</code> (Array<String>): Precondition predicates</li>
+<li><code>effects</code> (Array<String>): Effect predicates</li>
+</ul>
+<p><strong>Returns</strong>: String - Prolog code</p>
+<h4>generateActionRdf(actions, sessionId)</h4>
+<p>Converts actions to RDF.</p>
+<p><strong>Parameters</strong>:</p>
+<ul>
+<li><code>actions</code> (Array<Object>): Action objects</li>
+<li><code>sessionId</code> (String): Session ID</li>
+</ul>
+<p><strong>Returns</strong>: Promise<String> - Turtle RDF</p>
+<h4>validateActionSequence(actionSequence, initialState)</h4>
+<p>Validates action sequence using Prolog.</p>
+<p><strong>Parameters</strong>:</p>
+<ul>
+<li><code>actionSequence</code> (Array<String>): Action names</li>
+<li><code>initialState</code> (Object): Initial state predicates</li>
+</ul>
+<p><strong>Returns</strong>: Promise<Object> - Validation result</p>
+<h4>generateSolution(modelTurtle, goals)</h4>
+<p>Generates plan from model.</p>
+<p><strong>Parameters</strong>:</p>
+<ul>
+<li><code>modelTurtle</code> (String): Problem model RDF</li>
+<li><code>goals</code> (Array<String>): Goal descriptions</li>
+</ul>
+<p><strong>Returns</strong>: Promise<Object> - Solution object</p>
+<hr>
+<h3>SememProvider MFR Methods</h3>
+<p>Constraint reasoning and conflict detection.</p>
+<p><strong>Location</strong>: <code>src/agents/providers/semem-provider.js</code></p>
+<h4>extractConstraints(problemDescription)</h4>
+<p>Extracts constraints from problem.</p>
+<p><strong>Parameters</strong>:</p>
+<ul>
+<li><code>problemDescription</code> (String): Problem text</li>
+</ul>
+<p><strong>Returns</strong>: Promise&lt;Array<Object>&gt; - Constraint objects</p>
+<h4>detectConflicts(statements)</h4>
+<p>Detects conflicts in statements.</p>
+<p><strong>Parameters</strong>:</p>
+<ul>
+<li><code>statements</code> (Array<String>): Statements to check</li>
+</ul>
+<p><strong>Returns</strong>: Promise&lt;Array<Object>&gt; - Detected conflicts</p>
+<h4>validateModelConsistency(modelDescription)</h4>
+<p>Validates model consistency.</p>
+<p><strong>Parameters</strong>:</p>
+<ul>
+<li><code>modelDescription</code> (String): Model description</li>
+</ul>
+<p><strong>Returns</strong>: Promise<Object> - Validation result</p>
+<p><strong>Properties</strong>:</p>
+<ul>
+<li><code>consistent</code> (Boolean): True if consistent</li>
+<li><code>issues</code> (Array<Object>): Issues found</li>
+<li><code>score</code> (Number): Consistency score (0.0-1.0)</li>
+</ul>
+<h4>validateForReasoning(modelTurtle)</h4>
+<p>Assesses reasoning readiness.</p>
+<p><strong>Parameters</strong>:</p>
+<ul>
+<li><code>modelTurtle</code> (String): Model RDF</li>
+</ul>
+<p><strong>Returns</strong>: Promise<Object> - Readiness assessment</p>
+<p><strong>Properties</strong>:</p>
+<ul>
+<li><code>readyForReasoning</code> (Boolean): True if ready</li>
+<li><code>completeness</code> (Object): Completeness flags</li>
+<li><code>statistics</code> (Object): Model statistics</li>
+</ul>
+<hr>
+<h2>Constants</h2>
+<h3>MFR_PHASES</h3>
+<p>Protocol phase identifiers.</p>
+<p><strong>Location</strong>: <code>src/lib/mfr/constants.js</code></p>
+<pre><code class="language-javascript">import { MFR_PHASES } from &#39;./src/lib/mfr/constants.js&#39;;
+
+console.log(MFR_PHASES.INITIALIZATION);
+console.log(MFR_PHASES.ENTITY_DISCOVERY);
+console.log(MFR_PHASES.MODEL_VALIDATION);
+console.log(MFR_PHASES.CONSTRAINED_REASONING);
+</code></pre>
+<p><strong>All Phases</strong>:</p>
+<ul>
+<li><code>INITIALIZATION</code></li>
+<li><code>PROBLEM_INTERPRETATION</code></li>
+<li><code>ENTITY_DISCOVERY</code></li>
+<li><code>RELATIONSHIP_DISCOVERY</code></li>
+<li><code>ACTION_DEFINITION</code></li>
+<li><code>CONSTRAINT_IDENTIFICATION</code></li>
+<li><code>GOAL_SPECIFICATION</code></li>
+<li><code>MODEL_CONSOLIDATION</code></li>
+<li><code>MODEL_VALIDATION</code></li>
+<li><code>MODEL_NEGOTIATION</code></li>
+<li><code>CONSTRAINED_REASONING</code></li>
+<li><code>SOLUTION_GENERATION</code></li>
+<li><code>SOLUTION_VALIDATION</code></li>
+<li><code>SOLUTION_RANKING</code></li>
+<li><code>SOLUTION_SYNTHESIS</code></li>
+<li><code>SOLUTION_DELIVERY</code></li>
+</ul>
+<h3>MFR_MESSAGE_TYPES</h3>
+<p>Protocol message type URIs.</p>
+<p><strong>Location</strong>: <code>src/lib/mfr/constants.js</code></p>
+<pre><code class="language-javascript">import { MFR_MESSAGE_TYPES } from &#39;./src/lib/mfr/constants.js&#39;;
+
+console.log(MFR_MESSAGE_TYPES.MODEL_CONTRIBUTION_REQUEST);
+console.log(MFR_MESSAGE_TYPES.MODEL_CONTRIBUTION_RESPONSE);
+console.log(MFR_MESSAGE_TYPES.VALIDATION_REQUEST);
+</code></pre>
+<hr>
+<h2>Error Handling</h2>
+<p>All async methods may throw errors. Always use try-catch:</p>
+<pre><code class="language-javascript">try {
+  await store.addContribution(sessionId, agentId, rdf);
+} catch (error) {
+  console.error(&#39;Failed to add contribution:&#39;, error.message);
+}
+</code></pre>
+<p>Common errors:</p>
+<ul>
+<li><code>Model not found</code> - Invalid sessionId</li>
+<li><code>Invalid RDF</code> - Malformed Turtle</li>
+<li><code>Invalid transition</code> - State machine violation</li>
+<li><code>Validation failed</code> - SHACL constraint violation</li>
+</ul>
+<hr>
+<h2>Complete Example</h2>
+<pre><code class="language-javascript">import { MfrModelStore } from &#39;./src/lib/mfr/model-store.js&#39;;
+import { MfrShaclValidator } from &#39;./src/lib/mfr/shacl-validator.js&#39;;
+import { ShapesLoader } from &#39;./src/lib/mfr/shapes-loader.js&#39;;
+import { MfrProtocolState } from &#39;./src/lib/mfr/protocol-state.js&#39;;
+import { RdfUtils } from &#39;./src/lib/mfr/rdf-utils.js&#39;;
+import { MFR_PHASES } from &#39;./src/lib/mfr/constants.js&#39;;
+
+// Initialize components
+const store = new MfrModelStore({ logger: console });
+const loader = new ShapesLoader({ logger: console });
+const shapesGraph = await loader.loadShapes(&#39;./vocabs/mfr-shapes.ttl&#39;);
+const validator = new MfrShaclValidator({ shapesGraph, logger: console });
+const state = new MfrProtocolState(&#39;session-123&#39;, { logger: console });
+
+// Create model
+await store.createModel(&#39;session-123&#39;, &#39;Schedule three meetings&#39;);
+
+// Add contributions
+const entityRdf = `
+  @prefix mfr: &lt;http://purl.org/stuff/mfr/&gt; .
+  &lt;#entity1&gt; a mfr:Entity ; schema:name &quot;Alice&quot; .
+`;
+await store.addContribution(&#39;session-123&#39;, &#39;MistralAgent&#39;, entityRdf);
+
+// Validate model
+const modelRdf = await store.getModelAsRdf(&#39;session-123&#39;);
+const dataGraph = await RdfUtils.parseTurtle(modelRdf);
+const report = await validator.validate(dataGraph);
+
+if (report.conforms) {
+  console.log(&#39;Model is valid!&#39;);
+  state.transition(MFR_PHASES.CONSTRAINED_REASONING);
+} else {
+  console.log(&#39;Validation failed&#39;);
+  const formatted = validator.formatViolations(report);
+  console.log(formatted);
+}
+
+// Get statistics
+const stats = store.getSessionStatistics(&#39;session-123&#39;);
+console.log(`${stats.contributions} contributions from ${stats.contributors.length} agents`);
+</code></pre>
+
+    </main>
+  </body>
+</html>

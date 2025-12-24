@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Semem Agent Contract</title>
+    <style>
+      body { margin: 0; padding: 48px 20px; font-family: "Helvetica Neue", Arial, sans-serif; background: #f7f4ef; color: #1f1b16; }
+      main { max-width: 920px; margin: 0 auto; background: #fffdf9; padding: 48px; border: 1px solid #e3d8c7; box-shadow: 6px 8px 0 #e3d8c7; }
+      h1, h2, h3 { font-weight: 600; margin-top: 2rem; }
+      pre { background: #1f1b16; color: #f7f4ef; padding: 16px; overflow: auto; }
+      code { font-family: "SFMono-Regular", ui-monospace, Menlo, Monaco, Consolas, monospace; }
+      a { color: #8a3b12; }
+      img { max-width: 100%; height: auto; }
+      table { border-collapse: collapse; width: 100%; }
+      th, td { border: 1px solid #e3d8c7; padding: 8px; }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>Semem Agent Contract</h1>
+<p>This document defines the expected behavior of the Semem agent for MCP-backed <code>tell/ask/augment</code> workflows.</p>
+<h2>Role Summary</h2>
+<p>The Semem agent stores and retrieves knowledge using an MCP-backed semantic memory service.</p>
+<h2>Inputs</h2>
+<ul>
+<li>Direct or MUC messages addressed to the Semem agent.</li>
+<li>Commands prefixed with:<ul>
+<li><code>Semem tell &lt;text&gt;</code></li>
+<li><code>Semem ask &lt;question&gt;</code></li>
+<li><code>Semem augment &lt;text&gt;</code></li>
+</ul>
+</li>
+</ul>
+<h2>Outputs</h2>
+<ul>
+<li>Confirmation of stored facts for <code>tell</code>.</li>
+<li>Natural language responses for <code>ask</code>.</li>
+<li>Extracted concepts/augmentations for <code>augment</code>.</li>
+</ul>
+<h2>Required Lingue Modes</h2>
+<ul>
+<li><code>lng:HumanChat</code> for command parsing and responses.</li>
+<li><code>lng:IBISText</code> for optional structured summaries when enabled.</li>
+</ul>
+<h2>Command Responsibilities</h2>
+<h3>tell</h3>
+<ul>
+<li>Store the provided text via the Semem service.</li>
+<li>Return a short acknowledgment.</li>
+</ul>
+<h3>ask</h3>
+<ul>
+<li>Query the Semem service for relevant memory.</li>
+<li>Return a concise answer or a fallback if nothing is found.</li>
+</ul>
+<h3>augment</h3>
+<ul>
+<li>Extract entities and concepts from text via Semem.</li>
+<li>Return a short list or sentence summary of extracted items.</li>
+</ul>
+<h2>Error Handling</h2>
+<ul>
+<li>If the Semem service is unavailable, return a clear error message.</li>
+<li>If auth fails, report missing/invalid token.</li>
+</ul>
+<h2>Configuration Sources</h2>
+<ul>
+<li>XMPP account from RDF profile + <code>config/agents/secrets.json</code>.</li>
+<li>Semem service endpoint and auth token from <code>.env</code> or profile configuration.</li>
+</ul>
+<h2>Success Criteria</h2>
+<ul>
+<li>Commands execute without crashing and provide clear feedback.</li>
+<li>Semem calls are bounded by timeouts and fail gracefully.</li>
+</ul>
+
+    </main>
+  </body>
+</html>

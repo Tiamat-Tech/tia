@@ -1,0 +1,458 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Provider Guide</title>
+    <style>
+      body { margin: 0; padding: 48px 20px; font-family: "Helvetica Neue", Arial, sans-serif; background: #f7f4ef; color: #1f1b16; }
+      main { max-width: 920px; margin: 0 auto; background: #fffdf9; padding: 48px; border: 1px solid #e3d8c7; box-shadow: 6px 8px 0 #e3d8c7; }
+      h1, h2, h3 { font-weight: 600; margin-top: 2rem; }
+      pre { background: #1f1b16; color: #f7f4ef; padding: 16px; overflow: auto; }
+      code { font-family: "SFMono-Regular", ui-monospace, Menlo, Monaco, Consolas, monospace; }
+      a { color: #8a3b12; }
+      img { max-width: 100%; height: auto; }
+      table { border-collapse: collapse; width: 100%; }
+      th, td { border: 1px solid #e3d8c7; padding: 8px; }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>Provider Guide</h1>
+<p>This guide explains how to create custom providers for tia-agents. Providers handle incoming messages and generate responses.</p>
+<h2>Table of Contents</h2>
+<ul>
+<li><a href="#provider-basics">Provider Basics</a></li>
+<li><a href="#baseprovider-interface">BaseProvider Interface</a></li>
+<li><a href="#simple-provider-example">Simple Provider Example</a></li>
+<li><a href="#llm-integration-pattern">LLM Integration Pattern</a></li>
+<li><a href="#history-management">History Management</a></li>
+<li><a href="#error-handling">Error Handling</a></li>
+<li><a href="#testing-providers">Testing Providers</a></li>
+<li><a href="#advanced-topics">Advanced Topics</a></li>
+</ul>
+<hr>
+<h2>Provider Basics</h2>
+<p>A <strong>provider</strong> is a class that implements the message handling logic for your bot. It receives messages, processes them, and returns responses.</p>
+<h3>Key Concepts</h3>
+<ul>
+<li>Providers extend <code>BaseProvider</code> from tia-agents</li>
+<li>The <code>handle()</code> method is called for each message</li>
+<li>Providers are stateful - maintain conversation history, API clients, etc.</li>
+<li>Providers are framework-agnostic - use any API or logic you want</li>
+</ul>
+<hr>
+<h2>BaseProvider Interface</h2>
+<p>All providers must extend <code>BaseProvider</code> and implement the <code>handle()</code> method:</p>
+<pre><code class="language-javascript">import { BaseProvider } from &quot;tia-agents&quot;;
+
+class MyProvider extends BaseProvider {
+  async handle({ command, content, metadata, reply, rawMessage }) {
+    // Your logic here
+    return &quot;response string&quot;;
+  }
+}
+</code></pre>
+<h3>handle() Parameters</h3>
+<p>The <code>handle()</code> method receives an object with:</p>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>command</code></td>
+<td>string</td>
+<td>Command type: &quot;chat&quot;, &quot;ask&quot;, &quot;tell&quot;, &quot;augment&quot;, etc.</td>
+</tr>
+<tr>
+<td><code>content</code></td>
+<td>string</td>
+<td>Message content (without command prefix)</td>
+</tr>
+<tr>
+<td><code>metadata</code></td>
+<td>object</td>
+<td><code>{ sender, type, roomJid }</code> - message metadata</td>
+</tr>
+<tr>
+<td><code>reply</code></td>
+<td>async function</td>
+<td>For multi-part responses: <code>await reply(text)</code></td>
+</tr>
+<tr>
+<td><code>rawMessage</code></td>
+<td>string</td>
+<td>Original full message (before parsing)</td>
+</tr>
+</tbody></table>
+<h3>handle() Return Value</h3>
+<ul>
+<li><strong>String</strong>: The response to send back</li>
+<li><strong>Null/Falsy</strong>: Silent operation (no response sent)</li>
+</ul>
+<hr>
+<h2>Simple Provider Example</h2>
+<p>Let&#39;s build a simple echo provider:</p>
+<pre><code class="language-javascript">import { BaseProvider } from &quot;tia-agents&quot;;
+
+export class EchoProvider extends BaseProvider {
+  constructor({ nickname = &quot;EchoBot&quot;, logger = console } = {}) {
+    super();
+    this.nickname = nickname;
+    this.logger = logger;
+  }
+
+  async handle({ command, content, metadata }) {
+    this.logger.info(`Received: ${command} - ${content}`);
+
+    // Only respond to chat commands
+    if (command !== &quot;chat&quot;) {
+      return `${this.nickname} only supports chat; try &quot;${this.nickname.toLowerCase()}: &lt;message&gt;&quot;`;
+    }
+
+    const sender = metadata.sender || &quot;someone&quot;;
+    return `@${sender} You said: ${content}`;
+  }
+}
+</code></pre>
+<h3>Usage</h3>
+<pre><code class="language-javascript">import { createSimpleAgent } from &quot;tia-agents&quot;;
+import { EchoProvider } from &quot;./echo-provider.js&quot;;
+
+const runner = createSimpleAgent({
+  xmppConfig: { /* ... */ },
+  roomJid: &quot;general@conference.xmpp&quot;,
+  nickname: &quot;EchoBot&quot;,
+  provider: new EchoProvider({ nickname: &quot;EchoBot&quot; })
+});
+
+await runner.start();
+</code></pre>
+<hr>
+<h2>LLM Integration Pattern</h2>
+<p>Integrating with language model APIs follows this pattern:</p>
+<pre><code class="language-javascript">import { BaseProvider } from &quot;tia-agents&quot;;
+import { Mistral } from &quot;@mistralai/mistralai&quot;;
+
+export class MistralProvider extends BaseProvider {
+  constructor({
+    apiKey,
+    model = &quot;mistral-small-latest&quot;,
+    nickname = &quot;MistralBot&quot;,
+    systemPrompt = null,
+    historyStore = null,
+    logger = console
+  }) {
+    super();
+
+    if (!apiKey) {
+      throw new Error(&quot;API key is required&quot;);
+    }
+
+    this.client = new Mistral({ apiKey });
+    this.model = model;
+    this.nickname = nickname;
+    this.systemPrompt = systemPrompt || `You are ${nickname}, a helpful assistant.`;
+    this.historyStore = historyStore;
+    this.logger = logger;
+  }
+
+  async handle({ command, content, metadata }) {
+    if (command !== &quot;chat&quot;) {
+      return `${this.nickname} only supports chat`;
+    }
+
+    try {
+      // Build message array
+      const messages = [
+        { role: &quot;system&quot;, content: this.systemPrompt }
+      ];
+
+      // Add history
+      if (this.historyStore) {
+        const history = await this.historyStore.getHistory();
+        messages.push(...history.map(entry =&gt; ({
+          role: entry.role === &quot;bot&quot; ? &quot;assistant&quot; : &quot;user&quot;,
+          content: entry.content
+        })));
+      }
+
+      // Add current message
+      messages.push({ role: &quot;user&quot;, content });
+
+      // Call API
+      const response = await this.client.chat.complete({
+        model: this.model,
+        messages
+      });
+
+      const aiResponse = response.choices[0].message.content;
+
+      // Store in history
+      if (this.historyStore) {
+        await this.historyStore.addEntry({
+          role: &quot;user&quot;,
+          content,
+          sender: metadata.sender
+        });
+        await this.historyStore.addEntry({
+          role: &quot;bot&quot;,
+          content: aiResponse
+        });
+      }
+
+      return aiResponse;
+
+    } catch (error) {
+      this.logger.error(&quot;LLM error:&quot;, error);
+      return &quot;Sorry, I encountered an error processing your message.&quot;;
+    }
+  }
+}
+</code></pre>
+<h3>Key Patterns</h3>
+<ol>
+<li><strong>API Client Initialization</strong>: Create client in constructor</li>
+<li><strong>System Prompts</strong>: Define bot personality/instructions</li>
+<li><strong>History Management</strong>: Use historyStore to maintain context</li>
+<li><strong>Error Handling</strong>: Catch API errors, return friendly messages</li>
+<li><strong>Logging</strong>: Use logger for debugging</li>
+</ol>
+<hr>
+<h2>History Management</h2>
+<p>Use <code>InMemoryHistoryStore</code> for conversation context:</p>
+<pre><code class="language-javascript">import { InMemoryHistoryStore } from &quot;tia-agents&quot;;
+
+const historyStore = new InMemoryHistoryStore({
+  maxEntries: 40  // Keep last 40 messages
+});
+
+// In your provider
+await this.historyStore.addEntry({
+  role: &quot;user&quot;,  // or &quot;bot&quot;
+  content: &quot;message text&quot;,
+  sender: &quot;username&quot;
+});
+
+const history = await this.historyStore.getHistory();
+// Returns: [{ role, content, sender, timestamp }, ...]
+</code></pre>
+<h3>Custom History Store</h3>
+<p>Implement your own for persistence:</p>
+<pre><code class="language-javascript">import { HistoryStore } from &quot;tia-agents&quot;;
+
+export class DatabaseHistoryStore extends HistoryStore {
+  async addEntry(entry) {
+    // Store in database
+  }
+
+  async getHistory() {
+    // Retrieve from database
+    return entries;
+  }
+
+  async clear() {
+    // Clear database entries
+  }
+}
+</code></pre>
+<hr>
+<h2>Error Handling</h2>
+<p>Always handle errors gracefully:</p>
+<pre><code class="language-javascript">async handle({ command, content, metadata }) {
+  try {
+    // Your logic
+    const result = await someAsyncOperation(content);
+    return result;
+
+  } catch (error) {
+    // Log the error
+    this.logger.error(&quot;Error processing message:&quot;, error);
+
+    // Return user-friendly message
+    if (error.code === &quot;API_LIMIT&quot;) {
+      return &quot;Sorry, I&#39;ve reached my API limit. Try again later.&quot;;
+    }
+
+    return &quot;Sorry, I encountered an error. Please try again.&quot;;
+  }
+}
+</code></pre>
+<h3>Best Practices</h3>
+<ul>
+<li>✅ Log errors with context (use <code>this.logger.error()</code>)</li>
+<li>✅ Return user-friendly error messages</li>
+<li>✅ Don&#39;t expose internal details or stack traces to users</li>
+<li>✅ Handle specific error cases (rate limits, timeouts, etc.)</li>
+<li>❌ Don&#39;t let errors crash the bot</li>
+</ul>
+<hr>
+<h2>Multi-Part Responses</h2>
+<p>Use <code>reply()</code> for streaming or multi-part responses:</p>
+<pre><code class="language-javascript">async handle({ command, content, metadata, reply }) {
+  if (command !== &quot;chat&quot;) {
+    return &quot;I only support chat&quot;;
+  }
+
+  // Send first part
+  await reply(&quot;Let me think about that...&quot;);
+
+  // Do processing
+  const result = await heavyComputation(content);
+
+  // Send final response
+  await reply(`Here&#39;s my answer: ${result}`);
+
+  // Return value is optional when using reply()
+  return null;
+}
+</code></pre>
+<hr>
+<h2>Testing Providers</h2>
+<h3>Unit Testing</h3>
+<pre><code class="language-javascript">import { describe, it, expect } from &quot;vitest&quot;;
+import { EchoProvider } from &quot;./echo-provider.js&quot;;
+
+describe(&quot;EchoProvider&quot;, () =&gt; {
+  it(&quot;echoes message back to sender&quot;, async () =&gt; {
+    const provider = new EchoProvider({ nickname: &quot;TestBot&quot; });
+
+    const result = await provider.handle({
+      command: &quot;chat&quot;,
+      content: &quot;hello world&quot;,
+      metadata: { sender: &quot;alice&quot; }
+    });
+
+    expect(result).toBe(&quot;@alice You said: hello world&quot;);
+  });
+
+  it(&quot;rejects non-chat commands&quot;, async () =&gt; {
+    const provider = new EchoProvider({ nickname: &quot;TestBot&quot; });
+
+    const result = await provider.handle({
+      command: &quot;ask&quot;,
+      content: &quot;question&quot;,
+      metadata: { sender: &quot;bob&quot; }
+    });
+
+    expect(result).toContain(&quot;only supports chat&quot;);
+  });
+});
+</code></pre>
+<h3>Integration Testing</h3>
+<p>Test with a real bot runner (see <code>test/</code> directory for examples).</p>
+<hr>
+<h2>Advanced Topics</h2>
+<h3>Command Routing</h3>
+<p>Handle multiple command types:</p>
+<pre><code class="language-javascript">async handle({ command, content, metadata }) {
+  switch (command) {
+    case &quot;chat&quot;:
+      return await this.handleChat(content, metadata);
+
+    case &quot;ask&quot;:
+      return await this.handleQuestion(content, metadata);
+
+    case &quot;tell&quot;:
+      return await this.handleKnowledge(content, metadata);
+
+    default:
+      return `Unknown command: ${command}`;
+  }
+}
+</code></pre>
+<h3>State Management</h3>
+<p>Maintain per-user state:</p>
+<pre><code class="language-javascript">constructor({ nickname, logger } = {}) {
+  super();
+  this.nickname = nickname;
+  this.logger = logger;
+  this.userStates = new Map();  // user -&gt; state
+}
+
+async handle({ command, content, metadata }) {
+  const sender = metadata.sender;
+
+  if (!this.userStates.has(sender)) {
+    this.userStates.set(sender, { count: 0 });
+  }
+
+  const userState = this.userStates.get(sender);
+  userState.count++;
+
+  return `Hello ${sender}, this is message #${userState.count} from you`;
+}
+</code></pre>
+<h3>Lingue Protocol Support</h3>
+<p>For advanced language mode negotiation, providers can expose disco features:</p>
+<pre><code class="language-javascript">import { attachDiscoInfoResponder, FEATURES } from &quot;tia-agents/lingue&quot;;
+
+constructor({ xmppClient, ...options }) {
+  super();
+  // ... initialization
+
+  if (xmppClient) {
+    attachDiscoInfoResponder(xmppClient, {
+      features: [
+        FEATURES.LANG_HUMAN_CHAT,
+        FEATURES.LANG_IBIS_TEXT
+      ]
+    });
+  }
+}
+</code></pre>
+<p>See the <a href="./api-reference.md#lingue">API Reference</a> for details.</p>
+<hr>
+<h2>Provider Examples</h2>
+<p>The package includes several providers for reference:</p>
+<table>
+<thead>
+<tr>
+<th>Provider</th>
+<th>Location</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>DemoProvider</td>
+<td><code>tia-agents/providers/demo</code></td>
+<td>Simple mock responses</td>
+</tr>
+<tr>
+<td>BaseProvider</td>
+<td><code>tia-agents/providers/base</code></td>
+<td>Abstract base class</td>
+</tr>
+<tr>
+<td>MistralProvider</td>
+<td><code>src/agents/providers/mistral-provider.js</code></td>
+<td>Mistral AI integration</td>
+</tr>
+</tbody></table>
+<p>Check <code>templates/providers/</code> for additional templates.</p>
+<hr>
+<h2>Next Steps</h2>
+<ul>
+<li>Review <a href="./api-reference.md">API Reference</a> for complete API details</li>
+<li>Explore <code>src/agents/providers/</code> for real-world examples</li>
+<li>Join the discussion on <a href="https://github.com/danja/tia/issues">GitHub Issues</a></li>
+</ul>
+<h2>Summary</h2>
+<p>Creating a custom provider:</p>
+<ol>
+<li>Extend <code>BaseProvider</code></li>
+<li>Implement <code>async handle({ command, content, metadata, reply })</code></li>
+<li>Return a string response or null</li>
+<li>Handle errors gracefully</li>
+<li>Use historyStore for conversation context</li>
+<li>Test thoroughly</li>
+</ol>
+<p>That&#39;s it! You now have the knowledge to create sophisticated bot providers.</p>
+
+    </main>
+  </body>
+</html>

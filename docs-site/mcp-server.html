@@ -1,0 +1,247 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>MCP Server Guide</title>
+    <style>
+      body { margin: 0; padding: 48px 20px; font-family: "Helvetica Neue", Arial, sans-serif; background: #f7f4ef; color: #1f1b16; }
+      main { max-width: 920px; margin: 0 auto; background: #fffdf9; padding: 48px; border: 1px solid #e3d8c7; box-shadow: 6px 8px 0 #e3d8c7; }
+      h1, h2, h3 { font-weight: 600; margin-top: 2rem; }
+      pre { background: #1f1b16; color: #f7f4ef; padding: 16px; overflow: auto; }
+      code { font-family: "SFMono-Regular", ui-monospace, Menlo, Monaco, Consolas, monospace; }
+      a { color: #8a3b12; }
+      img { max-width: 100%; height: auto; }
+      table { border-collapse: collapse; width: 100%; }
+      th, td { border: 1px solid #e3d8c7; padding: 8px; }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>MCP Server Guide</h1>
+<h2>What is MCP?</h2>
+<p>The <strong>Model Context Protocol (MCP)</strong> is an open standard that enables AI assistants like Claude to securely connect to external data sources and tools. MCP servers expose capabilities (tools, resources, prompts) that AI clients can discover and use dynamically.</p>
+<p>TIA implements MCP servers that expose XMPP chat operations and semantic processing capabilities, allowing AI assistants to participate in chat rooms, negotiate structured dialogue modes (Lingue), and interact with knowledge graphs via SPARQL.</p>
+<h2>Architecture</h2>
+<p>TIA&#39;s MCP server implementation (<code>src/mcp/server-bridge.js</code>) provides:</p>
+<ul>
+<li><strong>stdio transport</strong>: Standard JSON-RPC 2.0 communication over stdin/stdout</li>
+<li><strong>Tool registration</strong>: Dynamic tool discovery and invocation</li>
+<li><strong>XMPP integration</strong>: Bridge between MCP calls and XMPP operations</li>
+<li><strong>Lingue support</strong>: Structured dialogue negotiation (IBIS, Prolog, profile exchange)</li>
+</ul>
+<h2>Available MCP Servers</h2>
+<h3>1. Chat + Lingue Server (stdio)</h3>
+<p><strong>Purpose</strong>: Exposes XMPP multi-user chat (MUC) and Lingue protocol operations as MCP tools.</p>
+<p><strong>Start the server:</strong></p>
+<pre><code class="language-bash">node src/mcp/servers/tia-mcp-server.js
+</code></pre>
+<p><strong>Tools exposed:</strong></p>
+<ul>
+<li><p><strong><code>sendMessage</code></strong>: Send a message to the MUC room or direct message a specific JID</p>
+<ul>
+<li>Parameters: <code>text</code> (string), <code>directJid</code> (string, optional)</li>
+<li>Use case: Post messages to chat rooms, send DMs</li>
+</ul>
+</li>
+<li><p><strong><code>offerLingueMode</code></strong>: Negotiate a structured dialogue mode with a peer</p>
+<ul>
+<li>Parameters: <code>peerJid</code> (string), <code>modes</code> (array of strings)</li>
+<li>Modes: <code>human-chat</code>, <code>ibis-text</code>, <code>prolog-program</code>, <code>profile-exchange</code></li>
+<li>Use case: Switch from free-form chat to structured formats (IBIS debate, Prolog queries)</li>
+</ul>
+</li>
+<li><p><strong><code>getProfile</code></strong>: Retrieve the agent&#39;s RDF profile as Turtle</p>
+<ul>
+<li>Parameters: none</li>
+<li>Returns: Agent capabilities, supported modes, endpoints as RDF</li>
+<li>Use case: Discover agent capabilities, share semantic metadata</li>
+</ul>
+</li>
+<li><p><strong><code>getRecentMessages</code></strong>: Return recent chat messages seen by the MCP agent</p>
+<ul>
+<li>Parameters: <code>limit</code> (number, optional, max 200)</li>
+<li>Returns: JSON array of <code>{ body, sender, from, roomJid, type, timestamp }</code></li>
+<li>Use case: Poll for replies without a streaming connection</li>
+</ul>
+</li>
+<li><p><strong><code>summarizeLingue</code></strong>: Analyze text and generate IBIS-style structured summary</p>
+<ul>
+<li>Parameters: <code>text</code> (string)</li>
+<li>Returns: Detected IBIS elements (Issues, Positions, Arguments)</li>
+<li>Use case: Extract structured debate elements from conversation</li>
+</ul>
+</li>
+</ul>
+<p><strong>Configuration:</strong>
+If <code>AGENT_PROFILE</code> is set, the server loads that profile from <code>config/agents/*.ttl</code>.
+If <code>AGENT_PROFILE</code> is not set, the server auto-creates a transient profile and auto-registers a new XMPP account:</p>
+<ul>
+<li>Username/nick: <code>mcp-###</code> (random 3-digit suffix)</li>
+<li>Room: <code>MUC_ROOM</code> (default <code>general@conference.tensegrity.it</code>)</li>
+<li>Service/domain: <code>XMPP_SERVICE</code>/<code>XMPP_DOMAIN</code></li>
+</ul>
+<p>Outgoing group messages are queued until the agent confirms it has joined the MUC.</p>
+<h3>2. SPARQL Server</h3>
+<p><strong>Purpose</strong>: Provides SPARQL query and update operations against remote endpoints (e.g., DBpedia, Wikidata, custom triple stores).</p>
+<p><strong>Start the server:</strong></p>
+<pre><code class="language-bash">SPARQL_QUERY_ENDPOINT=https://dbpedia.org/sparql \
+SPARQL_UPDATE_ENDPOINT=https://dbpedia.org/sparql \
+node src/mcp/servers/sparql-server.js
+</code></pre>
+<p><strong>Tools exposed:</strong></p>
+<ul>
+<li><p><strong><code>sparqlQuery</code></strong>: Execute SPARQL SELECT/ASK/CONSTRUCT queries</p>
+<ul>
+<li>Parameters: <code>query</code> (string), <code>endpoint</code> (string, optional override)</li>
+<li>Returns: JSON results or RDF serialization</li>
+<li>Use case: Query knowledge graphs, retrieve linked data</li>
+</ul>
+</li>
+<li><p><strong><code>sparqlUpdate</code></strong>: Execute SPARQL INSERT/DELETE/UPDATE operations</p>
+<ul>
+<li>Parameters: <code>update</code> (string), <code>endpoint</code> (string, optional override)</li>
+<li>Returns: Update confirmation</li>
+<li>Use case: Modify triple stores, add facts to knowledge graphs</li>
+</ul>
+</li>
+</ul>
+<p><strong>Example queries:</strong></p>
+<pre><code class="language-sparql"># Find information about a person
+SELECT ?property ?value WHERE {
+  &lt;http://dbpedia.org/resource/Albert_Einstein&gt; ?property ?value .
+} LIMIT 10
+
+# Find all programming languages
+SELECT ?lang ?label WHERE {
+  ?lang a dbo:ProgrammingLanguage .
+  ?lang rdfs:label ?label .
+  FILTER (lang(?label) = &#39;en&#39;)
+} LIMIT 20
+</code></pre>
+<h3>3. MCP Loopback Agent</h3>
+<p><strong>Purpose</strong>: Test/debug agent that echoes MCP calls back for integration testing.</p>
+<p><strong>Start the server:</strong></p>
+<pre><code class="language-bash">AGENT_PROFILE=mcp-loopback MCP_LOOPBACK_MODE=in-memory node src/services/mcp-loopback-agent.js
+</code></pre>
+<p><strong>Modes:</strong></p>
+<ul>
+<li><code>in-memory</code> (default): Server runs in same process</li>
+<li><code>stdio</code>: External stdio server for testing transport</li>
+</ul>
+<h2>Using TIA MCP Servers with Claude Code</h2>
+<p>Claude Code (and other MCP clients like Claude Desktop) can connect to TIA&#39;s MCP servers to gain new capabilities.</p>
+<h3>Setup for Claude Code</h3>
+<p><strong>1. Add the server to your MCP configuration:</strong></p>
+<p>Edit your Claude Code MCP settings (typically <code>~/.config/claude-code/mcp.json</code> or via CLI):</p>
+<pre><code class="language-bash">claude mcp add tia-chat node /path/to/tia/src/mcp/servers/tia-mcp-server.js
+</code></pre>
+<p>Or manually add to your config:</p>
+<pre><code class="language-json">{
+  &quot;mcpServers&quot;: {
+    &quot;tia-chat&quot;: {
+      &quot;command&quot;: &quot;node&quot;,
+      &quot;args&quot;: [&quot;/path/to/tia/src/mcp/servers/tia-mcp-server.js&quot;],
+      &quot;env&quot;: {
+        &quot;AGENT_PROFILE&quot;: &quot;mistral&quot;
+      }
+    }
+  }
+}
+</code></pre>
+<p>Omit <code>AGENT_PROFILE</code> to have the server auto-register a transient <code>mcp-###</code> user.</p>
+<p><strong>2. Restart Claude Code to load the new server</strong></p>
+<p><strong>3. Verify the tools are available:</strong></p>
+<p>Ask Claude: &quot;What MCP tools do you have access to?&quot;</p>
+<p>You should see <code>sendMessage</code>, <code>offerLingueMode</code>, <code>getProfile</code>, and <code>summarizeLingue</code>.
+You should also see <code>getRecentMessages</code>.</p>
+<h3>Example Usage</h3>
+<p><strong>Send a message to your XMPP chat room:</strong></p>
+<pre><code>Claude, please use sendMessage to post &quot;Hello from Claude Code!&quot; to the chat room.
+</code></pre>
+<p><strong>Analyze a conversation for IBIS structure:</strong></p>
+<pre><code>Claude, use summarizeLingue to analyze this text:
+&quot;Issue: Should we use REST or GraphQL?
+Position: Use GraphQL because it&#39;s more flexible.
+Argument: GraphQL allows clients to request exactly what they need.&quot;
+</code></pre>
+<p><strong>Retrieve agent capabilities:</strong></p>
+<pre><code>Claude, use getProfile to show me what this agent can do.
+</code></pre>
+<p><strong>Poll for recent chat messages:</strong></p>
+<pre><code>Claude, use getRecentMessages to fetch the last 10 messages from the room.
+</code></pre>
+<p><strong>Query DBpedia (with SPARQL server configured):</strong></p>
+<pre><code>Claude, use sparqlQuery to find 10 facts about Ada Lovelace from DBpedia.
+</code></pre>
+<h3>Advanced: Multiple Server Configuration</h3>
+<p>You can run multiple TIA MCP servers simultaneously for different purposes:</p>
+<pre><code class="language-json">{
+  &quot;mcpServers&quot;: {
+    &quot;tia-chat&quot;: {
+      &quot;command&quot;: &quot;node&quot;,
+      &quot;args&quot;: [&quot;/path/to/tia/src/mcp/servers/tia-mcp-server.js&quot;],
+      &quot;env&quot;: {
+        &quot;AGENT_PROFILE&quot;: &quot;mistral&quot;
+      }
+    },
+    &quot;tia-sparql&quot;: {
+      &quot;command&quot;: &quot;node&quot;,
+      &quot;args&quot;: [&quot;/path/to/tia/src/mcp/servers/sparql-server.js&quot;],
+      &quot;env&quot;: {
+        &quot;SPARQL_QUERY_ENDPOINT&quot;: &quot;https://dbpedia.org/sparql&quot;
+      }
+    }
+  }
+}
+</code></pre>
+<h2>Troubleshooting</h2>
+<p><strong>Server not connecting:</strong></p>
+<ul>
+<li>Check that Node.js is in your PATH</li>
+<li>Verify the script path is absolute</li>
+<li>Check logs in Claude Code&#39;s MCP output panel</li>
+</ul>
+<p><strong>XMPP authentication failures:</strong></p>
+<ul>
+<li>Ensure <code>config/agents/secrets.json</code> contains valid credentials</li>
+<li>Verify XMPP server is reachable</li>
+<li>Check <code>AGENT_PROFILE</code> points to a valid profile in <code>config/agents/</code></li>
+</ul>
+<p><strong>SPARQL errors:</strong></p>
+<ul>
+<li>Verify endpoint URL is correct and accessible</li>
+<li>Check query syntax (try in a SPARQL client first)</li>
+<li>Some endpoints require authentication (configure via env vars)</li>
+</ul>
+<h2>Development</h2>
+<p><strong>Creating custom MCP tools:</strong></p>
+<ol>
+<li>Extend <code>src/mcp/tool-definitions.js</code> with new tool schemas</li>
+<li>Implement handlers that call XMPP/Lingue operations via <code>chatAdapter</code></li>
+<li>Register tools in <code>McpServerBridge</code></li>
+</ol>
+<p><strong>Testing:</strong></p>
+<pre><code class="language-bash"># Test stdio communication
+echo &#39;{&quot;jsonrpc&quot;:&quot;2.0&quot;,&quot;id&quot;:1,&quot;method&quot;:&quot;tools/list&quot;}&#39; | node src/mcp/servers/tia-mcp-server.js
+
+# Integration tests
+npm test -- --grep &quot;MCP&quot;
+</code></pre>
+<h2>System Configuration</h2>
+<p>Runtime system settings live in <code>config/system.ttl</code>. This file is read via <code>rdf-ext</code> at startup.</p>
+<ul>
+<li><code>sys:maxAgentRounds</code> controls how many consecutive agent-to-agent turns are allowed before
+agents start ignoring unaddressed messages (default: 5). Recorder keeps its own override.</li>
+</ul>
+<h2>See Also</h2>
+<ul>
+<li><a href="mcp-client.md">MCP Client Guide</a> - Using TIA agents as MCP clients</li>
+<li><a href="lingue-integration.md">Lingue Integration</a> - Structured dialogue modes</li>
+<li><a href="agents.md">Agent Profiles</a> - Configuring agent capabilities</li>
+<li><a href="https://spec.modelcontextprotocol.io/">MCP Specification</a> - Official protocol docs</li>
+</ul>
+
+    </main>
+  </body>
+</html>

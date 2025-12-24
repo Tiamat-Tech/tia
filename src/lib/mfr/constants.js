@@ -15,6 +15,7 @@ export const MFR_MESSAGE_TYPES = {
   ENTITY_PROPOSAL: `${MFR_NS}EntityProposal`,
   CONSTRAINT_PROPOSAL: `${MFR_NS}ConstraintProposal`,
   ACTION_DEFINITION: `${MFR_NS}ActionDefinition`,
+  ACTION_SCHEMA: `${MFR_NS}ActionSchema`,
   GOAL_PROPOSAL: `${MFR_NS}GoalProposal`,
   STATE_VARIABLE_PROPOSAL: `${MFR_NS}StateVariableProposal`,
 
@@ -122,7 +123,8 @@ export const VALID_PHASE_TRANSITIONS = {
     MFR_PHASES.MODEL_VALIDATION
   ],
   [MFR_PHASES.CONSTRAINED_REASONING]: [
-    MFR_PHASES.SOLUTION_VALIDATION
+    MFR_PHASES.SOLUTION_VALIDATION,
+    MFR_PHASES.COMPLETE  // Allow direct completion when solution is received
   ],
   [MFR_PHASES.SOLUTION_VALIDATION]: [
     MFR_PHASES.SOLUTION_SYNTHESIS

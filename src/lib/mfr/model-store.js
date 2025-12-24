@@ -148,6 +148,9 @@ export class MfrModelStore {
     // Merge all datasets
     const merged = await RdfUtils.mergeDatasets(datasets);
 
+    // Link entities, goals, actions, and constraints to the ProblemModel
+    this.linkComponentsToModel(merged, problemId);
+
     // Update the stored model
     this.models.set(problemId, merged);
 
@@ -156,6 +159,66 @@ export class MfrModelStore {
     );
 
     return merged;
+  }
+
+  /**
+   * Link entities, goals, actions, and constraints to the ProblemModel node
+   * @param {Object} dataset - RDF dataset
+   * @param {string} problemId - Problem identifier
+   */
+  linkComponentsToModel(dataset, problemId) {
+    const modelUri = `${MFR_NS}model/${problemId}`;
+    const modelNode = RdfUtils.namedNode(modelUri);
+    const rdfType = RdfUtils.namedNode("http://www.w3.org/1999/02/22-rdf-syntax-ns#type");
+
+    let entityCount = 0;
+    let goalCount = 0;
+    let actionCount = 0;
+    let constraintCount = 0;
+
+    // Find and link all entities
+    const entityType = RdfUtils.namedNode(`${MFR_NS}Entity`);
+    const hasEntity = RdfUtils.namedNode(`${MFR_NS}hasEntity`);
+    for (const quad of dataset) {
+      if (quad.predicate.equals(rdfType) && quad.object.equals(entityType)) {
+        dataset.add(RdfUtils.quad(modelNode, hasEntity, quad.subject));
+        entityCount++;
+      }
+    }
+
+    // Find and link all goals
+    const goalType = RdfUtils.namedNode(`${MFR_NS}Goal`);
+    const hasGoal = RdfUtils.namedNode(`${MFR_NS}hasGoal`);
+    for (const quad of dataset) {
+      if (quad.predicate.equals(rdfType) && quad.object.equals(goalType)) {
+        dataset.add(RdfUtils.quad(modelNode, hasGoal, quad.subject));
+        goalCount++;
+      }
+    }
+
+    // Find and link all actions
+    const actionType = RdfUtils.namedNode(`${MFR_NS}Action`);
+    const hasAction = RdfUtils.namedNode(`${MFR_NS}hasAction`);
+    for (const quad of dataset) {
+      if (quad.predicate.equals(rdfType) && quad.object.equals(actionType)) {
+        dataset.add(RdfUtils.quad(modelNode, hasAction, quad.subject));
+        actionCount++;
+      }
+    }
+
+    // Find and link all constraints
+    const constraintType = RdfUtils.namedNode(`${MFR_NS}Constraint`);
+    const hasConstraint = RdfUtils.namedNode(`${MFR_NS}hasConstraint`);
+    for (const quad of dataset) {
+      if (quad.predicate.equals(rdfType) && quad.object.equals(constraintType)) {
+        dataset.add(RdfUtils.quad(modelNode, hasConstraint, quad.subject));
+        constraintCount++;
+      }
+    }
+
+    this.logger.info?.(
+      `[MfrModelStore] Linked components: ${entityCount} entities, ${goalCount} goals, ${actionCount} actions, ${constraintCount} constraints`
+    );
   }
 
   /**

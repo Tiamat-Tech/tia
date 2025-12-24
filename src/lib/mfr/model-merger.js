@@ -99,6 +99,13 @@ export class MfrModelMerger {
    */
   async detectConflicts(mergedDataset, provenance = null) {
     const conflicts = [];
+    const multiValuePredicates = new Set([
+      "http://purl.org/stuff/mfr/hasParameter",
+      "http://purl.org/stuff/mfr/hasPrecondition",
+      "http://purl.org/stuff/mfr/hasEffect",
+      "http://purl.org/stuff/mfr/constrainsEntity",
+      "http://purl.org/stuff/mfr/appliesTo"
+    ]);
 
     this.logger.debug?.("[MfrModelMerger] Detecting conflicts");
 
@@ -122,6 +129,13 @@ export class MfrModelMerger {
         const uniqueObjects = new Set(quads.map((q) => q.object.value));
 
         if (uniqueObjects.size > 1) {
+          const [, predicateUri] = key.split("|");
+          if (
+            multiValuePredicates.has(predicateUri) ||
+            predicateUri.startsWith("http://purl.org/stuff/mfr/has")
+          ) {
+            continue;
+          }
           // Different values - potential conflict
           const [subject, predicate] = key.split("|");
 

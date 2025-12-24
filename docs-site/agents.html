@@ -1,0 +1,152 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Agents Overview</title>
+    <style>
+      body { margin: 0; padding: 48px 20px; font-family: "Helvetica Neue", Arial, sans-serif; background: #f7f4ef; color: #1f1b16; }
+      main { max-width: 920px; margin: 0 auto; background: #fffdf9; padding: 48px; border: 1px solid #e3d8c7; box-shadow: 6px 8px 0 #e3d8c7; }
+      h1, h2, h3 { font-weight: 600; margin-top: 2rem; }
+      pre { background: #1f1b16; color: #f7f4ef; padding: 16px; overflow: auto; }
+      code { font-family: "SFMono-Regular", ui-monospace, Menlo, Monaco, Consolas, monospace; }
+      a { color: #8a3b12; }
+      img { max-width: 100%; height: auto; }
+      table { border-collapse: collapse; width: 100%; }
+      th, td { border: 1px solid #e3d8c7; padding: 8px; }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>Agents Overview</h1>
+<p>This page is for users first, then operators. It covers what each bot can do in chat, how to address it, and how to run it.</p>
+<h2>What each bot can do (in the MUC or DMs)</h2>
+<h2>Custom agent API</h2>
+<ul>
+<li>For building your own agent with the library API, see <code>docs/agent-dev-prompt.md</code> and <code>examples/minimal-agent.js</code>.</li>
+</ul>
+<h3>Mistral Bot</h3>
+<ul>
+<li>Mention it: <code>MistralBot, how do I ...?</code>, <code>bot: ...</code>, or <code>@mistralbot</code>.</li>
+<li>Replies with LLM answers (1–3 sentences, friendly).</li>
+<li>Lingue/IBIS: when Lingue is enabled (default), it detects Issues/Positions/Arguments and posts short IBIS summaries if confidence is high.</li>
+<li>Profiles: <code>mistral</code> (default), <code>mistral-analyst</code>, <code>mistral-creative</code> via <code>AGENT_PROFILE</code>.</li>
+</ul>
+<h3>Semem Agent</h3>
+<ul>
+<li>Mention it: <code>Semem, ...</code> (comma/colon supported) or DM.</li>
+<li>Semem verbs (explicit triggers):<ul>
+<li><code>Semem tell &lt;text&gt;</code> → store via <code>/tell</code>.</li>
+<li><code>Semem ask &lt;question&gt;</code> → query via <code>/ask</code>.</li>
+<li><code>Semem augment &lt;text&gt;</code> → extract concepts via <code>/augment</code>.</li>
+</ul>
+</li>
+</ul>
+<h3>MFR Semantic Agent</h3>
+<ul>
+<li>Role: extract constraints and domain rules for Model-First Reasoning sessions.</li>
+<li>Listens for MFR <code>ModelContributionRequest</code> in Lingue <code>ModelNegotiation</code> mode.</li>
+<li>Responds with RDF constraints in Lingue <code>ModelFirstRDF</code> mode.<ul>
+<li>Default mention/DM → <code>/chat/enhanced</code>, then auto-store the exchange via <code>/tell</code>.</li>
+</ul>
+</li>
+<li>Lingue/IBIS: responds to mentions like Mistral when Lingue is enabled (IBIS summaries when confidence is high).</li>
+</ul>
+<h3>MCP Debug Agent</h3>
+<ul>
+<li>Not a chatty bot; used for diagnostics.</li>
+<li>MCP verbs exposed: <code>initialize</code>, <code>echo</code>, <code>xmppStatus</code> (reports connection + last message), <code>xmppSend</code> (posts a test message to the MUC).</li>
+</ul>
+<h3>Demo Bot</h3>
+<ul>
+<li>Simple canned/demo responses; no external API.</li>
+</ul>
+<h3>Data Agent</h3>
+<ul>
+<li>Mention it: <code>Data, ...</code> (comma/colon supported) or DM.</li>
+<li>Query modes:<ul>
+<li><code>Data query: &lt;entity&gt;</code> → lookup entity facts from SPARQL endpoint (Wikidata by default).</li>
+<li><code>Data sparql: &lt;query&gt;</code> → execute direct SPARQL query.</li>
+<li><code>Data, &lt;natural language question&gt;</code> → extracts entity with Mistral, then queries.</li>
+</ul>
+</li>
+<li>Returns human-friendly summaries instead of raw JSON.</li>
+<li>Lingue/SPARQL: supports <code>lng:SparqlQuery</code> mode for agent-to-agent SPARQL exchange.</li>
+<li>Fully configurable via RDF profile - can be adapted to any SPARQL endpoint (DBpedia, local triplestores, etc.).</li>
+<li>See <a href="data-agent.md">Data Agent Guide</a> for detailed documentation.</li>
+</ul>
+<h2>Running the bots</h2>
+<p>Common XMPP env (put in <code>.env</code>):</p>
+<pre><code>XMPP_SERVICE=xmpp://your-host:5222     # or xmpps://... with NODE_TLS_REJECT_UNAUTHORIZED=0
+XMPP_DOMAIN=your-domain
+MUC_ROOM=general@conference.your-domain
+XMPP_RESOURCE=...                      # optional; defaults to bot nickname
+</code></pre>
+<p>XMPP passwords live in <code>config/agents/secrets.json</code> (ignored by git). Override the path
+with <code>AGENT_SECRETS_PATH</code> if needed.</p>
+<h3>Mistral Bot</h3>
+<ul>
+<li>Start: <code>./start-mistral-bot.sh</code></li>
+<li>Env: <code>MISTRAL_API_KEY</code> (required), <code>BOT_NICKNAME</code> (default <code>MistralBot</code>), <code>MISTRAL_MODEL</code> (default <code>mistral-small-latest</code>).</li>
+<li>Auto-renames on nickname conflict by appending a short suffix.</li>
+</ul>
+<h3>Semem Agent</h3>
+<ul>
+<li>Start: <code>./start-semem-agent.sh</code></li>
+<li>Env:<ul>
+<li><code>SEMEM_BASE_URL</code> (default <code>https://mcp.tensegrity.it</code>)</li>
+<li><code>SEMEM_AUTH_TOKEN</code> if needed</li>
+<li><code>SEMEM_HTTP_TIMEOUT_MS</code> (default 8000) timeout for Semem HTTP calls</li>
+<li><code>SEMEM_NICKNAME</code> (default profile) or <code>SEMEM_LITE_NICKNAME</code> (lite profile)</li>
+<li><code>AGENT_NICKNAME</code> (one-off override), <code>AGENT_RESOURCE</code> (resource override)</li>
+<li><code>AGENT_PROFILE</code> (<code>default</code> or <code>lite</code>) toggles feature flags (Wikipedia/Wikidata)</li>
+</ul>
+</li>
+<li>Auto-renames on nickname conflict (short suffix, limited retries).</li>
+</ul>
+<h3>MCP Debug Agent</h3>
+<ul>
+<li>Start: <code>node src/mcp/servers/Echo.js</code> (or via npx from the package)</li>
+<li>Env: same XMPP vars; <code>MCP_BOT_NICKNAME</code> sets nickname/resource.</li>
+<li>Auto-renames on conflict.</li>
+</ul>
+<h3>Demo Bot</h3>
+<ul>
+<li>Start: <code>./start-demo-bot.sh</code></li>
+<li>Env: <code>BOT_NICKNAME</code> (default <code>DemoBot</code>), uses XMPP vars.</li>
+</ul>
+<h3>Data Agent</h3>
+<ul>
+<li>Start: <code>./start-data-agent.sh</code></li>
+<li>Env:<ul>
+<li><code>MISTRAL_API_KEY</code> (optional, for natural language entity extraction)</li>
+<li><code>AGENT_PROFILE</code> (default <code>data</code>) - use different profiles for different SPARQL endpoints</li>
+<li>Standard XMPP vars from profile</li>
+</ul>
+</li>
+<li>SPARQL endpoint and other config defined in RDF profile (<code>config/agents/data.ttl</code>)</li>
+<li>See <a href="data-agent.md">Data Agent Guide</a> for query modes and configuration.</li>
+</ul>
+<h2>Running multiple agents</h2>
+<ul>
+<li><code>./start-all-agents.sh</code> spawns all known agents (Semem, Mistral variants, Demo, Data, Prolog, Chair, Recorder). Use distinct nicknames/resources to avoid MUC confusion, e.g.:<pre><code>BOT_NICKNAME=Mistral1
+SEMEM_NICKNAME=Semem1
+MCP_BOT_NICKNAME=McpDebug1
+XMPP_RESOURCE / AGENT_RESOURCE set per agent
+</code></pre>
+</li>
+<li>Or run start scripts individually with tailored env.</li>
+</ul>
+<h2>Testing</h2>
+<ul>
+<li>Unit tests: <code>npm test</code></li>
+<li>Integration (XMPP + bots, opt-in for Semem): <code>NODE_TLS_REJECT_UNAUTHORIZED=0 npm run test:integration</code><ul>
+<li>Mistral bot test runs when <code>MISTRAL_API_KEY</code> is set (skip with <code>RUN_MISTRAL_BOT_TEST=false</code>).</li>
+<li>Semem bot test runs only when <code>RUN_SEMEM_BOT_TEST=true</code> (requires Semem endpoint).</li>
+</ul>
+</li>
+</ul>
+
+    </main>
+  </body>
+</html>

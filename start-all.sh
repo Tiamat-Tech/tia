@@ -24,8 +24,8 @@ CYAN='\033[0;36m'
 NC='\033[0m' # No Color
 
 # Preset agent groups
-ALL_AGENTS="coordinator,mistral,analyst,creative,chair,recorder,semem,data,prolog,demo"
-MFR_AGENTS="$ALL_AGENTS"
+ALL_AGENTS="coordinator,mistral,analyst,creative,chair,recorder,semem,mfr-semantic,data,prolog,demo"
+MFR_AGENTS="coordinator,mistral,analyst,creative,chair,recorder,mfr-semantic,data,prolog,demo"
 DEBATE_AGENTS="chair,recorder,mistral,analyst,creative"
 BASIC_AGENTS="mistral,data,prolog,demo"
 
@@ -74,6 +74,7 @@ if [ -n "$1" ]; then
       echo "  analyst     - Mistral analyst variant (requires MISTRAL_API_KEY)"
       echo "  creative    - Mistral creative variant (requires MISTRAL_API_KEY)"
       echo "  semem       - Semem MCP agent (optional)"
+      echo "  mfr-semantic - MFR semantic constraint agent"
       echo "  data        - SPARQL knowledge query agent"
       echo "  prolog      - Tau-Prolog logic agent"
       echo "  chair       - Debate facilitator (requires MISTRAL_API_KEY)"
@@ -87,6 +88,10 @@ if [ -n "$1" ]; then
       exit 1
       ;;
   esac
+  echo ""
+elif [ -z "$AGENTS" ]; then
+  echo -e "${CYAN}Starting default MFR (Model-First Reasoning) system${NC}"
+  export AGENTS="$MFR_AGENTS"
   echo ""
 fi
 

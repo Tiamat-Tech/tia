@@ -1,0 +1,236 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Quick Start Guide</title>
+    <style>
+      body { margin: 0; padding: 48px 20px; font-family: "Helvetica Neue", Arial, sans-serif; background: #f7f4ef; color: #1f1b16; }
+      main { max-width: 920px; margin: 0 auto; background: #fffdf9; padding: 48px; border: 1px solid #e3d8c7; box-shadow: 6px 8px 0 #e3d8c7; }
+      h1, h2, h3 { font-weight: 600; margin-top: 2rem; }
+      pre { background: #1f1b16; color: #f7f4ef; padding: 16px; overflow: auto; }
+      code { font-family: "SFMono-Regular", ui-monospace, Menlo, Monaco, Consolas, monospace; }
+      a { color: #8a3b12; }
+      img { max-width: 100%; height: auto; }
+      table { border-collapse: collapse; width: 100%; }
+      th, td { border: 1px solid #e3d8c7; padding: 8px; }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>Quick Start Guide</h1>
+<p>Get started with tia-agents in minutes! This guide covers installation and the two main approaches to creating XMPP bots.</p>
+<h2>Installation</h2>
+<pre><code class="language-bash">npm install tia-agents
+</code></pre>
+<h2>Two Approaches</h2>
+<p>tia-agents supports two ways to create bots:</p>
+<ol>
+<li><strong>Config-Driven</strong>: Use <code>.ttl</code> profile files and <code>secrets.json</code> for configuration</li>
+<li><strong>Programmatic</strong>: Configure everything in code without external files</li>
+</ol>
+<p>Choose the approach that best fits your workflow.</p>
+<hr>
+<h2>Approach 1: Config-Driven (Recommended for Multiple Bots)</h2>
+<p>Best for: Managing multiple bots, team environments, declarative configuration</p>
+<h3>Step 1: Create Configuration Directory</h3>
+<pre><code class="language-bash">mkdir -p config/agents
+</code></pre>
+<h3>Step 2: Copy Templates</h3>
+<pre><code class="language-bash"># Copy profile template
+cp node_modules/tia-agents/templates/config/agent-profile.ttl config/agents/mybot.ttl
+
+# Copy secrets template
+cp node_modules/tia-agents/templates/config/secrets.example.json config/agents/secrets.json
+</code></pre>
+<h3>Step 3: Edit Configuration</h3>
+<p><strong>config/agents/mybot.ttl</strong>:</p>
+<pre><code class="language-turtle">@prefix agent: &lt;https://tensegrity.it/vocab/agent#&gt; .
+@prefix foaf: &lt;http://xmlns.com/foaf/0.1/&gt; .
+@prefix xmpp: &lt;https://tensegrity.it/vocab/xmpp#&gt; .
+@prefix lng: &lt;http://purl.org/stuff/lingue/&gt; .
+
+&lt;#mybot&gt; a agent:ConversationalAgent ;
+  foaf:nick &quot;MyBot&quot; ;
+
+  agent:xmppAccount [
+    xmpp:service &quot;xmpp://your-server.com:5222&quot; ;
+    xmpp:domain &quot;your-server.com&quot; ;
+    xmpp:username &quot;mybot&quot; ;
+    xmpp:passwordKey &quot;mybot&quot; ;
+    xmpp:resource &quot;MyBot&quot;
+  ] ;
+
+  agent:roomJid &quot;general@conference.your-server.com&quot; .
+</code></pre>
+<p><strong>config/agents/secrets.json</strong>:</p>
+<pre><code class="language-json">{
+  &quot;xmpp&quot;: {
+    &quot;mybot&quot;: &quot;your-xmpp-password&quot;
+  }
+}
+</code></pre>
+<p><strong>Important</strong>: Add <code>config/agents/secrets.json</code> to your <code>.gitignore</code>!</p>
+<h3>Step 4: Create Bot Script</h3>
+<p><strong>mybot.js</strong>:</p>
+<pre><code class="language-javascript">import { createAgent, DemoProvider } from &quot;tia-agents&quot;;
+
+const runner = await createAgent(&quot;mybot&quot;, new DemoProvider());
+await runner.start();
+
+process.on(&quot;SIGINT&quot;, async () =&gt; {
+  await runner.stop();
+  process.exit(0);
+});
+</code></pre>
+<h3>Step 5: Run Your Bot</h3>
+<pre><code class="language-bash">node mybot.js
+</code></pre>
+<hr>
+<h2>Approach 2: Programmatic (Quickest Start)</h2>
+<p>Best for: Quick prototyping, single bots, embedded scenarios</p>
+<h3>Create and Run</h3>
+<p><strong>mybot.js</strong>:</p>
+<pre><code class="language-javascript">import { createSimpleAgent, DemoProvider } from &quot;tia-agents&quot;;
+
+const runner = createSimpleAgent({
+  xmppConfig: {
+    service: &quot;xmpp://localhost:5222&quot;,
+    domain: &quot;xmpp&quot;,
+    username: &quot;mybot&quot;,
+    password: &quot;your-password&quot;,
+    resource: &quot;MyBot&quot;
+  },
+  roomJid: &quot;general@conference.xmpp&quot;,
+  nickname: &quot;MyBot&quot;,
+  provider: new DemoProvider()
+});
+
+await runner.start();
+
+process.on(&quot;SIGINT&quot;, async () =&gt; {
+  await runner.stop();
+  process.exit(0);
+});
+</code></pre>
+<pre><code class="language-bash">node mybot.js
+</code></pre>
+<hr>
+<h2>Creating a Custom Provider</h2>
+<p>Replace <code>DemoProvider</code> with your own logic:</p>
+<pre><code class="language-javascript">import { BaseProvider } from &quot;tia-agents&quot;;
+
+class MyProvider extends BaseProvider {
+  async handle({ command, content, metadata }) {
+    if (command !== &quot;chat&quot;) {
+      return &quot;I only support chat commands&quot;;
+    }
+
+    // Your logic here
+    return `You said: ${content}`;
+  }
+}
+
+// Use with createAgent or createSimpleAgent
+const runner = createSimpleAgent({
+  // ... xmpp config
+  provider: new MyProvider()
+});
+</code></pre>
+<p>See the <a href="./provider-guide.md">Provider Guide</a> for detailed examples.</p>
+<hr>
+<h2>AI-Powered Bot (Mistral Example)</h2>
+<h3>Install Peer Dependency</h3>
+<pre><code class="language-bash">npm install @mistralai/mistralai
+</code></pre>
+<h3>Create Config</h3>
+<p><strong>config/agents/aibot.ttl</strong>:</p>
+<pre><code class="language-turtle">@prefix agent: &lt;https://tensegrity.it/vocab/agent#&gt; .
+@prefix ai: &lt;https://tensegrity.it/vocab/ai-provider#&gt; .
+@prefix foaf: &lt;http://xmlns.com/foaf/0.1/&gt; .
+@prefix xmpp: &lt;https://tensegrity.it/vocab/xmpp#&gt; .
+
+&lt;#aibot&gt; a agent:ConversationalAgent, agent:AIAgent ;
+  foaf:nick &quot;AIBot&quot; ;
+
+  agent:xmppAccount [
+    xmpp:service &quot;xmpp://localhost:5222&quot; ;
+    xmpp:domain &quot;xmpp&quot; ;
+    xmpp:username &quot;aibot&quot; ;
+    xmpp:passwordKey &quot;aibot&quot; ;
+  ] ;
+
+  agent:roomJid &quot;general@conference.xmpp&quot; ;
+
+  agent:aiProvider [
+    a ai:MistralProvider ;
+    ai:model &quot;mistral-small-latest&quot; ;
+    ai:systemPrompt &quot;You are a helpful AI assistant. Be concise and friendly.&quot;
+  ] .
+</code></pre>
+<h3>Create Bot</h3>
+<pre><code class="language-javascript">import { createAgent, InMemoryHistoryStore } from &quot;tia-agents&quot;;
+import { MistralProvider } from &quot;tia-agents/providers/mistral&quot;;
+
+const provider = new MistralProvider({
+  apiKey: process.env.MISTRAL_API_KEY,
+  nickname: &quot;AIBot&quot;,
+  historyStore: new InMemoryHistoryStore({ maxEntries: 40 })
+});
+
+const runner = await createAgent(&quot;aibot&quot;, provider);
+await runner.start();
+</code></pre>
+<h3>Run</h3>
+<pre><code class="language-bash">MISTRAL_API_KEY=your-key node aibot.js
+</code></pre>
+<hr>
+<h2>Environment Variables</h2>
+<p>Override config file settings with environment variables:</p>
+<pre><code class="language-bash"># Profile directory
+export AGENT_PROFILE_DIR=./my-agents
+
+# XMPP connection
+export XMPP_SERVICE=xmpp://server.com:5222
+export XMPP_DOMAIN=server.com
+export XMPP_USERNAME=mybot
+
+# Secrets file
+export AGENT_SECRETS_PATH=./my-secrets.json
+</code></pre>
+<hr>
+<h2>Next Steps</h2>
+<ul>
+<li>Read the <a href="./provider-guide.md">Provider Guide</a> to create custom providers</li>
+<li>Check the <a href="./api-reference.md">API Reference</a> for complete API documentation</li>
+<li>Explore <a href="../templates/">templates/</a> for more examples</li>
+<li>Learn about <a href="./api-reference.md#lingue">Lingue protocol</a> for advanced language negotiation</li>
+</ul>
+<h2>Getting Help</h2>
+<ul>
+<li>GitHub Issues: <a href="https://github.com/danja/tia/issues">https://github.com/danja/tia/issues</a></li>
+<li>Check existing service files in <code>src/services/</code> for advanced patterns</li>
+</ul>
+<h2>Common Issues</h2>
+<h3>XMPP Connection Fails</h3>
+<ul>
+<li>Verify server URL, domain, username, and password</li>
+<li>For self-signed certificates (local dev): <code>NODE_TLS_REJECT_UNAUTHORIZED=0 node mybot.js</code></li>
+<li>Check firewall settings</li>
+</ul>
+<h3>Profile Not Found</h3>
+<ul>
+<li>Ensure <code>.ttl</code> file is in <code>config/agents/</code> directory</li>
+<li>Check filename matches the profile name argument</li>
+<li>Use <code>profileDir</code> option if using custom location</li>
+</ul>
+<h3>Missing Peer Dependencies</h3>
+<p>Some providers require additional packages:</p>
+<ul>
+<li>MistralProvider: <code>npm install @mistralai/mistralai</code></li>
+<li>Check provider documentation for requirements</li>
+</ul>
+
+    </main>
+  </body>
+</html>

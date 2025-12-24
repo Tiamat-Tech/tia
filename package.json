@@ -33,7 +33,8 @@
   },
   "scripts": {
     "test": "node --test test/ibis.test.js test/lingue-exchange.test.js test/lingue-store.test.js && vitest run test/profile-loading.test.js test/lingue-profile-loading.test.js test/lingue-discovery.test.js test/lingue-negotiation.test.js test/lingue-handlers/*.test.js test/agent-runner-lingue.test.js test/agent-runner-agent-rounds.test.js test/npm-exports.test.js test/prolog-provider.test.js test/prolog-lingue-payload.test.js test/mcp-profile-mapper.test.js test/mcp-loopback-provider.test.js test/history-store.test.js",
-    "test:integration": "vitest run test/xmpp.integration.test.js test/xmpp.bots.integration.test.js test/xmpp.semem.integration.test.js"
+    "test:integration": "vitest run test/xmpp.integration.test.js test/xmpp.bots.integration.test.js test/xmpp.semem.integration.test.js",
+    "test:mfr-integration": "vitest run test/mfr-semantic.integration.test.js test/mistral-mfr.integration.test.js"
   },
   "keywords": [
     "xmpp",
@@ -70,6 +71,7 @@
   },
   "devDependencies": {
     "@mistralai/mistralai": "^1.11.0",
+    "marked": "^17.0.1",
     "vitest": "^4.0.16"
   },
   "peerDependencies": {

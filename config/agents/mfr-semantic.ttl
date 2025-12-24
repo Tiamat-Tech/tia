@@ -1,0 +1,50 @@
+@prefix agent: <https://tensegrity.it/vocab/agent#> .
+@prefix foaf: <http://xmlns.com/foaf/0.1/> .
+@prefix schema: <https://schema.org/> .
+@prefix xmpp: <https://tensegrity.it/vocab/xmpp#> .
+@prefix ai: <https://tensegrity.it/vocab/ai-provider#> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+@prefix lng: <http://purl.org/stuff/lingue/> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix mfr: <http://purl.org/stuff/mfr/> .
+
+<#mfr-semantic> a agent:ConversationalAgent, lng:Agent, mfr:SemanticValidator ;
+  foaf:nick "MfrSemantic" ;
+  schema:identifier "mfr-semantic" ;
+  dcterms:created "2025-12-22T00:00:00Z"^^xsd:dateTime ;
+  dcterms:description "MFR semantic constraint agent for extracting and validating constraints" ;
+
+  lng:supports lng:HumanChat, lng:ModelFirstRDF, lng:ModelNegotiation ;
+  lng:prefers lng:ModelNegotiation ;
+  lng:profile <#mfr-semantic-lingue-profile> ;
+
+  mfr:capabilities [
+    mfr:modelsConstraints true ;
+    mfr:validatesOntology true ;
+    mfr:contributionTypes mfr:ConstraintIdentification, mfr:OntologyValidation
+  ] ;
+
+  agent:xmppAccount [
+    a xmpp:Account ;
+    xmpp:service "xmpp://tensegrity.it:5222" ;
+    xmpp:domain "tensegrity.it" ;
+    xmpp:username "mfr-semantic" ;
+    xmpp:passwordKey "mfr-semantic" ;
+    xmpp:resource "MfrSemantic"
+  ] ;
+
+  agent:roomJid "general@conference.tensegrity.it" ;
+
+  agent:aiProvider [
+    a ai:MistralProvider ;
+    ai:model "mistral-small-latest" ;
+    ai:apiKeyEnv "MISTRAL_API_KEY"
+  ] .
+
+<#mfr-semantic-lingue-profile> a lng:Profile ;
+  lng:availability lng:Process ;
+  lng:in [ a lng:Interface ; rdfs:label "XMPP MUC text + RDF models" ] ;
+  lng:out [ a lng:Interface ; rdfs:label "XMPP MUC text + RDF constraints" ] ;
+  lng:dependsOn [ a lng:Environment ; rdfs:label "XMPP/Prosody" ] ;
+  lng:alang "JavaScript" .

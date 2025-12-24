@@ -331,7 +331,7 @@ LIMIT 20
 
     for (let i = 0; i < entities.length; i++) {
       const entity = entities[i];
-      const entityId = `entity-${i + 1}`;
+      const entityId = `entity-${this.slugify(this.nickname)}-${i + 1}`;
       const entityUri = `<${MFR_NS}${sessionId}/${entityId}>`;
 
       // Try to ground the entity
@@ -342,6 +342,7 @@ LIMIT 20
 
       if (grounded) {
         lines.push(`  owl:sameAs <${grounded.uri}> ;`);
+        lines.push(`  mfr:entityType "${grounded.type || entity.name || entity}" ;`);
 
         if (grounded.label) {
           lines.push(`  rdfs:label "${grounded.label}" ;`);
@@ -358,6 +359,7 @@ LIMIT 20
         lines.push(`  mfr:groundedBy "${this.nickname}" ;`);
         lines.push(`  mfr:wikidataEntity <${grounded.uri}> ;`);
       } else {
+        lines.push(`  mfr:entityType "${entity.type || entity.name || entity}" ;`);
         lines.push(`  mfr:groundingStatus "ungrounded" ;`);
       }
 
@@ -395,7 +397,7 @@ LIMIT 20
 
       for (let i = 0; i < Math.min(relationships.length, 5); i++) {
         const rel = relationships[i];
-        const relId = `rel-${Date.now()}-${i}`;
+        const relId = `rel-${this.slugify(this.nickname)}-${Date.now()}-${i}`;
         const relUri = `<${MFR_NS}${sessionId}/${relId}>`;
 
         lines.push(`${relUri} a mfr:Relationship ;`);
@@ -416,6 +418,14 @@ LIMIT 20
     }
 
     return lines.join('\n');
+  }
+
+  slugify(value) {
+    return String(value || "")
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-+|-+$/g, "")
+      .replace(/--+/g, "-") || "agent";
   }
 
   /**

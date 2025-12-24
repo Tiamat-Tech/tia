@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>notes</title>
+    <style>
+      body { margin: 0; padding: 48px 20px; font-family: "Helvetica Neue", Arial, sans-serif; background: #f7f4ef; color: #1f1b16; }
+      main { max-width: 920px; margin: 0 auto; background: #fffdf9; padding: 48px; border: 1px solid #e3d8c7; box-shadow: 6px 8px 0 #e3d8c7; }
+      h1, h2, h3 { font-weight: 600; margin-top: 2rem; }
+      pre { background: #1f1b16; color: #f7f4ef; padding: 16px; overflow: auto; }
+      code { font-family: "SFMono-Regular", ui-monospace, Menlo, Monaco, Consolas, monospace; }
+      a { color: #8a3b12; }
+      img { max-width: 100%; height: auto; }
+      table { border-collapse: collapse; width: 100%; }
+      th, td { border: 1px solid #e3d8c7; padding: 8px; }
+    </style>
+  </head>
+  <body>
+    <main>
+      <p> DOCS_DIR=docs DOCS_OUT_DIR=docs-site node scripts/build-docs.mjs</p>
+<p>pkill -f &#39;node src/services&#39;
+./start-mfr-system.sh
+./start-all-agents.sh</p>
+<p>./start-all.sh mfr</p>
+<p>npm pack</p>
+<p>  Then from your test project (/home/danny/hyperdata/tia-test):</p>
+<p>  npm install ../tia/tia-agents-0.3.0.tgz</p>
+<p>npm install @mistralai/mistralai</p>
+<p> If you want the history store size or any other provider options to be 100%
+  config‑driven too, we can add those to the profile and wire them in the
+  provider config.</p>
+<p>systemctl restart tia-agents</p>
+<p>claude mcp add tia-chat node /home/danny/hyperdata/tia/src/mcp/servers/tia-mcp-server.js</p>
+<p>codex mcp add tia-chat node /home/danny/hyperdata/tia/src/mcp/servers/tia-mcp-server.js</p>
+<p>src/mcp/servers/tia-mcp-server.js</p>
+<p>  If you want, I can add tunable env vars for reconnect delays/retry caps or logging around reconnect attempts.</p>
+<pre><code>1. If you want history per room or per user, I can add a keyed history manager that
+ uses roomJid/from to select a store.
+</code></pre>
+<ol start="2">
+<li>If you want file persistence, we can implement a file-backed store that shares
+the same interface.</li>
+</ol>
+<p>RUN_SEMEM_BOT_TEST=true NODE_TLS_REJECT_UNAUTHORIZED=0 npm run test:integration</p>
+<p>node src/examples/semem-direct-test.js &quot;Glitch is a canary&quot; &quot;What is Glitch?&quot;</p>
+<p>systemctl stop tia-agents</p>
+<p> prosodyctl mod_muc delete_room <room-jid></p>
+<p>nano  /etc/prosody/conf.d/conference.cfg.lua</p>
+<p>Component &quot;conference.tensegrity.it&quot; &quot;muc&quot;
+    muc_room_default_persistent = true
+    muc_room_default_public = true</p>
+<p>prosodyctl adduser <a href="mailto:mfr-semantic@tensegrity.it">mfr-semantic@tensegrity.it</a> 
+mfr-semanticpass</p>
+<p>prosodyctl adduser <a href="mailto:semem@tensegrity.it">semem@tensegrity.it</a>
+prosodyctl adduser <a href="mailto:mistral@tensegrity.it">mistral@tensegrity.it</a>
+prosodyctl adduser <a href="mailto:demo@tensegrity.it">demo@tensegrity.it</a></p>
+<p>prosodyctl adduser <a href="mailto:prolog@tensegrity.it">prolog@tensegrity.it</a></p>
+<p>prosodyctl adduser <a href="mailto:coordinator@tensegrity.it">coordinator@tensegrity.it</a>
+coordinatorpass</p>
+<p>prosodyctl adduser <a href="mailto:admin@tensegrity.it">admin@tensegrity.it</a></p>
+<p>prosodyctl adduser <a href="mailto:mfruser@tensegrity.it">mfruser@tensegrity.it</a>
+mfrpass
+prosodyctl adduser <a href="mailto:testuser@tensegrity.it">testuser@tensegrity.it</a></p>
+<p> sudo prosodyctl register mistral-analyst tensegrity.it analystpass???</p>
+<h2> sudo prosodyctl adduser <a href="mailto:mistral-analyst@tensegrity.it">mistral-analyst@tensegrity.it</a> analystpass
+  sudo prosodyctl adduser <a href="mailto:mistral-creative@tensegrity.it">mistral-creative@tensegrity.it</a> creativepass
+  sudo prosodyctl adduser <a href="mailto:mcp-loopback@tensegrity.it">mcp-loopback@tensegrity.it</a> loopbackpass</h2>
+<p>npm install @xmpp/client @xmpp/debug</p>
+<p><a href="https://platform.openai.com/docs/quickstart?context=node">https://platform.openai.com/docs/quickstart?context=node</a></p>
+<p>npm install --save openai</p>
+<p>in ~/.bash_profile :</p>
+<p>export OPENAI_API_KEY=&#39;your-api-key-here&#39;</p>
+<p>source ~/.bash_profile
+echo $OPENAI_API_KEY</p>
+<p><a href="https://github.com/nioc/xmpp-bot">https://github.com/nioc/xmpp-bot</a></p>
+<p>npm install log4js</p>
+
+    </main>
+  </body>
+</html>

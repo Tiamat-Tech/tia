@@ -50,13 +50,13 @@ See [MFR Room Setup](MFR_ROOM_SETUP.md) for Prosody configuration and room creat
 
 ## Usage Examples
 
-### Start All Available Agents
+### Start the Default MFR Suite
 
 ```bash
 ./start-all.sh
 ```
 
-This starts all agents for which credentials are available. Agents requiring missing API keys are automatically skipped.
+By default, this starts the MFR suite. Agents requiring missing API keys are automatically skipped.
 
 ### Start MFR System
 
@@ -71,7 +71,7 @@ Starts the Model-First Reasoning system (full suite):
 - `creative` - Creative AI participant
 - `chair` - Debate facilitator
 - `recorder` - Meeting recorder
-- `semem` - Semantic reasoning (if configured)
+- `mfr-semantic` - Semantic constraint agent
 - `data` - Knowledge grounding (Wikidata/SPARQL)
 - `prolog` - Logical reasoning
 - `demo` - Simple demo bot
@@ -145,7 +145,7 @@ Starting MFR (Model-First Reasoning) system
 
 ✅ Environment checks passed
 
-Agent subset: coordinator,mistral,data,prolog,semem
+Agent subset: coordinator,mistral,data,prolog,mfr-semantic
 
 Configuration:
   XMPP service: xmpp://tensegrity.it:5222
@@ -158,7 +158,7 @@ Starting agent "coordinator" (MFR Coordinator): node src/services/coordinator-ag
 Starting agent "mistral" (Mistral API-backed bot): node src/services/mistral-bot.js
 Starting agent "data" (Data agent): node src/services/data-agent.js
 Starting agent "prolog" (Prolog agent): node src/services/prolog-agent.js
-Starting agent "semem" (Semem MCP-backed agent): node src/services/semem-agent.js
+Starting agent "mfr-semantic" (MFR semantic constraint agent): node src/services/mfr-semantic-agent.js
 ```
 
 ### Missing API Keys
@@ -185,9 +185,11 @@ The script continues and starts agents that don't require the missing keys.
 
    Example structure:
    {
+     "coordinator": { "password": "your_password" },
      "mistral": { "password": "your_password" },
      "data": { "password": "your_password" },
-     "prolog": { "password": "your_password" }
+     "prolog": { "password": "your_password" },
+     "mfr-semantic": { "password": "your_password" }
    }
 ```
 
@@ -438,6 +440,7 @@ AGENTS=mistral,data ./start-all.sh
 | `analyst` | Mistral analyst variant | `MISTRAL_API_KEY` |
 | `creative` | Mistral creative variant | `MISTRAL_API_KEY` |
 | `chair` | Debate facilitator | `MISTRAL_API_KEY` |
+| `mfr-semantic` | MFR semantic constraint agent | None (optional Mistral API key) |
 | `semem` | Semem MCP agent | None (optional token) |
 | `recorder` | Meeting recorder | `SEMEM_AUTH_TOKEN` |
 | `data` | SPARQL knowledge agent | None |

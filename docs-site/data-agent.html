@@ -1,0 +1,348 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Data Agent</title>
+    <style>
+      body { margin: 0; padding: 48px 20px; font-family: "Helvetica Neue", Arial, sans-serif; background: #f7f4ef; color: #1f1b16; }
+      main { max-width: 920px; margin: 0 auto; background: #fffdf9; padding: 48px; border: 1px solid #e3d8c7; box-shadow: 6px 8px 0 #e3d8c7; }
+      h1, h2, h3 { font-weight: 600; margin-top: 2rem; }
+      pre { background: #1f1b16; color: #f7f4ef; padding: 16px; overflow: auto; }
+      code { font-family: "SFMono-Regular", ui-monospace, Menlo, Monaco, Consolas, monospace; }
+      a { color: #8a3b12; }
+      img { max-width: 100%; height: auto; }
+      table { border-collapse: collapse; width: 100%; }
+      th, td { border: 1px solid #e3d8c7; padding: 8px; }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>Data Agent</h1>
+<p>The Data agent queries SPARQL endpoints (Wikidata by default) to answer questions about entities and return knowledge graph data in human-friendly format.</p>
+<h2>Overview</h2>
+<p>The Data agent is a <strong>knowledge query agent</strong> that:</p>
+<ul>
+<li>Queries SPARQL endpoints like Wikidata, DBpedia, or custom triplestores</li>
+<li>Supports three query modes: command-based, natural language, and direct SPARQL</li>
+<li>Returns human-friendly summaries instead of raw JSON</li>
+<li>Uses Lingue protocol for SPARQL query negotiation</li>
+<li>Is fully configurable via RDF profiles with no hardcoded defaults</li>
+</ul>
+<h2>Architecture</h2>
+<pre><code>User Message → Command Parser → DataProvider → MCP Bridge → SPARQL Server → Endpoint
+                                       ↓
+                                 Mistral API (for entity extraction)
+                                       ↓
+                                Human-friendly summary ← JSON results
+</code></pre>
+<p><strong>Key Components:</strong></p>
+<ul>
+<li><strong>DataProvider</strong> (<code>src/agents/providers/data-provider.js</code>) - Core provider logic</li>
+<li><strong>SPARQL Server</strong> (<code>src/mcp/servers/sparql-server.js</code>) - MCP server for SPARQL queries</li>
+<li><strong>Profile</strong> (<code>config/agents/data.ttl</code>) - RDF configuration</li>
+<li><strong>Lingue Handler</strong> (<code>src/lib/lingue/handlers/sparql-query-handler.js</code>) - SparqlQuery mode</li>
+</ul>
+<h2>Three Query Modes</h2>
+<h3>1. Command Mode: <code>query: &lt;entity&gt;</code></h3>
+<p>Direct entity lookup using the <code>query:</code> command prefix.</p>
+<p><strong>Examples:</strong></p>
+<pre><code>Data, query: Albert Einstein
+Data, query: Marie Curie
+Data, query: JavaScript
+</code></pre>
+<p><strong>How it works:</strong></p>
+<ol>
+<li>User provides entity name after <code>query:</code></li>
+<li>DataProvider builds Wikidata SPARQL query</li>
+<li>Query executed via MCP SPARQL server</li>
+<li>Results formatted as human-readable summary</li>
+</ol>
+<h3>2. Natural Language Mode</h3>
+<p>Ask questions naturally; the agent extracts the entity using Mistral API.</p>
+<p><strong>Examples:</strong></p>
+<pre><code>Data, who was Albert Einstein?
+Data, what is JavaScript?
+Data, tell me about Marie Curie
+</code></pre>
+<p><strong>How it works:</strong></p>
+<ol>
+<li>User asks natural language question</li>
+<li>Mistral API extracts main entity from question</li>
+<li>Same as command mode with extracted entity</li>
+<li>Returns formatted summary</li>
+</ol>
+<p><strong>Requires:</strong> <code>MISTRAL_API_KEY</code> environment variable</p>
+<h3>3. Direct SPARQL Mode: <code>sparql: &lt;query&gt;</code></h3>
+<p>Execute arbitrary SPARQL queries directly against the endpoint.</p>
+<p><strong>Examples:</strong></p>
+<pre><code>Data, sparql: SELECT ?label WHERE { wd:Q937 rdfs:label ?label } LIMIT 1
+Data, sparql: SELECT * WHERE {?s ?p ?o} LIMIT 5
+</code></pre>
+<p><strong>How it works:</strong></p>
+<ol>
+<li>User provides complete SPARQL query</li>
+<li>Query executed as-is via MCP server</li>
+<li>Results formatted as summary</li>
+</ol>
+<p><strong>Via Lingue:</strong> Direct SPARQL queries can also be sent via the <code>lng:SparqlQuery</code> Lingue mode for agent-to-agent communication.</p>
+<h2>Usage</h2>
+<h3>Starting the Agent</h3>
+<pre><code class="language-bash"># Basic start
+./start-data-agent.sh
+
+# With custom profile
+AGENT_PROFILE=data-dbpedia node src/services/data-agent.js
+</code></pre>
+<h3>In Chat</h3>
+<p><strong>Mention the agent:</strong></p>
+<pre><code>Data, query: Isaac Newton
+Data, who invented the telephone?
+</code></pre>
+<p><strong>Direct Message:</strong>
+Send DMs to the Data agent&#39;s JID for private queries.</p>
+<p><strong>Command Syntax:</strong></p>
+<ul>
+<li><code>query: &lt;entity&gt;</code> or <code>query &lt;entity&gt;</code> - Entity lookup</li>
+<li><code>sparql: &lt;query&gt;</code> or <code>sparql &lt;query&gt;</code> - Direct SPARQL</li>
+<li>Natural language - Any other question</li>
+</ul>
+<h2>Configuration</h2>
+<h3>RDF Profile (<code>config/agents/data.ttl</code>)</h3>
+<pre><code class="language-turtle">&lt;#data&gt; a agent:ConversationalAgent, agent:KnowledgeAgent, lng:Agent, mcp:Client ;
+  foaf:nick &quot;Data&quot; ;
+  schema:identifier &quot;data&quot; ;
+
+  agent:xmppAccount [
+    xmpp:service &quot;xmpp://tensegrity.it:5222&quot; ;
+    xmpp:domain &quot;tensegrity.it&quot; ;
+    xmpp:username &quot;data&quot; ;
+    xmpp:passwordKey &quot;data&quot; ;
+    xmpp:resource &quot;Data&quot;
+  ] ;
+
+  agent:roomJid &quot;general@conference.tensegrity.it&quot; ;
+
+  agent:dataProvider [
+    a ai:DataProvider ;
+    ai:sparqlEndpoint &quot;https://query.wikidata.org/sparql&quot; ;
+    ai:extractionModel &quot;mistral-small-latest&quot; ;
+    ai:extractionApiKeyEnv &quot;MISTRAL_API_KEY&quot; ;
+    ai:maxTokens &quot;50&quot;^^xsd:integer ;
+    ai:temperature &quot;0.3&quot;^^xsd:float
+  ] ;
+
+  lng:supports lng:HumanChat, lng:SparqlQuery ;
+  lng:prefers lng:SparqlQuery .
+</code></pre>
+<h3>Configuration Properties</h3>
+<p><strong>Data Provider (<code>agent:dataProvider</code>):</strong></p>
+<ul>
+<li><code>ai:sparqlEndpoint</code> - SPARQL endpoint URL (required)</li>
+<li><code>ai:extractionModel</code> - Mistral model for entity extraction (optional, for natural language mode)</li>
+<li><code>ai:extractionApiKeyEnv</code> - Env var name for Mistral API key (default: <code>MISTRAL_API_KEY</code>)</li>
+<li><code>ai:maxTokens</code> - Max tokens for extraction (default: 50)</li>
+<li><code>ai:temperature</code> - Temperature for extraction (default: 0.3)</li>
+</ul>
+<p><strong>XMPP Account:</strong></p>
+<ul>
+<li>Standard XMPP configuration (service, domain, username, resource)</li>
+<li>Password stored in <code>config/agents/secrets.json</code> under key specified by <code>xmpp:passwordKey</code></li>
+</ul>
+<p><strong>Lingue Modes:</strong></p>
+<ul>
+<li><code>lng:HumanChat</code> - Natural language chat</li>
+<li><code>lng:SparqlQuery</code> - Direct SPARQL queries via Lingue protocol</li>
+</ul>
+<h3>Secrets (<code>config/agents/secrets.json</code>)</h3>
+<pre><code class="language-json">{
+  &quot;xmpp&quot;: {
+    &quot;data&quot;: &quot;your-password-here&quot;
+  }
+}
+</code></pre>
+<h3>Environment Variables</h3>
+<p><strong>Required:</strong></p>
+<ul>
+<li>None (all configuration from profile)</li>
+</ul>
+<p><strong>Optional:</strong></p>
+<ul>
+<li><code>MISTRAL_API_KEY</code> - For natural language entity extraction</li>
+<li><code>AGENT_PROFILE</code> - Profile name to load (default: <code>data</code>)</li>
+<li>XMPP overrides (if needed): <code>XMPP_SERVICE</code>, <code>XMPP_DOMAIN</code>, <code>MUC_ROOM</code>, etc.</li>
+</ul>
+<h2>Adapting for Other SPARQL Endpoints</h2>
+<p>The Data agent can query any SPARQL endpoint by changing the profile.</p>
+<h3>DBpedia Example</h3>
+<p>Create <code>config/agents/data-dbpedia.ttl</code>:</p>
+<pre><code class="language-turtle">&lt;#data-dbpedia&gt; a agent:ConversationalAgent, agent:KnowledgeAgent ;
+  foaf:nick &quot;DBpedia&quot; ;
+  schema:identifier &quot;data-dbpedia&quot; ;
+
+  agent:dataProvider [
+    a ai:DataProvider ;
+    ai:sparqlEndpoint &quot;https://dbpedia.org/sparql&quot; ;
+    ai:extractionModel &quot;mistral-small-latest&quot; ;
+    ai:extractionApiKeyEnv &quot;MISTRAL_API_KEY&quot;
+  ] ;
+  # ... rest of profile
+</code></pre>
+<p>Start with: <code>AGENT_PROFILE=data-dbpedia node src/services/data-agent.js</code></p>
+<h3>Local Triplestore Example</h3>
+<p>For a local Apache Jena Fuseki instance:</p>
+<pre><code class="language-turtle">agent:dataProvider [
+  a ai:DataProvider ;
+  ai:sparqlEndpoint &quot;http://localhost:3030/dataset/sparql&quot; ;
+  ai:extractionModel &quot;mistral-small-latest&quot; ;
+  ai:extractionApiKeyEnv &quot;MISTRAL_API_KEY&quot;
+] ;
+</code></pre>
+<h3>Endpoint-Specific Query Builders</h3>
+<p>The DataProvider includes a Wikidata query builder (<code>buildWikidataQuery</code>). For other endpoints, you can:</p>
+<ol>
+<li>Extend DataProvider with custom query builders</li>
+<li>Use direct SPARQL mode with endpoint-specific queries</li>
+<li>Create a derived provider class for complex endpoint logic</li>
+</ol>
+<h2>Response Format</h2>
+<p>Results are formatted as human-friendly summaries:</p>
+<pre><code>Query: &quot;Data, query: Albert Einstein&quot;
+
+Response:
+1. Albert Einstein: German-born theoretical physicist (human)
+2. Albert Einstein: Wikimedia disambiguation page (Wikimedia disambiguation page)
+</code></pre>
+<p>Format:</p>
+<pre><code>&lt;number&gt;. &lt;label&gt;: &lt;description&gt; (&lt;type&gt;)
+</code></pre>
+<p><strong>Empty results:</strong></p>
+<pre><code>No results found.
+</code></pre>
+<p><strong>Errors:</strong></p>
+<pre><code>Query timeout - the SPARQL endpoint took too long to respond.
+Connection error - could not reach SPARQL endpoint.
+Query error - malformed SPARQL query.
+</code></pre>
+<h2>Lingue Integration</h2>
+<p>The Data agent supports the <strong>SparqlQuery</strong> Lingue mode for agent-to-agent SPARQL query exchange.</p>
+<p><strong>Mode URI:</strong> <code>http://purl.org/stuff/lingue/SparqlQuery</code></p>
+<p><strong>Feature:</strong> <code>http://purl.org/stuff/lingue/feature/lang/sparql-query</code></p>
+<p><strong>MIME Type:</strong> <code>application/sparql-query</code></p>
+<p><strong>Usage:</strong></p>
+<ul>
+<li>Other agents can send SPARQL queries to Data agent via Lingue negotiation</li>
+<li>Data agent responds with formatted results</li>
+<li>Useful for knowledge graph integration in multi-agent systems</li>
+</ul>
+<h2>Testing</h2>
+<h3>Manual Testing</h3>
+<pre><code class="language-bash"># Start the agent
+./start-data-agent.sh
+
+# In another terminal, use the test client
+NODE_TLS_REJECT_UNAUTHORIZED=0 node src/client/repl.js testuser testpass
+
+# Send test queries
+Data, query: Alan Turing
+Data, who was Ada Lovelace?
+Data, sparql: SELECT * WHERE {?s ?p ?o} LIMIT 3
+</code></pre>
+<h3>Automated Test Script</h3>
+<pre><code class="language-bash">NODE_TLS_REJECT_UNAUTHORIZED=0 node src/examples/test-data-agent.js
+</code></pre>
+<p>Tests all three query modes and displays results.</p>
+<h2>Implementation Details</h2>
+<h3>Provider Architecture</h3>
+<p><strong>DataProvider</strong> extends the base provider pattern:</p>
+<pre><code class="language-javascript">async handle({ command, content, metadata, reply }) {
+  if (command === &quot;query&quot;) return await this.handleEntityQuery(content);
+  if (command === &quot;sparql&quot;) return await this.handleDirectSparql(content);
+  if (command === &quot;chat&quot;) return await this.handleNaturalLanguage(content);
+  return `${this.nickname} supports: query &lt;entity&gt;, sparql &lt;query&gt;, or natural language`;
+}
+</code></pre>
+<p><strong>Key methods:</strong></p>
+<ul>
+<li><code>handleEntityQuery(entity)</code> - Build and execute entity query</li>
+<li><code>handleNaturalLanguage(text)</code> - Extract entity with Mistral, then query</li>
+<li><code>handleDirectSparql(sparql)</code> - Execute raw SPARQL</li>
+<li><code>buildWikidataQuery(entity)</code> - Construct Wikidata SPARQL query</li>
+<li><code>formatResults(jsonText)</code> - Parse and format JSON results</li>
+<li><code>extractEntity(text)</code> - Use Mistral to extract entity from natural language</li>
+</ul>
+<h3>MCP Integration</h3>
+<p>The Data agent uses <code>McpClientBridge</code> to communicate with the SPARQL server:</p>
+<pre><code class="language-javascript">const mcpBridge = new McpClientBridge({
+  serverParams: {
+    command: &quot;node&quot;,
+    args: [&quot;src/mcp/servers/sparql-server.js&quot;],
+    env: { SPARQL_QUERY_ENDPOINT: endpoint }
+  }
+});
+
+await mcpBridge.connect();
+const result = await mcpBridge.callTool(&quot;sparqlQuery&quot;, { query, endpoint });
+</code></pre>
+<p><strong>Tools available:</strong></p>
+<ul>
+<li><code>sparqlQuery</code> - Execute SELECT/ASK/CONSTRUCT queries</li>
+<li><code>sparqlUpdate</code> - Execute UPDATE statements (if needed)</li>
+</ul>
+<h3>Command Parser Extension</h3>
+<p>The default command parser was extended to support <code>query:</code> and <code>sparql:</code> commands:</p>
+<pre><code class="language-javascript">if (lowered.startsWith(&quot;query:&quot;) || lowered.startsWith(&quot;query &quot;)) {
+  return { command: &quot;query&quot;, content: trimmed.slice(6).trim() };
+}
+if (lowered.startsWith(&quot;sparql:&quot;) || lowered.startsWith(&quot;sparql &quot;)) {
+  return { command: &quot;sparql&quot;, content: trimmed.slice(7).trim() };
+}
+</code></pre>
+<p>This makes the commands available to all agents using the default parser.</p>
+<h2>Error Handling</h2>
+<p><strong>Network Errors:</strong></p>
+<ul>
+<li>Connection failures → &quot;Connection error - could not reach SPARQL endpoint.&quot;</li>
+<li>Timeouts → &quot;Query timeout - the SPARQL endpoint took too long to respond.&quot;</li>
+</ul>
+<p><strong>Query Errors:</strong></p>
+<ul>
+<li>Malformed SPARQL → &quot;Query error - malformed SPARQL query.&quot;</li>
+<li>No entity found → &quot;No results found.&quot;</li>
+</ul>
+<p><strong>Configuration Errors:</strong></p>
+<ul>
+<li>Missing endpoint → Throws error on startup</li>
+<li>Missing API key → Natural language mode disabled, warning logged</li>
+</ul>
+<h2>Future Enhancements</h2>
+<p><strong>Potential improvements:</strong></p>
+<ul>
+<li>Support for SPARQL UPDATE operations (data modification)</li>
+<li>Query result caching for frequently asked entities</li>
+<li>Multiple endpoint federation (query across multiple knowledge graphs)</li>
+<li>Enhanced result formatting with custom templates</li>
+<li>Integration with semantic reasoning engines</li>
+<li>Support for named graphs and graph protocols</li>
+<li>Query optimization and rewriting</li>
+<li>Federation with external knowledge bases</li>
+</ul>
+<h2>Related Documentation</h2>
+<ul>
+<li><a href="mcp-server.md">MCP Server Guide</a> - SPARQL server implementation</li>
+<li><a href="mcp-client.md">MCP Client Guide</a> - MCP bridge usage</li>
+<li><a href="lingue-integration.md">Lingue Integration</a> - Lingue protocol details</li>
+<li><a href="agents.md">Agents Overview</a> - All available agents</li>
+<li><a href="api-reference.md">API Reference</a> - Agent framework API</li>
+</ul>
+<h2>References</h2>
+<ul>
+<li><a href="https://query.wikidata.org/">Wikidata Query Service</a></li>
+<li><a href="https://www.w3.org/TR/sparql11-query/">SPARQL 1.1 Specification</a></li>
+<li><a href="https://dbpedia.org/sparql">DBpedia SPARQL Endpoint</a></li>
+<li><a href="https://danja.github.io/lingue/">Lingue Protocol</a></li>
+</ul>
+
+    </main>
+  </body>
+</html>

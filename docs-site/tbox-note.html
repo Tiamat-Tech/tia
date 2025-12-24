@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>tbox-note</title>
+    <style>
+      body { margin: 0; padding: 48px 20px; font-family: "Helvetica Neue", Arial, sans-serif; background: #f7f4ef; color: #1f1b16; }
+      main { max-width: 920px; margin: 0 auto; background: #fffdf9; padding: 48px; border: 1px solid #e3d8c7; box-shadow: 6px 8px 0 #e3d8c7; }
+      h1, h2, h3 { font-weight: 600; margin-top: 2rem; }
+      pre { background: #1f1b16; color: #f7f4ef; padding: 16px; overflow: auto; }
+      code { font-family: "SFMono-Regular", ui-monospace, Menlo, Monaco, Consolas, monospace; }
+      a { color: #8a3b12; }
+      img { max-width: 100%; height: auto; }
+      table { border-collapse: collapse; width: 100%; }
+      th, td { border: 1px solid #e3d8c7; padding: 8px; }
+    </style>
+  </head>
+  <body>
+    <main>
+      <ol>
+<li>Find the Prosody container name:</li>
+</ol>
+<p>  docker ps --filter name=xmpp --format &#39;{{.Names}}&#39;</p>
+<p>tbox-xmpp-1</p>
+<ol start="2">
+<li>Register a user non-interactively (avoid the password prompt):</li>
+</ol>
+<h1>replace <ctr> with the name from step 1, set your password</h1>
+<p>  docker exec tbox-xmpp-1 prosodyctl register bot xmpp yourpass</p>
+<p>docker exec tbox-xmpp-1 prosodyctl register danja xmpp sasha</p>
+<p>docker exec tbox-xmpp-1 prosodyctl register danbri xmpp canary</p>
+<p>  If you need an admin account, use a different username and the same command.</p>
+<ol start="3">
+<li>Verify the user:</li>
+</ol>
+<p>  docker exec tbox-xmpp-1  prosodyctl user list xmpp</p>
+<ol start="4">
+<li>Create the room (if not already present):</li>
+</ol>
+<p>  NODE_TLS_REJECT_UNAUTHORIZED=0 XMPP_SERVICE=&quot;xmpp://tensegrity.it:5222&quot; XMPP_DOMAIN=&quot;xmpp&quot; <br>    node src/examples/create-muc-room.js</p>
+<ol start="5">
+<li>Start the TIA Mistral bot pointing at tensegrity.it (in this repo):</li>
+</ol>
+<p>  cat &gt; .env &lt;&lt;&#39;EOF&#39;
+  XMPP_SERVICE=xmpp://tensegrity.it:5222
+  XMPP_DOMAIN=xmpp
+  MUC_ROOM=<a href="mailto:general@conference.xmpp">general@conference.xmpp</a>
+  NODE_TLS_REJECT_UNAUTHORIZED=0
+  LINGUE_ENABLED=true
+  EOF</p>
+<h1>Set the XMPP username/password in config/agents/mistral.ttl and</h1>
+<h1>config/agents/secrets.json (gitignored).</h1>
+<p>  ./start-mistral-bot.sh</p>
+<ul>
+<li>Send: MistralBot, hello there or an IBIS-style prompt.</li>
+</ul>
+<p>  If the prosodyctl register still fails, share the exact error and we’ll adjust.
+› tbox.sh isn&#39;t releasing the command line - when I do ctrl-c it shuts down the container</p>
+<h1>allow client-to-server</h1>
+<p>  sudo ufw allow 5222/tcp</p>
+<h1>allow server-to-server (optional)</h1>
+<p>  sudo ufw allow 5269/tcp</p>
+<h1>optional BOSH/HTTPS admin ports if you use them</h1>
+<p>  sudo ufw allow 5280/tcp
+  sudo ufw allow 5281/tcp</p>
+<pre><code>NODE_TLS_REJECT_UNAUTHORIZED=0 \
+</code></pre>
+<p>  XMPP_SERVICE=xmpp://tensegrity.it:5222 <br>  XMPP_DOMAIN=xmpp <br>  node src/client/repl.js danja sasha</p>
+<pre><code>NODE_TLS_REJECT_UNAUTHORIZED=0 \
+</code></pre>
+<p>  XMPP_SERVICE=xmpp://tensegrity.it:5222 <br>  XMPP_DOMAIN=xmpp <br>  node src/client/repl.js bot yourpass</p>
+<pre><code># 1) Verify container name
+</code></pre>
+<p>  docker ps --filter name=xmpp --format &#39;{{.Names}}&#39;</p>
+<h1>2) List users for the xmpp domain</h1>
+<p>  docker exec tbox-xmpp-1 prosodyctl listusers xmpp</p>
+<h1>3) (Re)create the account to be sure</h1>
+<p>  docker exec tbox-xmpp-1 prosodyctl register bot xmpp newpass123</p>
+<h1>4) Confirm again</h1>
+<p>  docker exec tbox-xmpp-1 prosodyctl listusers xmpp</p>
+<p>  docker exec tbox-xmpp-1 ls /var/lib/prosody/xmpp/accounts</p>
+
+    </main>
+  </body>
+</html>

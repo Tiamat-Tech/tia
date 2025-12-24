@@ -1,0 +1,326 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>MFR Quick Start Tutorial</title>
+    <style>
+      body { margin: 0; padding: 48px 20px; font-family: "Helvetica Neue", Arial, sans-serif; background: #f7f4ef; color: #1f1b16; }
+      main { max-width: 920px; margin: 0 auto; background: #fffdf9; padding: 48px; border: 1px solid #e3d8c7; box-shadow: 6px 8px 0 #e3d8c7; }
+      h1, h2, h3 { font-weight: 600; margin-top: 2rem; }
+      pre { background: #1f1b16; color: #f7f4ef; padding: 16px; overflow: auto; }
+      code { font-family: "SFMono-Regular", ui-monospace, Menlo, Monaco, Consolas, monospace; }
+      a { color: #8a3b12; }
+      img { max-width: 100%; height: auto; }
+      table { border-collapse: collapse; width: 100%; }
+      th, td { border: 1px solid #e3d8c7; padding: 8px; }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>MFR Quick Start Tutorial</h1>
+<p>Get started with the TIA Model-First Reasoning system in 10 minutes.</p>
+<h2>Prerequisites</h2>
+<ul>
+<li>Node.js v18+</li>
+<li>XMPP server (Prosody) running</li>
+<li>Mistral API key</li>
+</ul>
+<h2>Step 1: Install Dependencies</h2>
+<pre><code class="language-bash">cd /path/to/tia
+npm install
+</code></pre>
+<h2>Step 2: Configure Secrets</h2>
+<p>Create <code>config/agents/secrets.json</code>:</p>
+<pre><code class="language-json">{
+  &quot;coordinator&quot;: &quot;secure_password_1&quot;,
+  &quot;mistral&quot;: &quot;secure_password_2&quot;,
+  &quot;data&quot;: &quot;secure_password_3&quot;,
+  &quot;prolog&quot;: &quot;secure_password_4&quot;,
+  &quot;semem&quot;: &quot;secure_password_5&quot;
+}
+</code></pre>
+<p>Create <code>.env</code>:</p>
+<pre><code class="language-bash">MISTRAL_API_KEY=your_mistral_api_key_here
+XMPP_SERVICE=xmpp://tensegrity.it:5222
+XMPP_DOMAIN=tensegrity.it
+</code></pre>
+<h2>Step 3: Create MUC Rooms</h2>
+<pre><code class="language-bash">node src/examples/create-mfr-rooms.js
+</code></pre>
+<p>Expected output:</p>
+<pre><code>=== Creating MFR MUC Rooms ===
+✅ Joined room: mfr-construct@conference.tensegrity.it
+✅ Joined room: mfr-validate@conference.tensegrity.it
+✅ Joined room: mfr-reason@conference.tensegrity.it
+✅ All MFR rooms created successfully!
+</code></pre>
+<h2>Step 4: Start the MFR System</h2>
+<pre><code class="language-bash">./start-mfr-system.sh
+</code></pre>
+<p>This starts:</p>
+<ul>
+<li>Coordinator (orchestrator)</li>
+<li>Mistral (natural language)</li>
+<li>Data (knowledge grounding)</li>
+<li>Prolog (logical reasoning)</li>
+<li>Semem (semantic reasoning) - if configured</li>
+</ul>
+<p>Check logs:</p>
+<pre><code class="language-bash">tail -f logs/coordinator.log
+</code></pre>
+<h2>Step 5: Run Your First MFR Session</h2>
+<h3>Example 1: Simple Scheduling</h3>
+<pre><code class="language-bash">node src/examples/run-mfr-session.js \
+  &quot;Schedule meetings for Alice, Bob, and Carol. Alice is only available in the morning.&quot;
+</code></pre>
+<p><strong>What Happens</strong>:</p>
+<ol>
+<li>Coordinator receives problem, creates session</li>
+<li>Mistral extracts entities (Alice, Bob, Carol)</li>
+<li>Data grounds entities (if available in Wikidata)</li>
+<li>Prolog defines scheduling actions</li>
+<li>Semem identifies time constraints</li>
+<li>Model is validated</li>
+<li>Solution is generated</li>
+</ol>
+<h3>Example 2: Medical Appointments</h3>
+<pre><code class="language-bash">node src/examples/run-mfr-session.js \
+  &quot;Schedule appointments for patients. Alice takes warfarin, Bob takes aspirin. Ensure no drug interactions.&quot;
+</code></pre>
+<p><strong>What Happens</strong>:</p>
+<ol>
+<li>Entity extraction: patients and drugs</li>
+<li>Entity grounding: drugs linked to Wikidata</li>
+<li>Relationship discovery: drug interaction data</li>
+<li>Constraint identification: interaction constraints</li>
+<li>Solution with safety considerations</li>
+</ol>
+<h3>Example 3: Resource Allocation</h3>
+<pre><code class="language-bash">node src/examples/run-mfr-session.js \
+  &quot;Allocate 3 servers to 5 tasks: database, web, cache, worker, backup. Database needs high memory.&quot;
+</code></pre>
+<h2>Step 6: Monitor the Session</h2>
+<p>Watch the MFR protocol phases:</p>
+<pre><code class="language-bash">tail -f logs/coordinator.log logs/mistral.log logs/data.log logs/prolog.log
+</code></pre>
+<p><strong>Phases You&#39;ll See</strong>:</p>
+<ol>
+<li>✅ Initialization</li>
+<li>🔍 Entity Discovery</li>
+<li>🔗 Relationship Discovery</li>
+<li>⚙️  Action Definition</li>
+<li>🚫 Constraint Identification</li>
+<li>🎯 Model Validation</li>
+<li>🧠 Constrained Reasoning</li>
+<li>✨ Solution Delivery</li>
+</ol>
+<h2>Understanding the Output</h2>
+<h3>Session Started</h3>
+<pre><code>🎯 [Coordinator]
+MFR session started: session-abc123
+Broadcasting contribution request...
+</code></pre>
+<h3>Agent Contributions</h3>
+<pre><code>💬 [Mistral]
+Extracted 3 entities: Alice, Bob, Carol
+
+💬 [Data]
+Grounded entity Alice to http://www.wikidata.org/entity/Q...
+
+💬 [Prolog]
+Defined 2 actions: schedule, assign
+
+💬 [Semem]
+Identified 1 constraint: temporal availability
+</code></pre>
+<h3>Validation</h3>
+<pre><code>🎯 [Coordinator]
+Model validation: PASS
+Entities: 3, Actions: 2, Constraints: 1
+Transitioning to constrained reasoning...
+</code></pre>
+<h3>Solution</h3>
+<pre><code>🎯 [Coordinator]
+Solution generated:
+1. Schedule Alice at 9:00 AM
+2. Schedule Bob at 2:00 PM
+3. Schedule Carol at 11:00 AM
+</code></pre>
+<h2>Common Patterns</h2>
+<h3>Pattern 1: Scheduling with Constraints</h3>
+<p><strong>Problem Template</strong>:</p>
+<pre><code>Schedule [entities] with [constraints].
+[Entity 1] requires/prefers [constraint 1].
+[Entity 2] must/cannot [constraint 2].
+</code></pre>
+<p><strong>Example</strong>:</p>
+<pre><code>Schedule meetings for team members.
+Alice is only available in mornings.
+Bob needs 2-hour slots.
+Carol can&#39;t meet before Bob.
+</code></pre>
+<h3>Pattern 2: Resource Allocation</h3>
+<p><strong>Problem Template</strong>:</p>
+<pre><code>Allocate [resources] to [tasks].
+[Task 1] needs [requirement 1].
+[Task 2] requires [requirement 2].
+</code></pre>
+<p><strong>Example</strong>:</p>
+<pre><code>Allocate 3 servers to 5 tasks.
+Database needs high memory.
+Web server needs good network.
+Cache and worker can share.
+</code></pre>
+<h3>Pattern 3: Planning with Dependencies</h3>
+<p><strong>Problem Template</strong>:</p>
+<pre><code>Plan [sequence] from [start] to [end].
+[Step 1] must happen before [Step 2].
+[Constraint] applies to [step].
+</code></pre>
+<p><strong>Example</strong>:</p>
+<pre><code>Plan project phases for product launch.
+Requirements must be complete before design.
+Design must be approved before development.
+Budget is $100k, deadline is 6 months.
+</code></pre>
+<h2>Troubleshooting</h2>
+<h3>Agents Not Responding</h3>
+<p><strong>Check</strong>: Are all agents running?</p>
+<pre><code class="language-bash">ps aux | grep node
+</code></pre>
+<p><strong>Fix</strong>: Restart the system</p>
+<pre><code class="language-bash">pkill -f &#39;node src/services&#39;
+./start-mfr-system.sh
+</code></pre>
+<h3>Session Timeout</h3>
+<p><strong>Check</strong>: API rate limits</p>
+<ul>
+<li>Mistral API: 60 requests/minute</li>
+<li>Wikidata: Rate limited</li>
+</ul>
+<p><strong>Fix</strong>: Simplify problem or add delays</p>
+<pre><code class="language-javascript">// In run-mfr-session.js, increase timeout
+const TIMEOUT_MS = 120000; // 2 minutes
+</code></pre>
+<h3>Validation Failures</h3>
+<p><strong>Check</strong>: Model completeness</p>
+<pre><code class="language-bash">grep &quot;validation&quot; logs/coordinator.log
+</code></pre>
+<p><strong>Fix</strong>: Ensure all agents contributed</p>
+<ul>
+<li>Entities (Mistral + Data)</li>
+<li>Actions (Prolog)</li>
+<li>Constraints (Semem)</li>
+<li>Goals (Mistral)</li>
+</ul>
+<h3>Connection Errors</h3>
+<p><strong>Check</strong>: XMPP server status</p>
+<pre><code class="language-bash">prosodyctl status
+</code></pre>
+<p><strong>Fix</strong>: Restart Prosody</p>
+<pre><code class="language-bash">sudo systemctl restart prosody
+</code></pre>
+<h2>Next Steps</h2>
+<h3>1. Run Integration Test</h3>
+<pre><code class="language-bash">node src/examples/test-mfr-session.js
+</code></pre>
+<p>This comprehensive test validates the entire MFR flow.</p>
+<h3>2. Try Complex Problems</h3>
+<p><strong>Multi-Constraint Scheduling</strong>:</p>
+<pre><code class="language-bash">node src/examples/run-mfr-session.js \
+  &quot;Schedule 5 tasks with resource constraints, time dependencies, and priority ordering. Task A requires resource X and must complete before Task B. Task C has highest priority. Tasks D and E can run in parallel but need separate resources.&quot;
+</code></pre>
+<p><strong>Supply Chain Optimization</strong>:</p>
+<pre><code class="language-bash">node src/examples/run-mfr-session.js \
+  &quot;Optimize delivery routes for 3 trucks serving 10 locations. Truck 1 has capacity 100, Truck 2 has capacity 150, Truck 3 has capacity 200. Location A needs delivery before 10 AM. Locations B and C must use same truck.&quot;
+</code></pre>
+<h3>3. Extend the System</h3>
+<p><strong>Add Custom Agent</strong>:</p>
+<ol>
+<li>Create provider in <code>src/agents/providers/</code></li>
+<li>Implement <code>handleMfrContributionRequest()</code></li>
+<li>Create profile in <code>config/agents/</code></li>
+<li>Add to <code>start-mfr-system.sh</code></li>
+</ol>
+<p><strong>Add Custom Constraints</strong>:</p>
+<ol>
+<li>Edit <code>vocabs/mfr-shapes.ttl</code></li>
+<li>Add new SHACL shapes</li>
+<li>Restart coordinator</li>
+</ol>
+<p><strong>Add Custom Ontology</strong>:</p>
+<ol>
+<li>Edit <code>vocabs/mfr-ontology.ttl</code></li>
+<li>Add new classes/properties</li>
+<li>Update agent providers</li>
+</ol>
+<h3>4. Monitor Performance</h3>
+<p><strong>Session Statistics</strong>:</p>
+<pre><code class="language-javascript">const stats = store.getSessionStatistics(sessionId);
+console.log(`Duration: ${stats.durationMs}ms`);
+console.log(`Contributors: ${stats.contributors.length}`);
+console.log(`Contributions: ${stats.contributions}`);
+</code></pre>
+<p><strong>Phase Timing</strong>:</p>
+<pre><code class="language-javascript">const entityDiscoveryTime = state.getPhaseDuration(MFR_PHASES.ENTITY_DISCOVERY);
+const validationTime = state.getPhaseDuration(MFR_PHASES.MODEL_VALIDATION);
+console.log(`Entity discovery: ${entityDiscoveryTime}ms`);
+console.log(`Validation: ${validationTime}ms`);
+</code></pre>
+<h2>Tips for Best Results</h2>
+<ol>
+<li><p><strong>Be Specific</strong>: Clear problem descriptions get better results</p>
+<ul>
+<li>❌ &quot;Schedule some meetings&quot;</li>
+<li>✅ &quot;Schedule 3 meetings for Alice, Bob, and Carol with specific time constraints&quot;</li>
+</ul>
+</li>
+<li><p><strong>State Constraints Explicitly</strong>: Don&#39;t assume agents will infer constraints</p>
+<ul>
+<li>❌ &quot;Schedule meetings efficiently&quot;</li>
+<li>✅ &quot;Schedule meetings. Alice only available mornings. Bob needs 2-hour slots.&quot;</li>
+</ul>
+</li>
+<li><p><strong>Use Domain Terms</strong>: Agents recognize common domain vocabulary</p>
+<ul>
+<li>Medical: patient, drug, interaction, appointment</li>
+<li>Logistics: truck, route, capacity, delivery</li>
+<li>Project: task, resource, dependency, milestone</li>
+</ul>
+</li>
+<li><p><strong>Start Simple</strong>: Test with simple problems before complex ones</p>
+<ul>
+<li>Start: 3 entities, 2 constraints</li>
+<li>Then: 5 entities, 4 constraints, 2 dependencies</li>
+<li>Finally: 10+ entities, complex constraint networks</li>
+</ul>
+</li>
+<li><p><strong>Check Logs</strong>: Agents log their reasoning</p>
+<pre><code class="language-bash">grep &quot;extracted&quot; logs/mistral.log
+grep &quot;grounded&quot; logs/data.log
+grep &quot;defined&quot; logs/prolog.log
+grep &quot;constraint&quot; logs/semem.log
+</code></pre>
+</li>
+</ol>
+<h2>Resources</h2>
+<ul>
+<li><strong>Architecture</strong>: <code>docs/mfr-architecture-overview.md</code></li>
+<li><strong>Usage Guide</strong>: <code>docs/mfr-usage-guide.md</code></li>
+<li><strong>API Reference</strong>: <code>docs/mfr-api-reference.md</code></li>
+<li><strong>Implementation</strong>: <code>MFR_IMPLEMENTATION_SUMMARY.md</code></li>
+</ul>
+<h2>Support</h2>
+<ul>
+<li>Check <code>logs/</code> directory for detailed agent activity</li>
+<li>Review XMPP server logs for connection issues</li>
+<li>Examine RDF models in coordinator logs</li>
+<li>File issues on project repository</li>
+</ul>
+<hr>
+<p><strong>Congratulations!</strong> You&#39;ve completed the MFR Quick Start. You now have a working multi-agent system that collaboratively constructs explicit problem models before reasoning.</p>
+
+    </main>
+  </body>
+</html>

@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Lingue Integration Guide</title>
+    <style>
+      body { margin: 0; padding: 48px 20px; font-family: "Helvetica Neue", Arial, sans-serif; background: #f7f4ef; color: #1f1b16; }
+      main { max-width: 920px; margin: 0 auto; background: #fffdf9; padding: 48px; border: 1px solid #e3d8c7; box-shadow: 6px 8px 0 #e3d8c7; }
+      h1, h2, h3 { font-weight: 600; margin-top: 2rem; }
+      pre { background: #1f1b16; color: #f7f4ef; padding: 16px; overflow: auto; }
+      code { font-family: "SFMono-Regular", ui-monospace, Menlo, Monaco, Consolas, monospace; }
+      a { color: #8a3b12; }
+      img { max-width: 100%; height: auto; }
+      table { border-collapse: collapse; width: 100%; }
+      th, td { border: 1px solid #e3d8c7; padding: 8px; }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>Lingue Integration Guide</h1>
+<p>This guide describes how to advertise Lingue capabilities, negotiate modes, and exchange structured payloads.</p>
+<h2>Capability Advertisement</h2>
+<p>Agents should advertise Lingue support via XEP-0030 disco#info. Features are defined in <code>src/lib/lingue/constants.js</code>.</p>
+<p>Example features:</p>
+<ul>
+<li><code>http://purl.org/stuff/lingue/feature/lang/human-chat</code></li>
+<li><code>http://purl.org/stuff/lingue/feature/lang/ibis-text</code></li>
+<li><code>http://purl.org/stuff/lingue/feature/lang/prolog-program</code></li>
+<li><code>http://purl.org/stuff/lingue/feature/lang/profile-exchange</code></li>
+</ul>
+<h2>Profile Declarations</h2>
+<p>Add Lingue properties to each agent in <code>config/agents/*.ttl</code>:</p>
+<pre><code class="language-turtle">@prefix lng: &lt;http://purl.org/stuff/lingue/&gt; .
+
+&lt;#agent&gt; a lng:Agent ;
+  lng:supports lng:HumanChat, lng:IBISText ;
+  lng:prefers lng:HumanChat ;
+  lng:profile &lt;#agent-lingue-profile&gt; .
+</code></pre>
+<h2>Negotiation Flow</h2>
+<ol>
+<li>Sender offers one or more modes.</li>
+<li>Receiver selects a supported mode.</li>
+<li>Both sides store the active mode for the peer.</li>
+</ol>
+<p>The <code>LingueNegotiator</code> handles offer/accept stanzas and routes structured messages via handlers.</p>
+<h2>Handlers</h2>
+<p>Handlers implement mode-specific payloads:</p>
+<ul>
+<li><code>HumanChatHandler</code> - text/plain</li>
+<li><code>IBISTextHandler</code> - text/plain + text/turtle payload</li>
+<li><code>PrologProgramHandler</code> - text/x-prolog payload</li>
+<li><code>ProfileExchangeHandler</code> - text/turtle payload</li>
+</ul>
+<p>Register handlers based on <code>profile.supportsLingueMode()</code> and pass them into <code>LingueNegotiator</code>.</p>
+<h2>ASK/TELL Semantics</h2>
+<p>Use IBIS RDF for ASK/TELL:</p>
+<ul>
+<li><code>ASK</code> maps to <code>ibis:Issue</code> or <code>ibis:Question</code></li>
+<li><code>TELL</code> maps to <code>ibis:Position</code> or <code>ibis:Argument</code></li>
+</ul>
+<p>Keep MUC messages human-readable with a short <code>summary</code> plus payload attachments.</p>
+<h2>Prolog Agent Notes</h2>
+<p>The Prolog agent uses tau-prolog and supports:</p>
+<ul>
+<li><code>tell &lt;clauses&gt;</code> to load clauses into the session.</li>
+<li><code>ask &lt;query&gt;</code> to run a query.</li>
+<li>Inline program + query using <code>?-</code> (program above, query below).</li>
+</ul>
+<p>The Lingue <code>PrologProgram</code> handler can carry program text in structured payloads.</p>
+
+    </main>
+  </body>
+</html>

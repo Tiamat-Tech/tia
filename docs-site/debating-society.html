@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>debating-society</title>
+    <style>
+      body { margin: 0; padding: 48px 20px; font-family: "Helvetica Neue", Arial, sans-serif; background: #f7f4ef; color: #1f1b16; }
+      main { max-width: 920px; margin: 0 auto; background: #fffdf9; padding: 48px; border: 1px solid #e3d8c7; box-shadow: 6px 8px 0 #e3d8c7; }
+      h1, h2, h3 { font-weight: 600; margin-top: 2rem; }
+      pre { background: #1f1b16; color: #f7f4ef; padding: 16px; overflow: auto; }
+      code { font-family: "SFMono-Regular", ui-monospace, Menlo, Monaco, Consolas, monospace; }
+      a { color: #8a3b12; }
+      img { max-width: 100%; height: auto; }
+      table { border-collapse: collapse; width: 100%; }
+      th, td { border: 1px solid #e3d8c7; padding: 8px; }
+    </style>
+  </head>
+  <body>
+    <main>
+      <p>The debating society is an experiment in a mixed environment of intelligent agents (including humans).
+There will be two key agents with specific roles : Chair and Recorder
+Chair will coordinate inter-agent exchange of profiles, so eg. Semem may declare in Lingue RDF vocabulary that it has the capability of looking things up in wikidata, Mistral can translate between plain English and IBIS declarations and Recorder will declare that it is taking minutes. 
+Exchanges will operate through a baseline of regular human-style chat but the Chair will periodically poll for consensus, ask for opinions and statements of fact or other such IBIS operation.
+A debate will be initiated with a question, for example &quot;Is the Earth flat?&quot;. The Chair will decide from onsensus when the Issue is resolved.
+The system will reuse the existing code infrastructure wherever possible, favoring a modular approach. Any new operational code of significance will be given Vitest tests. Separation of concerned will be maintained, so the eg. prompt construction will be carried out through templating of separate text files, not inline with the code. RDF operations will make use of the standard RDF libs in the project, again, no inline RDF or SPARQL.  </p>
+<h2>Implementation Plan</h2>
+<ol>
+<li>Profiles &amp; Roles</li>
+</ol>
+<ul>
+<li>Add dedicated agent profiles (config/agents) for Chair and Recorder (distinct XMPP accounts/resources). Chair orchestrates; Recorder stores minutes.</li>
+<li>Keep Mistral and Semem as supporting agents; ensure Lingue/IBIS enabled for all participants.</li>
+</ul>
+<ol start="2">
+<li>Chair Orchestration</li>
+</ol>
+<ul>
+<li>Chair listens for debate initiation (<code>Issue: ...</code> or a “start debate” trigger).</li>
+<li>Periodically polls for consensus, requests Positions/Arguments, and posts a brief IBIS summary using <code>summarizeIBIS</code>.</li>
+<li>Uses mention detection only from profile nickname; no hardcoded aliases.</li>
+</ul>
+<ol start="3">
+<li>Recorder Logging</li>
+</ol>
+<ul>
+<li>Recorder captures MUC traffic and persists structured minutes:<ul>
+<li>Store IBIS summaries and raw statements via Semem <code>/tell</code> (using existing Semem provider or Recorder-specific).</li>
+<li>Use Lingue detection to tag Issues/Positions/Arguments.</li>
+</ul>
+</li>
+</ul>
+<ol start="4">
+<li>IBIS/Lingue Integration</li>
+</ol>
+<ul>
+<li>Reuse <code>ibis-detect</code> and Lingue summaries; ensure <code>LINGUE_ENABLED=true</code> for Chair/Recorder.</li>
+<li>Add Vitest coverage for: IBIS detection -&gt; summary -&gt; Recorder store; Chair prompting for Positions -&gt; response flow.</li>
+</ul>
+<ol start="5">
+<li>Prompt/Template Separation</li>
+</ol>
+<ul>
+<li>Store Chair/Recorder prompts in templates (e.g., <code>config/prompts/chair.txt</code>, <code>recorder.txt</code>) not inline.</li>
+<li>Chair prompt covers polling cadence, consensus checks, and brevity.</li>
+</ul>
+<ol start="6">
+<li>Storage &amp; RDF</li>
+</ol>
+<ul>
+<li>Use existing Semem client for <code>/tell</code> (Recorder) and <code>/ask</code> (Chair retrieval).</li>
+<li>No inline RDF/SPARQL; rely on existing RDF libs if exporting IBIS structures later.</li>
+</ul>
+<ol start="7">
+<li>Start/Run</li>
+</ol>
+<ul>
+<li>Add profiles to <code>config/agents</code> for chair/recorder; launch via <code>start-all-agents.sh</code> or individual start scripts with <code>AGENT_PROFILE=&lt;name&gt;</code>.</li>
+<li>Ensure distinct XMPP users/resources to avoid “bot” identity collision.</li>
+<li>Debate-only start: use <code>./start-debate-agents.sh</code> (AGENTS=chair,recorder) for testing Chair/Recorder without other bots.</li>
+</ul>
+<ol start="8">
+<li>Testing</li>
+</ol>
+<ul>
+<li>Unit: prompt/template loading; IBIS detection path.</li>
+<li>Integration (when XMPP reachable): Chair responds to “start debate” and polls; Recorder stores summaries via Semem <code>/tell</code>.</li>
+</ul>
+<ol start="9">
+<li>Logging &amp; Monitoring</li>
+</ol>
+<ul>
+<li>Use logger-lite with file output and concise log level; add key events (debate started, poll issued, summary stored).</li>
+</ul>
+
+    </main>
+  </body>
+</html>

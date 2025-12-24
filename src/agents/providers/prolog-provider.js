@@ -9,6 +9,8 @@ export class PrologProvider {
     this.logger = logger;
     this.pl = null;
     this.session = null;
+    this.actionSchemas = new Map();
+    this.goalSchemas = new Map();
   }
 
   async ensureSession() {
@@ -87,7 +89,7 @@ export class PrologProvider {
 
   async handle({ command, content, reply }) {
     const cleaned = this.normalizeContent(content);
-    if (!cleaned) return "No input provided.";
+    if (!cleaned || !command) return null;
 
     if (command === "tell") {
       await this.consult(cleaned);
@@ -240,11 +242,12 @@ export class PrologProvider {
     ];
 
     actions.forEach((action, index) => {
-      const actionId = `action-${index + 1}`;
+      const slug = this.slugify(action.name || `action-${index + 1}`);
+      const actionId = `action-${this.slugify(this.nickname)}-${slug}-${index + 1}`;
       const actionUri = `<${MFR_NS}${sessionId}/${actionId}>`;
 
       lines.push(`${actionUri} a mfr:Action ;`);
-      lines.push(`  schema:name "${action.name}" ;`);
+      lines.push(`  mfr:actionName "${action.name}" ;`);
       lines.push(`  rdfs:label "${action.name}" ;`);
 
       if (action.description) {
@@ -276,6 +279,14 @@ export class PrologProvider {
     return lines.join('\n');
   }
 
+  slugify(value) {
+    return String(value || "")
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-+|-+$/g, "")
+      .replace(/--+/g, "-") || "action";
+  }
+
   /**
    * Generate state variable definitions in RDF
    * @param {Array<string>} stateVars - State variable names
@@ -295,7 +306,7 @@ export class PrologProvider {
     ];
 
     stateVars.forEach((varName, index) => {
-      const varId = `state-var-${index + 1}`;
+      const varId = `state-var-${this.slugify(this.nickname)}-${index + 1}`;
       const varUri = `<${MFR_NS}${sessionId}/${varId}>`;
 
       lines.push(`${varUri} a mfr:StateVariable ;`);
@@ -429,6 +440,69 @@ valid_sequence([Action|Rest], State) :-
 
     // Combine all contributions
     return contributions.join('\n\n');
+  }
+
+  /**
+   * Store structured action schema for later reasoning
+   * @param {string} sessionId - MFR session ID
+   * @param {Array<Object>} actions - Action schema list
+   * @param {Array<Object>} goals - Optional goal schema list
+   */
+  storeActionSchema(sessionId, actions = [], goals = []) {
+    if (!sessionId) return;
+    if (Array.isArray(actions) && actions.length > 0) {
+      this.actionSchemas.set(sessionId, actions);
+    }
+    if (Array.isArray(goals) && goals.length > 0) {
+      this.goalSchemas.set(sessionId, goals);
+    }
+  }
+
+  /**
+   * Handle structured action schema payloads
+   * @param {Object} payload - Structured schema payload
+   * @returns {Promise<string>} RDF contribution
+   */
+  async handleActionSchema(payload) {
+    const sessionId = payload?.sessionId;
+    const actions = payload?.actions || [];
+    const goals = payload?.goals || [];
+
+    if (!sessionId || actions.length === 0) {
+      return "";
+    }
+
+    this.storeActionSchema(sessionId, actions, goals);
+    return this.generateActionRdf(actions, sessionId);
+  }
+
+  /**
+   * Handle a solution request using stored action schema
+   * @param {Object} payload - Solution request payload
+   * @returns {Promise<Object|null>} Solution proposal payload
+   */
+  async handleSolutionRequest(payload) {
+    const sessionId = payload?.sessionId;
+    if (!sessionId) return null;
+
+    const actions = this.actionSchemas.get(sessionId) || [];
+    const goals = this.goalSchemas.get(sessionId) || [];
+
+    if (actions.length === 0) {
+      return {
+        success: false,
+        message: "No action schema available for solution generation",
+        plan: []
+      };
+    }
+
+    const modelSnippet = actions
+      .map((action) => `schema:name "${action.name}"`)
+      .join("\n");
+    return this.generateSolution(
+      modelSnippet,
+      goals.map((g) => g.goal || g)
+    );
   }
 
   /**

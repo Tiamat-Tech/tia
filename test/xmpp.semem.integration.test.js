@@ -2,29 +2,12 @@ import dotenv from "dotenv";
 import { describe, it, expect, beforeAll, afterAll } from "vitest";
 import { XmppRoomAgent } from "../src/lib/xmpp-room-agent.js";
 import { spawn } from "child_process";
+import { loadXmppTestConfig } from "./utils/xmpp-test-credentials.js";
 
 dotenv.config();
 
-const requiredEnv = [
-  "XMPP_SERVICE",
-  "XMPP_DOMAIN",
-  "XMPP_USERNAME",
-  "XMPP_PASSWORD",
-  "MUC_ROOM"
-];
-
-const missingEnv = requiredEnv.filter((key) => !process.env[key]);
+const { missingEnv, xmppConfig: XMPP_CONFIG, mucRoom: MUC_ROOM } = loadXmppTestConfig();
 const sememTestEnabled = process.env.RUN_SEMEM_BOT_TEST === "true";
-
-const XMPP_CONFIG = {
-  service: process.env.XMPP_SERVICE || "xmpp://localhost:5222",
-  domain: process.env.XMPP_DOMAIN || "xmpp",
-  username: process.env.XMPP_USERNAME || "dogbot",
-  password: process.env.XMPP_PASSWORD || "woofwoof",
-  tls: { rejectUnauthorized: false }
-};
-
-const MUC_ROOM = process.env.MUC_ROOM || "general@conference.xmpp";
 const testerNick =
   process.env.TEST_XMPP_NICKNAME || `SememTester-${Math.random().toString(16).slice(2, 8)}`;
 const sememNick =
@@ -71,8 +54,8 @@ function findMessageFrom(senderNickname, textIncludes) {
 }
 
 if (missingEnv.length || !sememTestEnabled) {
-  describe.skip("Semem tell/ask integration (env not provided or disabled)", () => {
-    it("skipped because required env vars are missing or RUN_SEMEM_BOT_TEST!=true", () => {
+  describe.skip("Semem tell/ask integration (credentials not provided or disabled)", () => {
+    it("skipped because required credentials are missing or RUN_SEMEM_BOT_TEST!=true", () => {
       expect(true).toBe(true);
     });
   });

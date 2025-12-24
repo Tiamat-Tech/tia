@@ -13,6 +13,7 @@ import {
 } from "../../lib/mfr/constants.js";
 import { LANGUAGE_MODES } from "../../lib/lingue/constants.js";
 import { randomUUID } from "crypto";
+import { xml } from "@xmpp/client";
 
 /**
  * Coordinator provider for MFR protocol orchestration
@@ -224,7 +225,10 @@ export class CoordinatorProvider extends BaseProvider {
 
     const state = this.activeSessions.get(sessionId);
     if (!state) {
-      return `Error: Session ${sessionId} not found`;
+      this.logger.warn?.(
+        `[CoordinatorProvider] Ignoring contribution for unknown session ${sessionId}`
+      );
+      return null;
     }
 
     const agentId = metadata?.sender || "unknown";
@@ -257,7 +261,7 @@ export class CoordinatorProvider extends BaseProvider {
       expected.add(agentId);
     }
 
-    return `Contribution received from ${agentId}`;
+    return null;
   }
 
   /**
@@ -365,23 +369,62 @@ export class CoordinatorProvider extends BaseProvider {
       return `Error: Model not found for session ${sessionId}`;
     }
 
+    // Debug: Check what's in the model
+    const quadCount = RdfUtils.countQuads(model);
+    const modelUri = `http://purl.org/stuff/mfr/model/${sessionId}`;
+    const hasEntityPredicate = `http://purl.org/stuff/mfr/hasEntity`;
+    const entityLinks = RdfUtils.queryBySubject(model, modelUri).filter(
+      q => q.predicate.value === hasEntityPredicate
+    );
+    this.logger.info?.(
+      `[CoordinatorProvider] Model has ${quadCount} quads, ${entityLinks.length} hasEntity links`
+    );
+
     // Validate
     const report = await this.validator.validateCompleteness(model);
 
     // Check for conflicts
     const conflicts = await this.merger.detectConflicts(model);
 
+    // Check if we have only non-critical violations
+    const hasErrors = report.violations.some(v => {
+      const severity = this.validator.normalizeTerm(v.resultSeverity);
+      return severity === "Violation" || severity === "http://www.w3.org/ns/shacl#Violation";
+    });
+
     if (report.conforms && conflicts.length === 0) {
-      // Valid model, proceed to reasoning
+      // Valid model, no conflicts - proceed to reasoning
       state.transition(MFR_PHASES.CONSTRAINED_REASONING);
 
       const message = `Model validation passed for ${sessionId}\n${RdfUtils.countQuads(model)} quads validated\nProceeding to reasoning phase...`;
 
       this.logger.info?.(`[CoordinatorProvider] ${message}`);
+      await this.sendStatusMessage(message);
+
+      const reasoningMessage = await this.initiateReasoning(sessionId, {}, () => {});
+      if (reasoningMessage) {
+        await this.sendStatusMessage(reasoningMessage);
+      }
+
+      return message;
+    } else if (!hasErrors && conflicts.length === 0) {
+      // Only warnings/info, no conflicts - proceed with caution
+      state.transition(MFR_PHASES.CONSTRAINED_REASONING);
+
+      const summary = this.validator.formatValidationSummary(report);
+      const message = `Model validation completed with warnings for ${sessionId}:\n${summary}\n\nProceeding to reasoning phase...`;
+
+      this.logger.info?.(`[CoordinatorProvider] ${message}`);
+      await this.sendStatusMessage(message);
+
+      const reasoningMessage = await this.initiateReasoning(sessionId, {}, () => {});
+      if (reasoningMessage) {
+        await this.sendStatusMessage(reasoningMessage);
+      }
 
       return message;
     } else {
-      // Validation failed or conflicts detected
+      // Validation errors or conflicts detected
       state.transition(MFR_PHASES.CONFLICT_NEGOTIATION, {
         report,
         conflicts
@@ -393,7 +436,9 @@ export class CoordinatorProvider extends BaseProvider {
           ? `\n\nDetected ${conflicts.length} conflict(s):\n${conflicts.map((c) => `- ${c.message}`).join("\n")}`
           : "";
 
-      return `Model validation issues for ${sessionId}:\n${summary}${conflictSummary}`;
+      const message = `Model validation issues for ${sessionId}:\n${summary}${conflictSummary}`;
+      await this.sendStatusMessage(message);
+      return message;
     }
   }
 
@@ -457,7 +502,13 @@ export class CoordinatorProvider extends BaseProvider {
 
     if (this.negotiator && targetRooms.size > 0) {
       const summary = `MFR solution request for ${sessionId}`;
+      this.logger.info?.(
+        `[CoordinatorProvider] Broadcasting solution request to ${targetRooms.size} room(s)`
+      );
       for (const roomJid of targetRooms) {
+        this.logger.info?.(
+          `[CoordinatorProvider] Sending solution request to ${roomJid}`
+        );
         await this.negotiator.send(roomJid, {
           mode: LANGUAGE_MODES.MODEL_NEGOTIATION,
           payload: message,
@@ -472,6 +523,181 @@ export class CoordinatorProvider extends BaseProvider {
     }
 
     return `Solution request broadcast for ${sessionId}\nWaiting for agent solutions...`;
+  }
+
+  /**
+   * Handle negotiation payloads (solution proposals, etc.)
+   * @param {Object} payload - Negotiation payload
+   * @param {Object} metadata - Metadata (sender, etc.)
+   * @returns {Promise<string|null>} Optional response string
+   */
+  async handleNegotiationPayload(payload, metadata = {}) {
+    const messageType = payload?.messageType;
+    if (messageType === MFR_MESSAGE_TYPES.SOLUTION_PROPOSAL) {
+      return await this.handleSolutionProposal(payload, metadata);
+    }
+    return null;
+  }
+
+  /**
+   * Track and synthesize solution proposals
+   * @param {Object} payload - Solution proposal payload
+   * @param {Object} metadata - Metadata including sender
+   * @returns {Promise<string|null>} Synthesis summary (if available)
+   */
+  async handleSolutionProposal(payload, metadata = {}) {
+    const sessionId = payload?.sessionId || metadata?.sessionId;
+    if (!sessionId) {
+      return null;
+    }
+
+    const solution = payload?.solution;
+    if (!solution) {
+      return null;
+    }
+
+    const sender = metadata?.sender || "unknown";
+    this.logger.info?.(
+      `[CoordinatorProvider] Received solution proposal from ${sender} for ${sessionId}`
+    );
+
+    const existing = this.solutions.get(sessionId) || [];
+    existing.push({
+      sender,
+      solution,
+      receivedAt: new Date().toISOString()
+    });
+    this.solutions.set(sessionId, existing);
+
+    const state = this.activeSessions.get(sessionId);
+    if (state && !state.isComplete()) {
+      state.transition(MFR_PHASES.COMPLETE, {
+        solutionCount: existing.length
+      });
+    }
+
+    const summary = this.summarizeSolutions(sessionId, existing);
+    await this.broadcastSessionComplete(sessionId, existing);
+    await this.sendSolutionMessage(existing);
+    return `MFR session complete: ${sessionId}\n${summary}`;
+  }
+
+  async sendSolutionMessage(solutions = []) {
+    if (solutions.length === 0) return;
+
+    const lines = ["", "=== SOLUTION ===", ""];
+
+    solutions.forEach((entry, index) => {
+      const solution = entry.solution;
+      const sender = entry.sender;
+
+      if (solutions.length > 1) {
+        lines.push(`Solution #${index + 1} (from ${sender}):`);
+      } else {
+        lines.push(`Solution from ${sender}:`);
+      }
+
+      if (solution.message) {
+        lines.push(`  ${solution.message}`);
+      }
+
+      if (Array.isArray(solution.plan) && solution.plan.length > 0) {
+        lines.push(`  Plan steps:`);
+        solution.plan.forEach((step, i) => {
+          lines.push(`    ${i + 1}. ${step}`);
+        });
+      }
+
+      if (Array.isArray(solution.satisfiesGoals) && solution.satisfiesGoals.length > 0) {
+        lines.push(`  Achieves goals:`);
+        solution.satisfiesGoals.forEach((g) => {
+          const status = g.satisfied ? "✓" : "✗";
+          lines.push(`    ${status} ${g.goal}`);
+        });
+      }
+
+      if (solution.success === false) {
+        lines.push(`  Status: ⚠️  ${solution.message || "Failed to generate solution"}`);
+      }
+
+      lines.push("");
+    });
+
+    const message = lines.join("\n");
+    await this.sendStatusMessage(message);
+  }
+
+  /**
+   * Broadcast a structured session complete payload
+   * @param {string} sessionId - Session ID
+   * @param {Array<Object>} solutions - Solution entries
+   */
+  async broadcastSessionComplete(sessionId, solutions = []) {
+    const payload = {
+      messageType: MFR_MESSAGE_TYPES.SESSION_COMPLETE,
+      sessionId,
+      solutions: solutions.map((entry) => entry.solution),
+      timestamp: new Date().toISOString()
+    };
+
+    const summary = `Session complete ${sessionId} (${solutions.length} solution(s))`;
+
+    if (this.negotiator && this.primaryRoomJid) {
+      await this.negotiator.send(this.primaryRoomJid, {
+        mode: LANGUAGE_MODES.MODEL_NEGOTIATION,
+        payload,
+        summary
+      });
+      return;
+    }
+
+    if (this.multiRoomManager) {
+      await this.multiRoomManager.broadcastForPhase(
+        MFR_PHASES.SOLUTION_EXPLANATION,
+        JSON.stringify(payload)
+      );
+    }
+  }
+
+  /**
+   * Create a concise solution summary for the session
+   * @param {string} sessionId - Session ID
+   * @param {Array<Object>} solutions - Solution entries
+   * @returns {string} Summary text
+   */
+  summarizeSolutions(sessionId, solutions = []) {
+    const lines = [
+      `Solutions received: ${solutions.length}`
+    ];
+
+    solutions.forEach((entry, index) => {
+      const label = entry.solution?.message || "Solution proposal";
+      lines.push(`${index + 1}. ${label} (from ${entry.sender})`);
+
+      const plan = entry.solution?.plan;
+      if (Array.isArray(plan) && plan.length > 0) {
+        lines.push(`   Plan: ${plan.join(", ")}`);
+      }
+    });
+
+    return lines.join("\n");
+  }
+
+  /**
+   * Send a status message to the primary room if available
+   * @param {string} message - Status message
+   */
+  async sendStatusMessage(message) {
+    if (!message) return;
+    if (this.negotiator?.xmppClient && this.primaryRoomJid) {
+      await this.negotiator.xmppClient.send(
+        xml(
+          "message",
+          { to: this.primaryRoomJid, type: "groupchat" },
+          xml("body", {}, message)
+        )
+      );
+    }
   }
 
   /**

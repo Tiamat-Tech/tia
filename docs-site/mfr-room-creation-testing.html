@@ -1,0 +1,315 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>MFR Room Creation Testing</title>
+    <style>
+      body { margin: 0; padding: 48px 20px; font-family: "Helvetica Neue", Arial, sans-serif; background: #f7f4ef; color: #1f1b16; }
+      main { max-width: 920px; margin: 0 auto; background: #fffdf9; padding: 48px; border: 1px solid #e3d8c7; box-shadow: 6px 8px 0 #e3d8c7; }
+      h1, h2, h3 { font-weight: 600; margin-top: 2rem; }
+      pre { background: #1f1b16; color: #f7f4ef; padding: 16px; overflow: auto; }
+      code { font-family: "SFMono-Regular", ui-monospace, Menlo, Monaco, Consolas, monospace; }
+      a { color: #8a3b12; }
+      img { max-width: 100%; height: auto; }
+      table { border-collapse: collapse; width: 100%; }
+      th, td { border: 1px solid #e3d8c7; padding: 8px; }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>MFR Room Creation Testing</h1>
+<h2>Problem</h2>
+<p>The original <code>src/examples/create-mfr-rooms.js</code> script reports success when rooms are created, but doesn&#39;t actually verify that the rooms persist and are functional. The script:</p>
+<ol>
+<li>Joins/creates the room</li>
+<li>Sends a configuration message</li>
+<li>Sends a test message</li>
+<li>Exits and reports success</li>
+</ol>
+<p><strong>Issue</strong>: The script assumes success based on receiving presence stanzas, but doesn&#39;t verify:</p>
+<ul>
+<li>The room actually persists after the script exits</li>
+<li>Other users can join the room</li>
+<li>The room is properly configured</li>
+<li>The room information is queryable</li>
+</ul>
+<h2>Solution</h2>
+<p>Created a comprehensive integration test (<code>test/integration/mfr-room-creation.test.js</code>) that:</p>
+<h3>Phase 1: Room Creation</h3>
+<ul>
+<li>Connects as admin user</li>
+<li>Attempts to create/join each MFR room</li>
+<li>Configures rooms as instant rooms (publicly accessible)</li>
+<li>Sends test messages</li>
+<li>Captures status codes to confirm creation (status 201)</li>
+</ul>
+<h3>Phase 2: Verification</h3>
+<ul>
+<li>Connects as a <strong>different test user</strong></li>
+<li>Attempts to join each room</li>
+<li>Verifies rooms are accessible by non-admin users</li>
+<li>Detects &quot;item-not-found&quot; errors (room doesn&#39;t exist)</li>
+<li>Confirms presence stanzas (room exists and is joinable)</li>
+</ul>
+<h3>Phase 3: Information Query</h3>
+<ul>
+<li>Queries room disco#info for each room</li>
+<li>Retrieves room identities and features</li>
+<li>Confirms rooms are discoverable and queryable</li>
+<li>Provides detailed room metadata</li>
+</ul>
+<h2>Usage</h2>
+<h3>Quick Test</h3>
+<pre><code class="language-bash">./test-mfr-rooms.sh
+</code></pre>
+<h3>Manual Test</h3>
+<pre><code class="language-bash"># With default credentials
+node --test test/integration/mfr-room-creation.test.js
+
+# With custom credentials
+XMPP_USERNAME=admin \
+XMPP_PASSWORD=yourpass \
+XMPP_TEST_USERNAME=testuser \
+XMPP_TEST_PASSWORD=testpass \
+node --test test/integration/mfr-room-creation.test.js
+</code></pre>
+<h2>Test Output</h2>
+<h3>Successful Test</h3>
+<pre><code>=== MFR Room Creation Integration Test ===
+
+Creating room: mfr-construct@conference.tensegrity.it
+  Connected as admin@tensegrity.it
+  ✅ Joined room: mfr-construct@conference.tensegrity.it
+  🎉 Room created (status 201): mfr-construct@conference.tensegrity.it
+  ✅ Room configured: mfr-construct@conference.tensegrity.it
+  ✅ Room creation completed
+
+[... similar for other rooms ...]
+
+=== Verification Phase ===
+
+Verifying room: mfr-construct@conference.tensegrity.it
+  ✅ Verified room exists: mfr-construct@conference.tensegrity.it
+
+[... similar for other rooms ...]
+
+=== Room Information Query ===
+
+Querying room info: mfr-construct@conference.tensegrity.it
+  ✅ Room info retrieved
+     Identities: 1
+     Features: 10+
+
+[... similar for other rooms ...]
+
+=== Test Summary ===
+
+Room Creation:
+  ✅ mfr-construct@conference.tensegrity.it: Created
+  ✅ mfr-validate@conference.tensegrity.it: Created
+  ✅ mfr-reason@conference.tensegrity.it: Created
+
+Room Verification:
+  ✅ mfr-construct@conference.tensegrity.it: Exists
+  ✅ mfr-validate@conference.tensegrity.it: Exists
+  ✅ mfr-reason@conference.tensegrity.it: Exists
+
+Room Information:
+  ✅ mfr-construct@conference.tensegrity.it: Available
+  ✅ mfr-validate@conference.tensegrity.it: Available
+  ✅ mfr-reason@conference.tensegrity.it: Available
+
+=== Test Result ===
+All rooms created: ✅ YES
+All rooms verified: ✅ YES
+All rooms queryable: ✅ YES
+
+✅ Integration test PASSED - All MFR rooms exist and are functional
+</code></pre>
+<h3>Failed Test</h3>
+<p>If rooms don&#39;t exist:</p>
+<pre><code>Room Verification:
+  ❌ mfr-construct@conference.tensegrity.it: Not found
+  ...
+
+=== Test Result ===
+All rooms created: ✅ YES
+All rooms verified: ❌ NO
+All rooms queryable: ❌ NO
+
+AssertionError: All MFR rooms should be verified to exist
+</code></pre>
+<h2>What the Test Checks</h2>
+<h3>1. Room Creation (Admin User)</h3>
+<ul>
+<li>✅ Connection successful</li>
+<li>✅ Presence stanza received (joined room)</li>
+<li>✅ Status code 201 received (room created)</li>
+<li>✅ Configuration IQ result received (room configured)</li>
+<li>✅ Test message sent successfully</li>
+</ul>
+<h3>2. Room Verification (Test User)</h3>
+<ul>
+<li>✅ Test user can connect</li>
+<li>✅ Test user can join the room</li>
+<li>✅ Presence stanza received (room is accessible)</li>
+<li>❌ &quot;item-not-found&quot; error NOT received (room exists)</li>
+</ul>
+<h3>3. Room Information Query</h3>
+<ul>
+<li>✅ Disco#info query successful</li>
+<li>✅ Room identities retrieved (conference, text)</li>
+<li>✅ Room features retrieved (muc features)</li>
+<li>✅ Room is discoverable in server listings</li>
+</ul>
+<h2>Troubleshooting</h2>
+<h3>Rooms Not Persisting</h3>
+<p><strong>Symptom</strong>: Test shows rooms created but verification fails</p>
+<p><strong>Possible Causes</strong>:</p>
+<ol>
+<li><strong>Memory-only rooms</strong>: Prosody configured to not persist rooms</li>
+<li><strong>Room destruction</strong>: Rooms destroyed when last occupant leaves</li>
+<li><strong>Configuration issue</strong>: Room not properly configured as persistent</li>
+</ol>
+<p><strong>Solutions</strong>:</p>
+<ol>
+<li>Check Prosody MUC configuration in <code>/etc/prosody/conf.d/conference.cfg.lua</code> (or <code>/etc/prosody/prosody.cfg.lua</code>):</li>
+</ol>
+<pre><code class="language-lua">Component &quot;conference.tensegrity.it&quot; &quot;muc&quot;
+    modules_enabled = { &quot;muc_mam&quot; }
+
+    -- CRITICAL: These settings are required for MFR rooms to persist
+    muc_room_default_persistent = true
+    muc_room_default_public = true
+    muc_room_default_members_only = false
+</code></pre>
+<ol start="2">
+<li>Restart Prosody:</li>
+</ol>
+<pre><code class="language-bash">sudo systemctl restart prosody
+</code></pre>
+<ol start="3">
+<li>Verify configuration loaded:</li>
+</ol>
+<pre><code class="language-bash">prosodyctl check
+</code></pre>
+<h3>Authentication Failures</h3>
+<p><strong>Symptom</strong>: &quot;not-authorized&quot; errors</p>
+<p><strong>Solutions</strong>:</p>
+<ol>
+<li>Ensure admin user exists:</li>
+</ol>
+<pre><code class="language-bash">prosodyctl adduser admin@tensegrity.it
+</code></pre>
+<ol start="2">
+<li>Ensure test user exists:</li>
+</ol>
+<pre><code class="language-bash">prosodyctl adduser testuser@tensegrity.it
+</code></pre>
+<ol start="3">
+<li>Check passwords match environment variables</li>
+</ol>
+<h3>Connection Timeouts</h3>
+<p><strong>Symptom</strong>: Test times out waiting for stanzas</p>
+<p><strong>Solutions</strong>:</p>
+<ol>
+<li>Verify Prosody is running:</li>
+</ol>
+<pre><code class="language-bash">prosodyctl status
+</code></pre>
+<ol start="2">
+<li>Check network connectivity:</li>
+</ol>
+<pre><code class="language-bash">nc -zv tensegrity.it 5222
+</code></pre>
+<ol start="3">
+<li>Check TLS settings match server configuration</li>
+</ol>
+<h3>Room Creation Fails</h3>
+<p><strong>Symptom</strong>: Room creation returns error stanza</p>
+<p><strong>Possible Errors</strong>:</p>
+<ul>
+<li><code>forbidden</code>: User doesn&#39;t have permission to create rooms</li>
+<li><code>not-allowed</code>: MUC room creation disabled</li>
+<li><code>conflict</code>: Room already exists with different configuration</li>
+</ul>
+<p><strong>Solutions</strong>:</p>
+<ol>
+<li>Grant admin privileges in Prosody config:</li>
+</ol>
+<pre><code class="language-lua">admins = { &quot;admin@tensegrity.it&quot; }
+</code></pre>
+<ol start="2">
+<li>Enable room creation:</li>
+</ol>
+<pre><code class="language-lua">restrict_room_creation = false
+</code></pre>
+<ol start="3">
+<li>Delete existing rooms if needed:</li>
+</ol>
+<pre><code class="language-bash">prosodyctl mod_muc delete_room mfr-construct@conference.tensegrity.it
+</code></pre>
+<h2>Integration with CI/CD</h2>
+<p>Add to test suite:</p>
+<pre><code class="language-json">{
+  &quot;scripts&quot;: {
+    &quot;test&quot;: &quot;node --test&quot;,
+    &quot;test:integration&quot;: &quot;node --test test/integration/*.test.js&quot;,
+    &quot;test:mfr-rooms&quot;: &quot;./test-mfr-rooms.sh&quot;
+  }
+}
+</code></pre>
+<p>Run before starting MFR system:</p>
+<pre><code class="language-bash"># In start-mfr-system.sh
+echo &quot;Verifying MFR rooms...&quot;
+./test-mfr-rooms.sh || {
+  echo &quot;❌ MFR rooms not available. Creating rooms...&quot;
+  node src/examples/create-mfr-rooms.js
+}
+</code></pre>
+<h2>Comparison: Old vs New</h2>
+<h3>Old Script (create-mfr-rooms.js)</h3>
+<ul>
+<li>✅ Creates rooms</li>
+<li>✅ Configures rooms</li>
+<li>❌ Doesn&#39;t verify persistence</li>
+<li>❌ Doesn&#39;t test accessibility</li>
+<li>❌ Single user perspective</li>
+<li>❌ Reports success prematurely</li>
+</ul>
+<h3>New Test (mfr-room-creation.test.js)</h3>
+<ul>
+<li>✅ Creates rooms</li>
+<li>✅ Configures rooms</li>
+<li>✅ Verifies persistence</li>
+<li>✅ Tests accessibility with different user</li>
+<li>✅ Multi-phase verification</li>
+<li>✅ Queries room information</li>
+<li>✅ Comprehensive error detection</li>
+<li>✅ Detailed reporting</li>
+</ul>
+<h2>Recommendations</h2>
+<ol>
+<li><strong>Always run the integration test</strong> after creating rooms</li>
+<li><strong>Use the test as source of truth</strong> for room existence</li>
+<li><strong>Update create-mfr-rooms.js</strong> to use same verification logic</li>
+<li><strong>Add test to CI/CD pipeline</strong> for automated verification</li>
+<li><strong>Monitor test output</strong> for degradation over time</li>
+</ol>
+<h2>Future Enhancements</h2>
+<p>Potential improvements to the test:</p>
+<ol>
+<li><strong>Concurrent Join Test</strong>: Multiple users join simultaneously</li>
+<li><strong>Message Persistence</strong>: Verify MAM (Message Archive Management)</li>
+<li><strong>Room Discovery</strong>: Test service discovery for room list</li>
+<li><strong>Configuration Verification</strong>: Query and validate room config</li>
+<li><strong>Occupant List</strong>: Verify occupant tracking</li>
+<li><strong>Affiliation Test</strong>: Test admin/owner/member affiliations</li>
+<li><strong>Performance</strong>: Measure room creation time</li>
+<li><strong>Cleanup</strong>: Option to delete rooms after test</li>
+</ol>
+
+    </main>
+  </body>
+</html>

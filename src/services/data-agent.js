@@ -101,9 +101,6 @@ if (profile.supportsLingueMode(LANGUAGE_MODES.SPARQL_QUERY)) {
 const modelFirstRdfHandler = profile.supportsLingueMode(LANGUAGE_MODES.MODEL_FIRST_RDF)
   ? new ModelFirstRdfHandler({ logger })
   : null;
-if (modelFirstRdfHandler) {
-  handlers[LANGUAGE_MODES.MODEL_FIRST_RDF] = modelFirstRdfHandler;
-}
 
 if (profile.supportsLingueMode(LANGUAGE_MODES.MODEL_NEGOTIATION)) {
   handlers[LANGUAGE_MODES.MODEL_NEGOTIATION] = new ModelNegotiationHandler({

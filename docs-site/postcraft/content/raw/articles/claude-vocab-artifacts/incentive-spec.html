@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>RPP Incentive Extension Specification</title>
+    <style>
+      body { margin: 0; padding: 48px 20px; font-family: "Helvetica Neue", Arial, sans-serif; background: #f7f4ef; color: #1f1b16; }
+      main { max-width: 920px; margin: 0 auto; background: #fffdf9; padding: 48px; border: 1px solid #e3d8c7; box-shadow: 6px 8px 0 #e3d8c7; }
+      h1, h2, h3 { font-weight: 600; margin-top: 2rem; }
+      pre { background: #1f1b16; color: #f7f4ef; padding: 16px; overflow: auto; }
+      code { font-family: "SFMono-Regular", ui-monospace, Menlo, Monaco, Consolas, monospace; }
+      a { color: #8a3b12; }
+      img { max-width: 100%; height: auto; }
+      table { border-collapse: collapse; width: 100%; }
+      th, td { border: 1px solid #e3d8c7; padding: 8px; }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>RPP Incentive Extension Specification</h1>
+<h2>Core Classes</h2>
+<h3>rpp:Incentive</h3>
+<p>Base class for representing motivational aspects of tasks and goals. Subclass of rpp:Component.</p>
+<h3>rpp:IncentiveType</h3>
+<p>Specific classification of incentive nature. Two defined instances:</p>
+<ul>
+<li>rpp:PositiveIncentive: Reward-seeking motivation</li>
+<li>rpp:NegativeIncentive: Loss-avoidance motivation</li>
+</ul>
+<h3>rpp:Outcome</h3>
+<p>Represents specific consequences associated with incentives. Two subclasses:</p>
+<ul>
+<li>rpp:PositiveOutcome: Beneficial results to be gained</li>
+<li>rpp:NegativeOutcome: Adverse results to be avoided</li>
+</ul>
+<h2>Properties</h2>
+<h3>rpp:hasIncentive</h3>
+<ul>
+<li>Domain: Union of (rpp:Goal, rpp:Task)</li>
+<li>Range: rpp:IncentiveType</li>
+<li>Description: Links goals/tasks to their motivation type</li>
+</ul>
+<h3>rpp:strength</h3>
+<ul>
+<li>Domain: rpp:Incentive</li>
+<li>Range: xsd:decimal</li>
+<li>Description: Numeric value (0.0-1.0) indicating incentive strength</li>
+</ul>
+<h3>rpp:hasOutcome</h3>
+<ul>
+<li>Domain: rpp:Incentive</li>
+<li>Range: rpp:Outcome</li>
+<li>Description: Associates incentives with specific outcomes</li>
+</ul>
+<h3>rpp:outcomeValue</h3>
+<ul>
+<li>Domain: rpp:Outcome</li>
+<li>Range: xsd:string</li>
+<li>Description: Textual description of the specific reward or penalty</li>
+</ul>
+<h2>Usage Notes</h2>
+<ul>
+<li>Each task/goal can have one incentive type</li>
+<li>Strength values should be normalized between 0 and 1</li>
+<li>Outcomes should be concrete and specific</li>
+<li>Multiple outcomes per incentive are permitted</li>
+</ul>
+<h2>Example Usage</h2>
+<pre><code class="language-turtle">:SecurityTask
+    rpp:hasIncentive [
+        a rpp:NegativeIncentive ;
+        rpp:strength 0.9 ;
+        rpp:hasOutcome [
+            a rpp:NegativeOutcome ;
+            rpp:outcomeValue &quot;Potential loss of customer data&quot;
+        ]
+    ] .
+</code></pre>
+
+    </main>
+  </body>
+</html>

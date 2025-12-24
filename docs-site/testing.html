@@ -1,0 +1,135 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Testing Guide</title>
+    <style>
+      body { margin: 0; padding: 48px 20px; font-family: "Helvetica Neue", Arial, sans-serif; background: #f7f4ef; color: #1f1b16; }
+      main { max-width: 920px; margin: 0 auto; background: #fffdf9; padding: 48px; border: 1px solid #e3d8c7; box-shadow: 6px 8px 0 #e3d8c7; }
+      h1, h2, h3 { font-weight: 600; margin-top: 2rem; }
+      pre { background: #1f1b16; color: #f7f4ef; padding: 16px; overflow: auto; }
+      code { font-family: "SFMono-Regular", ui-monospace, Menlo, Monaco, Consolas, monospace; }
+      a { color: #8a3b12; }
+      img { max-width: 100%; height: auto; }
+      table { border-collapse: collapse; width: 100%; }
+      th, td { border: 1px solid #e3d8c7; padding: 8px; }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>Testing Guide</h1>
+<p>This repository has two layers of tests:</p>
+<ul>
+<li><strong>Node unit tests</strong> (fast, offline): <code>npm test</code></li>
+<li><strong>Live XMPP integration tests</strong> (exercise XMPP MUC and optional bots): <code>npm run test:integration</code></li>
+</ul>
+<h2>Prerequisites</h2>
+<ul>
+<li>Node.js installed</li>
+<li>XMPP server reachable with a MUC room you can join</li>
+<li><code>.env</code> file with XMPP credentials and room details</li>
+</ul>
+<p>Example <code>.env</code> (self-signed TLS example):</p>
+<pre><code>NODE_TLS_REJECT_UNAUTHORIZED=0          # only if your XMPP TLS is self-signed
+XMPP_SERVICE=xmpp://tensegrity.it:5222  # or xmpps://... if TLS-only
+XMPP_DOMAIN=tensegrity.it
+MUC_ROOM=general@conference.tensegrity.it
+TEST_XMPP_ACCOUNT=integration-test      # key in config/agents/secrets.json
+XMPP_RESOURCE=SememTest                 # optional: set XMPP resource; defaults to bot nickname
+
+# Optional for bots under test
+MISTRAL_API_KEY=...                     # required to test the Mistral bot
+SEMEM_BASE_URL=https://mcp.tensegrity.it
+SEMEM_AUTH_TOKEN=...                    # if your Semem endpoint needs auth
+SEMEM_NICKNAME=SememTest                # optional nickname for Semem agent
+MCP_BOT_NICKNAME=McpDebug               # nickname for MCP debug agent (if using)
+</code></pre>
+<p>XMPP usernames and passwords are read from <code>config/agents/secrets.json</code> (ignored by git).
+Set <code>AGENT_SECRETS_PATH</code> to use a different secrets file.</p>
+<p>Example secrets entry for tests:</p>
+<pre><code>{
+  &quot;integration-test&quot;: {
+    &quot;username&quot;: &quot;testuser&quot;,
+    &quot;password&quot;: &quot;testpass&quot;
+  }
+}
+</code></pre>
+<blockquote>
+<p>Tip: If your <code>.env</code> lives elsewhere, set <code>TIA_ENV_PATH=/path/to/.env</code> before running tests.</p>
+</blockquote>
+<h2>Running the tests</h2>
+<p>Install deps once:</p>
+<pre><code>npm install
+</code></pre>
+<p>Unit tests (offline):</p>
+<pre><code>npm test
+</code></pre>
+<p>XMPP integration (live server required):</p>
+<pre><code>NODE_TLS_REJECT_UNAUTHORIZED=0 npm run test:integration
+</code></pre>
+<p>MFR semantic integration (live server required, MFR semantic agent running):</p>
+<pre><code>NODE_TLS_REJECT_UNAUTHORIZED=0 npm run test:mfr-integration
+</code></pre>
+<h3>What the integration tests do</h3>
+<ul>
+<li><code>test/xmpp.integration.test.js</code>: joins the MUC with a transient nickname, posts a message, and confirms it is observed (self-messages allowed in the test).</li>
+<li><code>test/xmpp.bots.integration.test.js</code>: joins the MUC and optionally spawns bots, then mentions them and waits for replies:<ul>
+<li><strong>Mistral bot</strong>: runs when <code>MISTRAL_API_KEY</code> is set (skip with <code>RUN_MISTRAL_BOT_TEST=false</code>).</li>
+<li><strong>Semem agent</strong>: runs only if <code>RUN_SEMEM_BOT_TEST=true</code> (assumes Semem endpoint reachable). Uses <code>SEMEM_NICKNAME</code> or <code>AGENT_NICKNAME</code> if provided.</li>
+</ul>
+</li>
+</ul>
+<p>Both tests reuse the shared <code>XmppRoomAgent</code> helper and honor the same <code>.env</code> values.</p>
+<h3>MFR semantic integration test</h3>
+<ul>
+<li><code>test/mfr-semantic.integration.test.js</code>: sends an MFR <code>ModelContributionRequest</code> and expects a <code>ModelFirstRDF</code> response with <code>mfr:Constraint</code> or <code>mfr:DomainRule</code> from the MFR semantic agent.</li>
+<li>Requires the MFR semantic agent to be running and reachable in the configured MUC room.</li>
+<li>Optional override: <code>MFR_SEMANTIC_NICKNAME</code> if the agent nickname differs from <code>MfrSemantic</code>.</li>
+</ul>
+<h3>Mistral MFR integration test</h3>
+<ul>
+<li><code>test/mistral-mfr.integration.test.js</code>: sends a <code>SessionComplete</code> payload and expects a natural language explanation from the Mistral agent.</li>
+<li>Requires <code>MISTRAL_API_KEY</code> and the Mistral agent to be running in the configured MUC room.</li>
+<li>Optional override: <code>MISTRAL_NICKNAME</code> if the agent nickname differs from <code>Mistral</code>.</li>
+</ul>
+<h3>Environment gating for bot tests</h3>
+<p>Set these only when you want to exercise the bots:</p>
+<pre><code># Mistral bot test (on by default if key is present)
+MISTRAL_API_KEY=...
+RUN_MISTRAL_BOT_TEST=true   # default; set to false to skip
+
+# Semem agent test (opt-in)
+RUN_SEMEM_BOT_TEST=true
+SEMEM_BASE_URL=https://mcp.tensegrity.it
+SEMEM_AUTH_TOKEN=...        # if required
+SEMEM_NICKNAME=SememTest    # optional override
+</code></pre>
+<h3>Expected behavior and timeouts</h3>
+<ul>
+<li>The integration tests give bots a few seconds to join the MUC and up to ~15s to respond after being pinged.</li>
+<li>If you see timeouts, verify:<ul>
+<li>XMPP host/port/domain/room are correct.</li>
+<li>The MUC echoes messages back to the sender (needed for the self-observe test).</li>
+<li>Bots have their required env (e.g., <code>MISTRAL_API_KEY</code>, <code>SEMEM_BASE_URL</code>/token).</li>
+<li>Certificates: add <code>NODE_TLS_REJECT_UNAUTHORIZED=0</code> for self-signed TLS.</li>
+</ul>
+</li>
+</ul>
+<h3>Troubleshooting checklist</h3>
+<ul>
+<li><code>host-unknown</code> or no join: confirm <code>XMPP_SERVICE</code> (correct protocol/port), <code>XMPP_DOMAIN</code>, and MUC host (e.g., <code>conference.&lt;domain&gt;</code>).</li>
+<li>No bot reply: ensure the bot started (logs in test output), nickname matches, and required keys/URLs are set.</li>
+<li>TLS failures: add <code>NODE_TLS_REJECT_UNAUTHORIZED=0</code> when using <code>xmpps://</code> with self-signed certs.</li>
+</ul>
+<h2>Quick commands</h2>
+<ul>
+<li>Run only unit tests: <code>npm test</code></li>
+<li>Run only XMPP integration: <code>NODE_TLS_REJECT_UNAUTHORIZED=0 npm run test:integration</code></li>
+<li>Skip Mistral bot test: <code>RUN_MISTRAL_BOT_TEST=false npm run test:integration</code></li>
+<li>Enable Semem bot test: <code>RUN_SEMEM_BOT_TEST=true npm run test:integration</code></li>
+</ul>
+
+    </main>
+  </body>
+</html>
