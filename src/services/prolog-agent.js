@@ -148,15 +148,29 @@ if (profile.supportsLingueMode(LANGUAGE_MODES.MODEL_NEGOTIATION)) {
             )
           );
         }
-        const bindings = await provider.runProgramQuery(program, query);
+        let bindings = [];
+        let executionError = null;
+        try {
+          const timeoutMs = 20000;
+          bindings = await Promise.race([
+            provider.runProgramQuery(program, query),
+            new Promise((_, reject) => {
+              setTimeout(() => reject(new Error("Execution timeout")), timeoutMs);
+            })
+          ]);
+        } catch (error) {
+          executionError = error?.message || "Execution failed";
+          logger.warn?.(`[PrologAgent] Plan execution failed: ${executionError}`);
+        }
 
         await negotiator.send(targetRoom, {
           mode: LANGUAGE_MODES.MODEL_NEGOTIATION,
           payload: {
             messageType: MFR_MESSAGE_TYPES.PLAN_EXECUTION_RESULT,
             sessionId,
-            bindings,
+            bindings: Array.isArray(bindings) ? bindings : [],
             query,
+            error: executionError,
             timestamp: new Date().toISOString()
           },
           summary: `Plan execution result from ${BOT_NICKNAME} for ${sessionId}`
@@ -168,7 +182,13 @@ if (profile.supportsLingueMode(LANGUAGE_MODES.MODEL_NEGOTIATION)) {
             xml(
               "message",
               { to: targetRoom, type: "groupchat" },
-              xml("body", {}, `Prolog: sent execution result (${count} binding(s)) for ${sessionId}`)
+              xml(
+                "body",
+                {},
+                executionError
+                  ? `Prolog: execution failed for ${sessionId} (${executionError})`
+                  : `Prolog: sent execution result (${count} binding(s)) for ${sessionId}`
+              )
             )
           );
         }

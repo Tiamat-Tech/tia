@@ -1,11 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 1000" width="1200" height="1000">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 1150" width="1200" height="1150">
   <defs>
     <style>
       .box { fill: #fff; stroke: #333; stroke-width: 2; }
       .agent { fill: #e3f2fd; }
       .coordinator { fill: #fff3e0; }
       .data { fill: #e8f5e9; }
+      .executor { fill: #ffe0f0; }
       .room { fill: #f3e5f5; stroke-dasharray: 5,5; }
       .text { font-family: Arial, sans-serif; font-size: 14px; text-anchor: middle; }
       .title { font-size: 18px; font-weight: bold; }
@@ -14,6 +15,7 @@
       .data-arrow { stroke: #4caf50; stroke-width: 2; }
       .validation-arrow { stroke: #ff9800; stroke-width: 2; }
       .solution-arrow { stroke: #2196f3; stroke-width: 3; }
+      .execution-arrow { stroke: #9c27b0; stroke-width: 2; }
     </style>
     <marker id="arrowhead" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
       <polygon points="0 0, 10 3, 0 6" fill="#333" />
@@ -105,16 +107,34 @@
   <text x="710" y="910" class="text title">Prolog Agent</text>
   <text x="710" y="930" class="text phase">Generates plan</text>
 
-  <!-- Solution -->
-  <path d="M 710 950 L 600 980" class="arrow solution-arrow"/>
-  <path d="M 600 880 L 600 980" class="arrow solution-arrow" stroke-dasharray="5,5"/>
+  <text x="780" y="920" class="text phase" text-anchor="start">Solution Proposal</text>
 
-  <text x="780" y="970" class="text phase" text-anchor="start">Solution Proposal</text>
+  <!-- Phase 4: Execution & Binding -->
+  <text x="100" y="985" class="text phase" text-anchor="start">PHASE 4: Execution &amp; Binding</text>
 
-  <rect x="450" y="980" width="300" height="0" class="box" rx="5" opacity="0"/>
+  <!-- Executor Agent -->
+  <path d="M 710 950 L 450 1000" class="arrow execution-arrow"/>
+  <rect x="330" y="1000" width="160" height="70" class="box executor" rx="5"/>
+  <text x="410" y="1030" class="text title">Executor Agent</text>
+  <text x="410" y="1050" class="text phase">Requests bindings</text>
+
+  <!-- Executor to Prolog for bindings -->
+  <path d="M 490 1020 L 630 1020 L 710 970" class="arrow execution-arrow" stroke-dasharray="5,5"/>
+  <text x="570" y="1010" class="text phase">Binding request</text>
+
+  <!-- Prolog returns bindings to Executor -->
+  <path d="M 710 950 L 710 990 L 490 1040" class="arrow execution-arrow"/>
+  <text x="620" y="1060" class="text phase">Concrete bindings</text>
+
+  <!-- Executor to Coordinator -->
+  <path d="M 410 1070 L 520 1110" class="arrow execution-arrow"/>
+  <text x="320" y="1100" class="text phase" text-anchor="start">Execution result</text>
+
+  <!-- Final Coordinator -->
+  <rect x="480" y="1110" width="240" height="0" class="box coordinator" rx="5" opacity="0"/>
 
   <!-- Legend -->
-  <rect x="20" y="850" width="200" height="140" fill="#f9f9f9" stroke="#999" rx="3"/>
+  <rect x="20" y="850" width="200" height="160" fill="#f9f9f9" stroke="#999" rx="3"/>
   <text x="120" y="870" class="text title">Legend</text>
   <line x1="30" y1="885" x2="80" y2="885" class="arrow data-arrow"/>
   <text x="90" y="890" class="text phase" text-anchor="start">RDF Data Flow</text>
@@ -122,8 +142,10 @@
   <text x="90" y="910" class="text phase" text-anchor="start">Validation</text>
   <line x1="30" y1="925" x2="80" y2="925" class="arrow solution-arrow"/>
   <text x="90" y="930" class="text phase" text-anchor="start">Solution</text>
-  <rect x="30" y="940" width="50" height="20" class="box agent" rx="2"/>
-  <text x="90" y="955" class="text phase" text-anchor="start">AI Agent</text>
-  <rect x="30" y="965" width="50" height="20" class="box coordinator" rx="2"/>
-  <text x="90" y="980" class="text phase" text-anchor="start">Coordinator</text>
+  <line x1="30" y1="945" x2="80" y2="945" class="arrow execution-arrow"/>
+  <text x="90" y="950" class="text phase" text-anchor="start">Execution</text>
+  <rect x="30" y="960" width="50" height="20" class="box agent" rx="2"/>
+  <text x="90" y="975" class="text phase" text-anchor="start">AI Agent</text>
+  <rect x="30" y="985" width="50" height="20" class="box executor" rx="2"/>
+  <text x="90" y="1000" class="text phase" text-anchor="start">Executor</text>
 </svg>

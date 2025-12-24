@@ -1,3 +1,7 @@
+TIA Intelligence Agency Progress Report
+
+Introduction : why chat agents? (text is the lingua franca of humans online) why RDF? (the web is a global graph knowledgebase) why xmpp? (open spec, no owned by big tech)
+
  I must have mentioned using the Prolog engine for constraint solving at some point, because that's the direction this seems to have gone in. So the sample problem is : "Schedule appointments for patients. Alice takes warfarin, Bob takes aspirin. Ensure no drug interactions."
 
 The data flow looks like this:

@@ -188,9 +188,16 @@ async function runMfrSession(problemDescription) {
             resolve({ sessionId, solution, responses, completed: true });
           }
 
-          // Check for errors
-          if (body.toLowerCase().includes("error") || body.toLowerCase().includes("failed")) {
-            if (sender === "Coordinator") {
+          // Check for explicit errors from coordinator (avoid false positives)
+          if (sender === "Coordinator") {
+            const lower = body.toLowerCase();
+            const isExplicitError =
+              lower.startsWith("error:") ||
+              lower.startsWith("error ") ||
+              lower.includes("session error") ||
+              lower.includes("failed to") ||
+              lower.includes("failed:");
+            if (isExplicitError) {
               console.log("\n❌ Session encountered an error");
               await wait(2000);
               clearTimeout(timeoutHandle);

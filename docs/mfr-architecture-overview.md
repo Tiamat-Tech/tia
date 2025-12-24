@@ -119,9 +119,13 @@ User Request
      ↓
 8. Solution Validation (Against Model)
      ↓
-9. Synthesis & Ranking (Coordinator)
+9. Plan Execution Preparation (Executor, in progress)
      ↓
-10. Explanation Generation (NL Agent)
+10. Plan Execution & Binding (Prolog)
+     ↓
+11. Synthesis & Ranking (Coordinator)
+     ↓
+12. Explanation Generation (NL Agent)
      ↓
 Response to User
 ```
