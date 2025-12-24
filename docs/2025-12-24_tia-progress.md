@@ -1,6 +1,10 @@
 # TIA Intelligence Agency: Building a Multi-Agent System for Collaborative Problem Solving
 
-*December 24, 2025*
+* [TIA Live Chat](https://tensegrity.it/chat/) - register and join the `general@conference.tensegrity.it` chatroom to play
+* [GitHub Repo](https://github.com/danja/tia)
+* [Documentation](https://danja.github.io/tia/) - *in progress, needs organising*
+
+**Status Report : December 24, 2025**
 
 ## Introduction: Why This Stack?
 
