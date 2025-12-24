@@ -7,4 +7,3 @@ The data flow looks like this:
 the inter-agent comms happen in a set of MUCs - general, mfr-construct, mfr-reason, mfr-validate
 
 most of these messages are sent as minimal text + not-visible RDF payload, just a few human-readably notifications.
-
