@@ -161,7 +161,7 @@ describe("MFR Debate Integration", () => {
 
     it("should include debate command in help when enabled", () => {
       const helpMessage = provider.getHelpMessage();
-      expect(helpMessage).toContain("mfr-debate");
+      expect(helpMessage).toContain("debate <problem description>");
       expect(helpMessage).toContain("debate-driven");
     });
 
@@ -175,7 +175,7 @@ describe("MFR Debate Integration", () => {
       });
 
       const helpMessage = providerNoDebate.getHelpMessage();
-      expect(helpMessage).not.toContain("mfr-debate");
+      expect(helpMessage).not.toContain("debate <problem description>");
     });
   });
 

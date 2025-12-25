@@ -70,7 +70,7 @@ const runner = new AgentRunner({
   commandParser: defaultCommandParser,
   allowSelfMessages: false,
   respondToAll: true,  // Chair needs to see all messages to detect debate issues
-  maxAgentRounds: systemConfig.maxAgentRounds,
+  maxAgentRounds: 0,  // Disable agent-rounds limiting - Chair must see all messages including from agents
   agentRoster,
   logger
 });

@@ -39,16 +39,35 @@ export class ChairProvider {
 
   async handle({ content, rawMessage, metadata }) {
     const text = content || rawMessage || "";
-    const lower = text.toLowerCase();
+    const trimmedText = text.trim();
+    const lower = trimmedText.toLowerCase();
+
+    // Debug logging for MFR debate detection
+    this.logger.debug?.(`[Chair] Received message: "${trimmedText.substring(0, 100)}..."`);
+
+    // Ignore MFR coordinator commands (those are for the Coordinator, not Chair)
+    // BUT don't ignore "debate" alone - that's for Chair to facilitate
+    if (lower.startsWith("mfr-") || lower.match(/^(start|contribute|validate|solve|status|list|help)\s/)) {
+      this.logger.debug?.(`[Chair] Ignoring MFR command: ${trimmedText.substring(0, 50)}`);
+      return null;
+    }
+
+    // Also ignore single-word "debate" command (that's for Coordinator)
+    // but DO respond to debate issues that Coordinator broadcasts
+    if (lower === "debate" || lower.match(/^debate\s+[^:]/)) {
+      this.logger.debug?.(`[Chair] Ignoring debate command (for Coordinator): ${trimmedText.substring(0, 50)}`);
+      return null;
+    }
 
     // Check for MFR debate initiation FIRST (before general IBIS detection)
     // This ensures Coordinator's debate issue gets explicit response
     if (lower.includes("which tools and agents should we use") ||
         lower.includes("available agents:") ||
-        (lower.startsWith("issue:") && lower.includes("tools"))) {
-      this.currentIssue = text.replace(/^issue:\s*/i, "").trim() || text;
+        (lower.startsWith("issue:") && lower.includes("tool"))) {
+      this.currentIssue = trimmedText.replace(/^issue:\s*/i, "").trim() || trimmedText;
       this.positions = [];
       this.arguments = [];
+      this.logger.info?.(`[Chair] Debate started for issue: ${this.currentIssue.substring(0, 50)}...`);
       return `Debate started. Issue: ${this.currentIssue}\nPlease provide Positions and Arguments.`;
     }
 
@@ -63,7 +82,10 @@ export class ChairProvider {
     // General IBIS structure detection (for position/argument contributions)
     const structure = detectIBISStructure(text);
 
-    if (structure.confidence >= 0.5 && (structure.issues.length || structure.positions.length || structure.arguments.length)) {
+    // Always acknowledge explicit IBIS markers (Position:, Support:, Objection:)
+    // Or acknowledge if confidence threshold is met
+    const hasExplicitIBIS = structure.positions.length > 0 || structure.arguments.length > 0;
+    if ((hasExplicitIBIS || structure.confidence >= 0.5) && (structure.issues.length || structure.positions.length || structure.arguments.length)) {
       this.updateState(structure, text, metadata.sender);
       const summary = summarizeIBIS(structure);
       return `Noted. ${summary}`;

@@ -209,6 +209,8 @@ export class CoordinatorProvider extends BaseProvider {
     ].join('\n');
 
     // Send debate issue to primary room
+    this.logger.info?.(`[CoordinatorProvider] Sending debate issue to room: ${this.primaryRoomJid}`);
+    this.logger.debug?.(`[CoordinatorProvider] Debate issue text: ${debateIssue.substring(0, 100)}...`);
     await this.sendStatusMessage(debateIssue);
 
     // Set timeout for debate phase (60 seconds)
@@ -993,7 +995,7 @@ export class CoordinatorProvider extends BaseProvider {
   mfr-list - List active sessions`;
 
     const debateCommand = this.enableDebate
-      ? `\n  mfr-debate <problem description> - Start debate-driven MFR session (tool selection via Chair)`
+      ? `\n  debate <problem description> - Start debate-driven MFR session (tool selection via Chair)`
       : '';
 
     return baseCommands + debateCommand;

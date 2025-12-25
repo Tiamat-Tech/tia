@@ -42,7 +42,7 @@ NODE_TLS_REJECT_UNAUTHORIZED=0 node src/client/repl.js <your-username> <your-pas
 Once connected, try the new debate command:
 
 ```
-mfr-debate Schedule appointments for patients. Alice takes warfarin, Bob takes aspirin. Ensure no drug interactions.
+debate Schedule appointments for patients. Alice takes warfarin, Bob takes aspirin. Ensure no drug interactions.
 ```
 
 You should see:
@@ -390,9 +390,9 @@ Requesting contributions from agreed-upon agents: Data, Prolog, MFR-Semantic
 
 **Implemented:**
 1. ✅ Added `TOOL_SELECTION_DEBATE` phase to MFR constants
-2. ✅ Added `mfr-debate` command to Coordinator (feature flag: `MFR_ENABLE_DEBATE`)
+2. ✅ Added `debate` command to Coordinator (feature flag: `MFR_ENABLE_DEBATE`)
 3. ✅ Coordinator formats debate issue and sends to general room
-4. ✅ Chair agent responds to all messages to detect debate issues (`respondToAll: true`)
+4. ✅ Chair agent responds to all messages to detect debate issues (`respondToAll: true`, `maxAgentRounds: 0`)
 5. ✅ Chair agent participates using existing IBIS detection
 6. ✅ Added tool extraction methods to Chair (`extractToolRecommendations()`, `detectToolConsensus()`)
 7. ✅ 60-second timeout with fallback to all agents
@@ -406,8 +406,10 @@ Requesting contributions from agreed-upon agents: Data, Prolog, MFR-Semantic
 - `src/services/chair-agent.js` - Added `respondToAll: true` to detect debate issues
 - `test/mfr-debate.integration.test.js` - Comprehensive test suite (10/10 tests passing)
 
-**Key Implementation Detail:**
-The Chair now checks for MFR debate patterns ("which tools and agents should we use", "available agents:") BEFORE general IBIS detection. This ensures the Coordinator's debate issue gets the explicit "Debate started. Issue: ..." response instead of just "Noted. Issue: ..."
+**Key Implementation Details:**
+1. The Chair has `maxAgentRounds: 0` to disable agent-rounds limiting - this ensures Chair can see ALL messages including broadcasts from Coordinator (another agent)
+2. The Chair checks for MFR debate patterns ("which tools and agents should we use", "available agents:") BEFORE general IBIS detection
+3. The Chair ignores the `debate` command itself (returns null) so it doesn't interfere with Coordinator processing it
 
 **Deliverable:** ✅ Chair can track debate, humans can guide tool selection, automated timeout
 
