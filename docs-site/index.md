@@ -1,142 +1,116 @@
 # TIA Documentation
 
-TIA is an XMPP agent framework that implements Lingue protocol flows and
-Model Context Protocol (MCP) integrations. It includes long-running agents,
-example scripts for message flow testing, and shared utilities for
-configuration, logging, and RDF-based profiles.
+**TIA (The Intelligence Agency)** is an experimental multi-agent system built on open standards: XMPP for messaging, RDF for knowledge representation, and semantic protocols for inter-agent coordination. The system implements Model-First Reasoning (MFR), where specialized agents collaboratively construct explicit problem models before generating solutions.
 
-## Documents
+**Key features:**
+- 🤖 Multiple specialized AI agents (Mistral, Prolog, Data, Semantic)
+- 📊 RDF-based knowledge representation and SHACL validation
+- 🔄 Lingue protocol for language mode negotiation
+- 🌐 XMPP/Jabber for federated, real-time communication
+- 🔧 Model Context Protocol (MCP) integration
+- ✅ Constraint-based reasoning with verifiable solutions
 
-- [2024-09.md](2024-09.html)
-- [2025-12-21_tia-blog.md](2025-12-21_tia-blog.html)
-- [2025-12-21.md](2025-12-21.html)
-- [agent-dev-prompt.md](agent-dev-prompt.html)
-- [agents.md](agents.html)
-- [api-reference.md](api-reference.html)
-- [auto-registration.md](auto-registration.html)
-- [coordinator-agent-contract.md](coordinator-agent-contract.html)
-- [data-agent-contract.md](data-agent-contract.html)
-- [data-agent.md](data-agent.html)
-- [debating-society.md](debating-society.html)
-- [docs/2024-09.md](docs/2024-09.html)
-- [docs/kia (copy)/agents.md](docs/kia (copy)/agents.html)
-- [docs/kia (copy)/design-chat.md](docs/kia (copy)/design-chat.html)
-- [docs/kia (copy)/horsebot.md](docs/kia (copy)/horsebot.html)
-- [docs/kia (copy)/README.md](docs/kia (copy)/README.html)
-- [docs/kia (copy)/vocabs.md](docs/kia (copy)/vocabs.html)
-- [docs/kia/agents.md](docs/kia/agents.html)
-- [docs/kia/architectures/continuous-learning-chat.md](docs/kia/architectures/continuous-learning-chat.html)
-- [docs/kia/architectures/danbri-challenge-me.md](docs/kia/architectures/danbri-challenge-me.html)
-- [docs/kia/architectures/prompts.md](docs/kia/architectures/prompts.html)
-- [docs/kia/bot-components.md](docs/kia/bot-components.html)
-- [docs/kia/culture.md](docs/kia/culture.html)
-- [docs/kia/deliverables.md](docs/kia/deliverables.html)
-- [docs/kia/deploy.md](docs/kia/deploy.html)
-- [docs/kia/design-chat.md](docs/kia/design-chat.html)
-- [docs/kia/horsebot.md](docs/kia/horsebot.html)
-- [docs/kia/mapping-language.md](docs/kia/mapping-language.html)
-- [docs/kia/messages.md](docs/kia/messages.html)
-- [docs/kia/misc-tools.md](docs/kia/misc-tools.html)
-- [docs/kia/next-steps.md](docs/kia/next-steps.html)
-- [docs/kia/prompts/copilot.md](docs/kia/prompts/copilot.html)
-- [docs/kia/raw-notes/agents.md](docs/kia/raw-notes/agents.html)
-- [docs/kia/raw-notes/bot-components.md](docs/kia/raw-notes/bot-components.html)
-- [docs/kia/raw-notes/culture.md](docs/kia/raw-notes/culture.html)
-- [docs/kia/raw-notes/deliverables.md](docs/kia/raw-notes/deliverables.html)
-- [docs/kia/raw-notes/deploy.md](docs/kia/raw-notes/deploy.html)
-- [docs/kia/raw-notes/design-chat.md](docs/kia/raw-notes/design-chat.html)
-- [docs/kia/raw-notes/horsebot.md](docs/kia/raw-notes/horsebot.html)
-- [docs/kia/raw-notes/mapping-language.md](docs/kia/raw-notes/mapping-language.html)
-- [docs/kia/raw-notes/messages.md](docs/kia/raw-notes/messages.html)
-- [docs/kia/raw-notes/misc-tools.md](docs/kia/raw-notes/misc-tools.html)
-- [docs/kia/raw-notes/next-steps.md](docs/kia/raw-notes/next-steps.html)
-- [docs/kia/raw-notes/technologies.md](docs/kia/raw-notes/technologies.html)
-- [docs/kia/raw-notes/translators.md](docs/kia/raw-notes/translators.html)
-- [docs/kia/raw-notes/vocabs.md](docs/kia/raw-notes/vocabs.html)
-- [docs/kia/raw-notes/yawns-chat.md](docs/kia/raw-notes/yawns-chat.html)
-- [docs/kia/README.md](docs/kia/README.html)
-- [docs/kia/technologies.md](docs/kia/technologies.html)
-- [docs/kia/translators.md](docs/kia/translators.html)
-- [docs/kia/vocabs.md](docs/kia/vocabs.html)
-- [docs/kia/write-up/bits.md](docs/kia/write-up/bits.html)
-- [docs/kia/write-up/formal_01.md](docs/kia/write-up/formal_01.html)
-- [docs/kia/write-up/formal_02.md](docs/kia/write-up/formal_02.html)
-- [docs/kia/write-up/index.md](docs/kia/write-up/index.html)
-- [docs/kia/wwworkspace.md](docs/kia/wwworkspace.html)
-- [docs/kia/yawns-chat.md](docs/kia/yawns-chat.html)
-- [docs/notes.md](docs/notes.html)
-- [ibis.md](ibis.html)
-- [kia/agents.md](kia/agents.html)
-- [kia/architectures/continuous-learning-chat.md](kia/architectures/continuous-learning-chat.html)
-- [kia/architectures/danbri-challenge-me.md](kia/architectures/danbri-challenge-me.html)
-- [kia/architectures/prompts.md](kia/architectures/prompts.html)
-- [kia/bot-components.md](kia/bot-components.html)
-- [kia/culture.md](kia/culture.html)
-- [kia/deliverables.md](kia/deliverables.html)
-- [kia/deploy.md](kia/deploy.html)
-- [kia/design-chat.md](kia/design-chat.html)
-- [kia/horsebot.md](kia/horsebot.html)
-- [kia/mapping-language.md](kia/mapping-language.html)
-- [kia/messages.md](kia/messages.html)
-- [kia/misc-tools.md](kia/misc-tools.html)
-- [kia/next-steps.md](kia/next-steps.html)
-- [kia/prompts/copilot.md](kia/prompts/copilot.html)
-- [kia/raw-notes/agents.md](kia/raw-notes/agents.html)
-- [kia/raw-notes/bot-components.md](kia/raw-notes/bot-components.html)
-- [kia/raw-notes/culture.md](kia/raw-notes/culture.html)
-- [kia/raw-notes/deliverables.md](kia/raw-notes/deliverables.html)
-- [kia/raw-notes/deploy.md](kia/raw-notes/deploy.html)
-- [kia/raw-notes/design-chat.md](kia/raw-notes/design-chat.html)
-- [kia/raw-notes/horsebot.md](kia/raw-notes/horsebot.html)
-- [kia/raw-notes/mapping-language.md](kia/raw-notes/mapping-language.html)
-- [kia/raw-notes/messages.md](kia/raw-notes/messages.html)
-- [kia/raw-notes/misc-tools.md](kia/raw-notes/misc-tools.html)
-- [kia/raw-notes/next-steps.md](kia/raw-notes/next-steps.html)
-- [kia/raw-notes/technologies.md](kia/raw-notes/technologies.html)
-- [kia/raw-notes/translators.md](kia/raw-notes/translators.html)
-- [kia/raw-notes/vocabs.md](kia/raw-notes/vocabs.html)
-- [kia/raw-notes/yawns-chat.md](kia/raw-notes/yawns-chat.html)
-- [kia/README.md](kia/README.html)
-- [kia/technologies.md](kia/technologies.html)
-- [kia/translators.md](kia/translators.html)
-- [kia/vocabs.md](kia/vocabs.html)
-- [kia/write-up/bits.md](kia/write-up/bits.html)
-- [kia/write-up/formal_01.md](kia/write-up/formal_01.html)
-- [kia/write-up/formal_02.md](kia/write-up/formal_02.html)
-- [kia/write-up/index.md](kia/write-up/index.html)
-- [kia/wwworkspace.md](kia/wwworkspace.html)
-- [kia/yawns-chat.md](kia/yawns-chat.html)
-- [lingue-integration.md](lingue-integration.html)
-- [LINGUE-PLAN.md](LINGUE-PLAN.html)
-- [mcp-client.md](mcp-client.html)
-- [MCP-PLAN.md](MCP-PLAN.html)
-- [mcp-server.md](mcp-server.html)
-- [mcp.md](mcp.html)
-- [mfr-agent-contracts.md](mfr-agent-contracts.html)
-- [mfr-api-reference.md](mfr-api-reference.html)
-- [mfr-architecture-overview.md](mfr-architecture-overview.html)
-- [mfr-quick-start.md](mfr-quick-start.html)
-- [mfr-room-creation-testing.md](mfr-room-creation-testing.html)
-- [mfr-semantic-agent-contract.md](mfr-semantic-agent-contract.html)
-- [mfr-usage-guide.md](mfr-usage-guide.html)
-- [mistral-agent-contract.md](mistral-agent-contract.html)
-- [notes.md](notes.html)
-- [postcraft/content/raw/articles/about.md](postcraft/content/raw/articles/about.html)
-- [postcraft/content/raw/articles/claude-vocab-artifacts/incentive-spec.md](postcraft/content/raw/articles/claude-vocab-artifacts/incentive-spec.html)
-- [postcraft/content/raw/articles/links.md](postcraft/content/raw/articles/links.html)
-- [postcraft/content/raw/entries/2023-10-27_hello.md](postcraft/content/raw/entries/2023-10-27_hello.html)
-- [postcraft/knowledge/about.md](postcraft/knowledge/about.html)
-- [postcraft/knowledge/prompts/2024-10-06_prompt-01.md](postcraft/knowledge/prompts/2024-10-06_prompt-01.html)
-- [postcraft/knowledge/prompts/about.md](postcraft/knowledge/prompts/about.html)
-- [postcraft/knowledge/prompts/system-prompt.md](postcraft/knowledge/prompts/system-prompt.html)
-- [postcraft/knowledge/references/about.md](postcraft/knowledge/references/about.html)
-- [postcraft/layout/inspiration.md](postcraft/layout/inspiration.html)
-- [postcraft/layout/mediocre/about.md](postcraft/layout/mediocre/about.html)
-- [prolog-agent-contract.md](prolog-agent-contract.html)
-- [provider-guide.md](provider-guide.html)
-- [quick-start.md](quick-start.html)
-- [semem-agent-contract.md](semem-agent-contract.html)
-- [server.md](server.html)
-- [tbox-note.md](tbox-note.html)
-- [TEMPLATE-PLAN.md](TEMPLATE-PLAN.html)
-- [testing.md](testing.html)
+**Quick links:**
+- 💬 [TIA Live Chat](https://tensegrity.it/chat/) - Join `general@conference.tensegrity.it`
+- 🐙 [GitHub Repository](https://github.com/danja/tia)
+- 📖 [Lingue Protocol Specification](https://danja.github.io/lingue/)
+
+---
+
+## 🚀 Getting Started
+
+- **[Progress Report (Dec 24, 2025)](2025-12-24_tia-progress.html)** - Latest status and complete system walkthrough
+- **[Quick Start Guide](quick-start.html)** - Get up and running with TIA agents
+- **[MFR Quick Start](mfr-quick-start.html)** - Model-First Reasoning system setup
+- **[Agent Overview](agents.html)** - Capabilities and commands for each agent
+
+## 🏗️ Model-First Reasoning (MFR)
+
+The core innovation of TIA: explicit model construction before reasoning.
+
+### Core Documentation
+- **[MFR Architecture Overview](mfr-architecture-overview.html)** - Four-phase problem solving workflow
+- **[MFR Usage Guide](mfr-usage-guide.html)** - Practical guide to using MFR
+- **[MFR API Reference](mfr-api-reference.html)** - Complete API documentation
+- **[MFR Agent Contracts](mfr-agent-contracts.html)** - Expected agent behaviors
+
+### Agent Contracts
+Individual specifications for each MFR agent:
+- **[Coordinator Agent](coordinator-agent-contract.html)** - Orchestrates the MFR protocol
+- **[Data Agent](data-agent-contract.html)** - Wikidata/DBpedia knowledge grounding
+- **[Mistral Agent](mistral-agent-contract.html)** - NLP entity extraction and explanation
+- **[Prolog Agent](prolog-agent-contract.html)** - Logical reasoning and plan generation
+- **[MFR Semantic Agent](mfr-semantic-agent-contract.html)** - Constraint identification
+- **[Semem Agent](semem-agent-contract.html)** - Knowledge base integration
+
+### Testing & Room Setup
+- **[MFR Room Creation & Testing](mfr-room-creation-testing.html)** - Prosody MUC configuration
+
+### Experimental Features
+- **[MFR Debate Integration](mfr-debate-integration.html)** ✅ - Tool selection through structured dialogue (Phase 1 complete, enabled by default in `config/agents/coordinator.ttl`)
+- **[MFR Debate Requirements](mfr-debate-agent-requirements.html)** - Implementation requirements ensuring zero breaking changes
+
+## 🔌 Integration Protocols
+
+### Lingue Protocol
+Language mode negotiation for multi-agent communication:
+- **[Lingue Integration](lingue-integration.html)** - How agents negotiate communication modes
+- **[IBIS Structured Dialogue](ibis.html)** - Issue-Based Information System vocabulary
+- **[Lingue Development Plan](LINGUE-PLAN.html)** - Protocol development roadmap
+
+### Model Context Protocol (MCP)
+Integration with external tools and services:
+- **[MCP Overview](mcp.html)** - Model Context Protocol introduction
+- **[MCP Server Guide](mcp-server.html)** - Exposing TIA as an MCP server
+- **[MCP Client Guide](mcp-client.html)** - Consuming external MCP services
+- **[MCP Development Plan](MCP-PLAN.html)** - MCP integration roadmap
+
+## 🛠️ Development & Customization
+
+- **[Agent Development Guide](agent-dev-prompt.html)** - Creating new agents
+- **[Provider Guide](provider-guide.html)** - Building custom agent providers
+- **[API Reference](api-reference.html)** - Core API documentation
+- **[Auto-Registration](auto-registration.html)** - Automatic credential management
+- **[Testing Guide](testing.html)** - Running tests and validation
+
+## 📚 Specialized Topics
+
+- **[Data Agent Deep Dive](data-agent.html)** - SPARQL queries, Wikidata integration
+- **[Debating Society](debating-society.html)** - Chair, Recorder, and structured debates
+- **[Server Deployment](server.html)** - Production deployment considerations
+- **[TBox Note](tbox-note.html)** - Ontology design notes
+
+## 📝 Blog Posts & Updates
+
+- **[December 24, 2025 - TIA Progress](2025-12-24_tia-progress.html)** - Complete system overview
+- **[December 21, 2025 - TIA Blog](2025-12-21_tia-blog.html)** - MFR implementation update
+- **[December 21, 2025 - Notes](2025-12-21.html)** - Development notes
+- **[September 2024 - Early Notes](2024-09.html)** - Initial project notes
+
+## 🔧 Internal Documentation
+
+Planning documents and development notes:
+- **[Template Plan](TEMPLATE-PLAN.html)** - Planning template for new features
+- **[Development Notes](notes.html)** - Ongoing development notes
+- **[Temporary Notes](temp.html)** - Scratch notes and ideas
+
+---
+
+## Documentation Organization
+
+This documentation is organized hierarchically:
+
+1. **Getting Started** - For new users and quick setup
+2. **MFR System** - Core multi-agent reasoning documentation
+3. **Integration Protocols** - Lingue and MCP integration guides
+4. **Development** - For developers extending TIA
+5. **Specialized Topics** - Deep dives into specific components
+6. **Blog/Updates** - Progress reports and announcements
+
+## Contributing
+
+TIA is open source and welcomes contributions. See the [GitHub repository](https://github.com/danja/tia) for issues, pull requests, and development discussion.
+
+## License
+
+See repository for license information.

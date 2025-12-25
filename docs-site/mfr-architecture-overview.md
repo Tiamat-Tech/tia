@@ -80,6 +80,11 @@ MFR is a two-phase paradigm:
 - Explains solutions in natural language
 - Mediates human-machine communication
 
+#### **Executor Agent** (in progress)
+- Translates high-level plans into Prolog-ready execution queries
+- Requests concrete bindings from the Prolog agent
+- Feeds bindings back to the coordinator for final synthesis
+
 ### 3. Protocol Flow
 
 ```
@@ -114,9 +119,13 @@ User Request
      ↓
 8. Solution Validation (Against Model)
      ↓
-9. Synthesis & Ranking (Coordinator)
+9. Plan Execution Preparation (Executor, in progress)
      ↓
-10. Explanation Generation (NL Agent)
+10. Plan Execution & Binding (Prolog)
+     ↓
+11. Synthesis & Ranking (Coordinator)
+     ↓
+12. Explanation Generation (NL Agent)
      ↓
 Response to User
 ```

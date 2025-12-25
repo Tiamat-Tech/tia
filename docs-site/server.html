@@ -29,6 +29,7 @@
 <li><code>Restart=on-failure</code> with <code>RestartSec=5</code></li>
 <li><code>User=danny</code></li>
 <li><code>WantedBy=multi-user.target</code></li>
+<li>Ensure <code>logs/</code> exists and is writable by the service user (start scripts default to per-agent log files).</li>
 </ul>
 <h2>Install &amp; enable</h2>
 <pre><code class="language-bash">sudo cp /home/danny/hyperdata/tia/misc/tia-agents.service /etc/systemd/system/
@@ -44,6 +45,7 @@ journalctl -u tia-agents.service -f
 <ul>
 <li>Populate <code>/home/danny/hyperdata/tia/.env</code> (or per-agent configs in <code>config/agents/</code>) with XMPP credentials/resources and any API keys/tokens.</li>
 <li>Ensure <code>start-all-agents.sh</code> is executable.</li>
+<li>Create <code>logs/</code> and set ownership (e.g., <code>mkdir -p /home/danny/hyperdata/tia/logs &amp;&amp; chown -R danny:danny /home/danny/hyperdata/tia/logs</code>).</li>
 <li>If your XMPP server doesn’t support multiple resources on one account, use distinct accounts per agent in <code>config/agents/{mistral,semem,demo}.ttl</code> and restart the service.</li>
 </ul>
 

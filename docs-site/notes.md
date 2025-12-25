@@ -1,10 +1,16 @@
+Resolved: `Q:` now starts a Coordinator debate (via Chair), consensus selects agents, and the plan proceeds through MFR. Example: "Q: how can we optimize delivery routes for 3 trucks serving 10 locations. Truck 1 has capacity 100, Truck 2 has capacity 150, Truck 3 has capacity 200. Location A needs delivery before 10 AM. Locations B and C must use same truck."
+
  DOCS_DIR=docs DOCS_OUT_DIR=docs-site node scripts/build-docs.mjs
 
 pkill -f 'node src/services'
-./start-mfr-system.sh
-./start-all-agents.sh
 
-./start-all.sh mfr
+./start-all.sh
+./stop-all.sh
+./restart-all.sh
+
+#./start-mfr-system.sh
+#./start-all-agents.sh
+#./start-all.sh mfr
 
 npm pack
 
@@ -13,6 +19,14 @@ npm pack
   npm install ../tia/tia-agents-0.3.0.tgz
 
 npm install @mistralai/mistralai
+
+  - Map class - not included
+  - Properties: refersTo, pro, con - not implemented
+
+  The system currently uses these properties instead:
+  - ibis:supports (for support arguments)
+  - ibis:objects-to (for objections)
+  - ibis:responds-to (positions to issues)
 
  If you want the history store size or any other provider options to be 100%
   config‑driven too, we can add those to the profile and wire them in the
@@ -55,6 +69,9 @@ prosodyctl adduser semem@tensegrity.it
 prosodyctl adduser mistral@tensegrity.it
 prosodyctl adduser demo@tensegrity.it
 
+prosodyctl adduser groqbot@tensegrity.it
+groqbotpass
+
 prosodyctl adduser prolog@tensegrity.it
 
 prosodyctl adduser coordinator@tensegrity.it
@@ -65,6 +82,9 @@ prosodyctl adduser admin@tensegrity.it
 prosodyctl adduser mfruser@tensegrity.it
 mfrpass
 prosodyctl adduser testuser@tensegrity.it
+
+prosodyctl adduser executor@tensegrity.it
+executorpass
 
  sudo prosodyctl register mistral-analyst tensegrity.it analystpass???
 

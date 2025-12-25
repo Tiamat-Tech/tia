@@ -1,0 +1,599 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>MFR Debate Integration: Agent Requirements & Backward Compatibility</title>
+    <style>
+      body { margin: 0; padding: 48px 20px; font-family: "Helvetica Neue", Arial, sans-serif; background: #f7f4ef; color: #1f1b16; }
+      main { max-width: 920px; margin: 0 auto; background: #fffdf9; padding: 48px; border: 1px solid #e3d8c7; box-shadow: 6px 8px 0 #e3d8c7; }
+      h1, h2, h3 { font-weight: 600; margin-top: 2rem; }
+      pre { background: #1f1b16; color: #f7f4ef; padding: 16px; overflow: auto; }
+      code { font-family: "SFMono-Regular", ui-monospace, Menlo, Monaco, Consolas, monospace; }
+      a { color: #8a3b12; }
+      img { max-width: 100%; height: auto; }
+      table { border-collapse: collapse; width: 100%; }
+      th, td { border: 1px solid #e3d8c7; padding: 8px; }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>MFR Debate Integration: Agent Requirements &amp; Backward Compatibility</h1>
+<h2>Executive Summary</h2>
+<p>This document analyzes the capabilities needed to add debate-driven tool selection to MFR, ensuring <strong>zero breaking changes</strong> to the existing system. The debate phase is <strong>configurable</strong> and enabled by default in <code>config/agents/coordinator.ttl</code>.</p>
+<h2>Core Principle: Optional Enhancement</h2>
+<p><strong>The debate integration must be additive, not disruptive:</strong></p>
+<ol>
+<li>✅ Existing <code>mfr-start</code> command continues to work unchanged</li>
+<li>✅ New <code>mfr-debate</code> command is opt-in (with <code>Q:</code> shorthand)</li>
+<li>✅ Agents that don&#39;t understand debate messages simply ignore them</li>
+<li>✅ If no consensus is reached, fall back to current broadcast approach</li>
+<li>✅ All existing tests continue to pass</li>
+</ol>
+<h2>Current Agent Capabilities (From Contracts)</h2>
+<h3>Coordinator Agent</h3>
+<p><strong>Current capabilities:</strong></p>
+<ul>
+<li>Accepts <code>mfr-start &lt;problem&gt;</code> commands</li>
+<li>Broadcasts <code>mfr:ModelContributionRequest</code></li>
+<li>Collects RDF contributions</li>
+<li>Validates merged model with SHACL</li>
+<li>Requests solutions via <code>mfr:SolutionRequest</code></li>
+<li>Returns <code>mfr:SessionComplete</code></li>
+</ul>
+<p><strong>Lingue modes:</strong> <code>lng:ModelNegotiation</code>, <code>lng:ModelFirstRDF</code>, <code>lng:HumanChat</code></p>
+<h3>Mistral Agent</h3>
+<p><strong>Current capabilities:</strong></p>
+<ul>
+<li>Receives <code>mfr:ModelContributionRequest</code></li>
+<li>Extracts entities and goals from problem text</li>
+<li>Emits <code>mfr:Entity</code> and <code>mfr:Goal</code> RDF</li>
+<li>Provides natural language explanations</li>
+</ul>
+<p><strong>Lingue modes:</strong> <code>lng:ModelNegotiation</code>, <code>lng:ModelFirstRDF</code>, <code>lng:HumanChat</code></p>
+<h3>Data Agent</h3>
+<p><strong>Current capabilities:</strong></p>
+<ul>
+<li>Receives <code>mfr:ModelContributionRequest</code></li>
+<li>Extracts named entities</li>
+<li>Grounds entities in Wikidata</li>
+<li>Emits <code>mfr:Entity</code> with <code>owl:sameAs</code> links</li>
+</ul>
+<p><strong>Lingue modes:</strong> <code>lng:ModelNegotiation</code>, <code>lng:ModelFirstRDF</code></p>
+<h3>Prolog Agent</h3>
+<p><strong>Current capabilities:</strong></p>
+<ul>
+<li>Receives <code>mfr:ModelContributionRequest</code></li>
+<li>Consumes action schemas</li>
+<li>Emits <code>mfr:Action</code> RDF with preconditions/effects</li>
+<li>Generates solution plans</li>
+</ul>
+<p><strong>Lingue modes:</strong> <code>lng:ModelNegotiation</code>, <code>lng:ModelFirstRDF</code>, <code>lng:PrologProgram</code></p>
+<h3>MFR-Semantic Agent</h3>
+<p><strong>Current capabilities:</strong></p>
+<ul>
+<li>Receives <code>mfr:ModelContributionRequest</code></li>
+<li>Extracts constraints from problem text</li>
+<li>Emits <code>mfr:Constraint</code> RDF</li>
+</ul>
+<p><strong>Lingue modes:</strong> <code>lng:ModelNegotiation</code>, <code>lng:ModelFirstRDF</code></p>
+<h3>Chair Agent</h3>
+<p><strong>Current capabilities:</strong></p>
+<ul>
+<li>Detects IBIS structure (Issue/Position/Argument)</li>
+<li>Tracks debate state</li>
+<li>Summarizes positions and arguments</li>
+<li>Responds to &quot;status&quot; and &quot;consensus&quot; queries</li>
+</ul>
+<p><strong>Lingue modes:</strong> <code>lng:HumanChat</code>, <code>lng:IBISText</code></p>
+<h2>Required Changes Per Agent (Minimal)</h2>
+<h3>1. Coordinator Agent</h3>
+<p><strong>New capability:</strong> Handle <code>mfr-debate</code> command</p>
+<p><strong>Implementation:</strong></p>
+<pre><code class="language-javascript">// In coordinator-provider.js
+async handle({ command, content, metadata, reply }) {
+  switch (command) {
+    case &quot;mfr-start&quot;:
+    case &quot;start&quot;:
+      return await this.startMfrSession(content, metadata, reply);
+
+    // NEW - completely separate from existing flow
+    case &quot;mfr-debate&quot;:
+    case &quot;debate&quot;:
+      return await this.startDebateSession(content, metadata, reply);
+
+    // ... existing cases unchanged
+  }
+}
+
+async startDebateSession(problemDescription, metadata, reply) {
+  // NEW method - doesn&#39;t touch existing startMfrSession()
+  const sessionId = randomUUID();
+
+  // Format debate issue for Chair
+  const debateMessage = `Issue: Which tools should we use to solve this problem?\n\n` +
+    `Problem: ${problemDescription}\n\n` +
+    `Available agents: Mistral (NLP), Data (Wikidata), Prolog (logic), MFR-Semantic (constraints)\n\n` +
+    `Please respond with:\n` +
+    `- Position: I recommend [agent] because...\n` +
+    `- Support: [reason]\n` +
+    `- Objection: [concern]`;
+
+  await this.sendStatusMessage(debateMessage);
+
+  // Store session with debate flag
+  this.activeSessions.set(sessionId, {
+    type: &#39;debate&#39;,
+    problemDescription,
+    startTime: Date.now()
+  });
+
+  return `Debate started for session ${sessionId}\nWaiting for positions...`;
+}
+</code></pre>
+<p><strong>New message type:</strong></p>
+<pre><code class="language-javascript">// In src/lib/mfr/constants.js
+export const MFR_MESSAGE_TYPES = {
+  // ... existing types unchanged ...
+
+  // NEW - optional debate message type
+  TOOL_RECOMMENDATION: `${MFR_NS}ToolRecommendation`,  // Optional
+};
+</code></pre>
+<p><strong>New phase (optional):</strong></p>
+<pre><code class="language-javascript">export const MFR_PHASES = {
+  // ... existing phases unchanged ...
+
+  // NEW - optional phase
+  TOOL_SELECTION_DEBATE: &#39;tool_selection_debate&#39;,  // Optional
+};
+
+// Phase transitions - debate is optional path
+export const VALID_PHASE_TRANSITIONS = {
+  [MFR_PHASES.PROBLEM_INTERPRETATION]: [
+    MFR_PHASES.TOOL_SELECTION_DEBATE,  // NEW optional path
+    MFR_PHASES.ENTITY_DISCOVERY         // Existing path - still works!
+  ],
+
+  [MFR_PHASES.TOOL_SELECTION_DEBATE]: [
+    MFR_PHASES.ENTITY_DISCOVERY
+  ],
+
+  // ... rest unchanged
+};
+</code></pre>
+<p><strong>Backward compatibility:</strong></p>
+<ul>
+<li><code>mfr-start</code> continues to work exactly as before</li>
+<li><code>mfr-debate</code> is a new, separate code path</li>
+<li>Existing tests don&#39;t need changes</li>
+</ul>
+<h3>2. Chair Agent</h3>
+<p><strong>New capability:</strong> Understand MFR tool names</p>
+<p><strong>Implementation:</strong></p>
+<pre><code class="language-javascript">// In chair-provider.js - ADD new method, don&#39;t modify existing ones
+
+// NEW method - optional enhancement
+extractToolRecommendations() {
+  const MFR_AGENTS = [&#39;mistral&#39;, &#39;data&#39;, &#39;prolog&#39;, &#39;semantic&#39;, &#39;mfr-semantic&#39;];
+  const recommendations = new Map();
+
+  this.positions.forEach(position =&gt; {
+    const text = position.text.toLowerCase();
+    MFR_AGENTS.forEach(agent =&gt; {
+      if (text.includes(agent)) {
+        recommendations.set(agent, (recommendations.get(agent) || 0) + 1);
+      }
+    });
+  });
+
+  return recommendations;
+}
+
+// NEW method - optional enhancement
+detectToolConsensus() {
+  const recommendations = this.extractToolRecommendations();
+  const totalPositions = this.positions.length;
+
+  if (totalPositions === 0) return { reached: false };
+
+  const agreedTools = [];
+  for (const [tool, count] of recommendations) {
+    if (count &gt; totalPositions / 2) {
+      agreedTools.push(tool);
+    }
+  }
+
+  const hasUnresolvedObjections = this.arguments.some(arg =&gt;
+    arg.stance === &#39;object&#39; &amp;&amp; !this.isResolved(arg)
+  );
+
+  if (agreedTools.length &gt; 0 &amp;&amp; !hasUnresolvedObjections) {
+    return {
+      reached: true,
+      tools: agreedTools,
+      summary: `Consensus: ${agreedTools.join(&#39;, &#39;)}`
+    };
+  }
+
+  return { reached: false };
+}
+
+// MODIFY existing handle method - add new capability
+async handle({ content, rawMessage, metadata }) {
+  const text = content || rawMessage || &quot;&quot;;
+  const structure = detectIBISStructure(text);
+
+  // Existing IBIS detection - unchanged
+  if (structure.confidence &gt;= 0.5 &amp;&amp;
+      (structure.issues.length || structure.positions.length || structure.arguments.length)) {
+    this.updateState(structure, text, metadata.sender);
+    const summary = summarizeIBIS(structure);
+    return `Noted. ${summary}`;
+  }
+
+  // Existing debate controls - unchanged
+  const lower = text.toLowerCase();
+  if (lower.includes(&quot;start debate&quot;) || lower.startsWith(&quot;issue:&quot;)) {
+    // ... existing code unchanged
+  }
+
+  // NEW - check for consensus request (backward compatible)
+  if (lower.includes(&quot;consensus&quot;) || lower.includes(&quot;tool consensus&quot;)) {
+    const consensus = this.detectToolConsensus();
+    if (consensus.reached) {
+      return `${consensus.summary}\nBased on ${this.positions.length} positions.`;
+    }
+    return this.summarizeState();  // Existing fallback
+  }
+
+  // Existing default - unchanged
+  return `Please contribute Position: ... or Argument: ...`;
+}
+</code></pre>
+<p><strong>Backward compatibility:</strong></p>
+<ul>
+<li>Existing IBIS detection unchanged</li>
+<li>New tool extraction is optional</li>
+<li>If no tool names mentioned, falls back to regular IBIS summary</li>
+</ul>
+<h3>3. Mistral Agent (Optional Enhancement)</h3>
+<p><strong>New capability:</strong> Express tool recommendations (OPTIONAL)</p>
+<p><strong>Implementation:</strong></p>
+<pre><code class="language-javascript">// In mistral-provider.js - NEW method, completely optional
+
+// NEW - optional method for debate participation
+async handleDebateParticipation(problemDescription) {
+  // This is OPTIONAL - agent can choose not to implement
+  // If not implemented, agent just doesn&#39;t participate in debate
+
+  const prompt = `Problem: ${problemDescription}\n\n` +
+    `As an NLP agent, should you be used for this problem?\n` +
+    `Respond with: &quot;Position: I recommend [agent] because...&quot; or &quot;I defer&quot;`;
+
+  const response = await this.callMistralAPI(prompt);
+
+  return response; // Send to chat room
+}
+
+// EXISTING handle method - unchanged
+async handle({ command, content, metadata }) {
+  // All existing code unchanged
+  // Debate participation is a separate method
+}
+</code></pre>
+<p><strong>Backward compatibility:</strong></p>
+<ul>
+<li>Completely optional - if not implemented, agent works as before</li>
+<li>Existing contribution flow unchanged</li>
+<li>Agent chooses whether to participate in debates</li>
+</ul>
+<h3>4. Data Agent (Optional Enhancement)</h3>
+<p>Similar pattern to Mistral - optional debate participation method:</p>
+<pre><code class="language-javascript">// NEW optional method
+async handleDebateParticipation(problemDescription) {
+  // Detect if problem mentions entities that need grounding
+  const needsGrounding = this.detectNamedEntities(problemDescription).length &gt; 0;
+
+  if (needsGrounding) {
+    return `Position: I recommend Data agent because the problem mentions entities ` +
+           `that should be grounded in Wikidata for factual accuracy.`;
+  }
+
+  return null; // Don&#39;t participate if not relevant
+}
+</code></pre>
+<p><strong>Backward compatibility:</strong></p>
+<ul>
+<li>Optional method</li>
+<li>Existing code unchanged</li>
+</ul>
+<h3>5. Prolog Agent (Optional Enhancement)</h3>
+<pre><code class="language-javascript">// NEW optional method
+async handleDebateParticipation(problemDescription) {
+  // Detect constraint satisfaction keywords
+  const hasConstraints = /schedule|plan|allocate|assign|optimize/.test(
+    problemDescription.toLowerCase()
+  );
+
+  if (hasConstraints) {
+    return `Position: I recommend Prolog agent because this is a constraint ` +
+           `satisfaction problem that requires logical reasoning.`;
+  }
+
+  return null;
+}
+</code></pre>
+<p><strong>Backward compatibility:</strong></p>
+<ul>
+<li>Optional method</li>
+<li>Existing code unchanged</li>
+</ul>
+<h3>6. MFR-Semantic Agent (Optional Enhancement)</h3>
+<pre><code class="language-javascript">// NEW optional method
+async handleDebateParticipation(problemDescription) {
+  // Detect constraint language
+  const hasConstraints = /must|require|ensure|constraint|rule|policy/.test(
+    problemDescription.toLowerCase()
+  );
+
+  if (hasConstraints) {
+    return `Position: I recommend MFR-Semantic agent because explicit ` +
+           `constraints need to be identified and validated.`;
+  }
+
+  return null;
+}
+</code></pre>
+<p><strong>Backward compatibility:</strong></p>
+<ul>
+<li>Optional method</li>
+<li>Existing code unchanged</li>
+</ul>
+<h2>Implementation Strategy: Zero Breaking Changes</h2>
+<h3>Phase 1: Infrastructure (Coordinator + Chair)</h3>
+<p><strong>Goal:</strong> Add debate capability without changing existing MFR flow</p>
+<p><strong>Changes:</strong></p>
+<ol>
+<li>Add <code>mfr-debate</code> command to Coordinator (new code path)</li>
+<li>Add tool extraction to Chair (new methods, existing unchanged)</li>
+<li>Add new message type and phase constants</li>
+<li>Update phase transition map (additive only)</li>
+</ol>
+<p><strong>Testing:</strong></p>
+<pre><code class="language-bash"># Existing tests must pass unchanged
+npm test
+
+# New tests for debate feature
+npm test -- test/mfr-debate.test.js
+</code></pre>
+<p><strong>Success criteria:</strong></p>
+<ul>
+<li>All existing tests pass</li>
+<li><code>mfr-start</code> works identically to before</li>
+<li><code>mfr-debate</code> command exists but doesn&#39;t break anything</li>
+</ul>
+<h3>Phase 2: Optional Agent Participation</h3>
+<p><strong>Goal:</strong> Agents can optionally participate in debates</p>
+<p><strong>Changes:</strong></p>
+<ol>
+<li>Add optional <code>handleDebateParticipation()</code> to agent providers</li>
+<li>Agents check if they want to participate</li>
+<li>Non-participating agents simply don&#39;t respond</li>
+</ol>
+<p><strong>Testing:</strong></p>
+<pre><code class="language-javascript">// Test that debate works with NO agent participation
+test(&#39;debate falls back to broadcast when no agents participate&#39;, async () =&gt; {
+  // Start debate session
+  // Wait for timeout
+  // Verify it falls back to normal MFR flow
+});
+
+// Test that debate works with SOME agent participation
+test(&#39;debate works with partial agent participation&#39;, async () =&gt; {
+  // Mistral participates, others don&#39;t
+  // Should still work
+});
+</code></pre>
+<p><strong>Success criteria:</strong></p>
+<ul>
+<li>System works if zero agents participate</li>
+<li>System works if some agents participate</li>
+<li>Existing contribution flow unchanged</li>
+</ul>
+<h3>Phase 3: Integration Testing</h3>
+<p><strong>Goal:</strong> Verify debate enhances but doesn&#39;t break MFR</p>
+<p><strong>Test scenarios:</strong></p>
+<pre><code class="language-javascript">// Scenario 1: User uses old command (existing behavior)
+test(&#39;mfr-start works exactly as before&#39;, async () =&gt; {
+  const result = await coordinator.handle({
+    command: &#39;mfr-start&#39;,
+    content: &#39;Schedule appointments...&#39;
+  });
+
+  // Verify it broadcasts to all agents immediately
+  // Verify no debate phase entered
+  // Verify solution produced
+});
+
+// Scenario 2: User uses new command (new behavior)
+test(&#39;mfr-debate enables debate phase&#39;, async () =&gt; {
+  const result = await coordinator.handle({
+    command: &#39;mfr-debate&#39;,
+    content: &#39;Schedule appointments...&#39;
+  });
+
+  // Verify debate issue posted
+  // Verify agents can participate
+  // Verify fallback to broadcast on timeout
+});
+
+// Scenario 3: Mixed environment
+test(&#39;old and new agents coexist&#39;, async () =&gt; {
+  // Some agents have debate capability
+  // Some agents don&#39;t
+  // System works correctly
+});
+</code></pre>
+<h2>Configuration: Debate Toggle</h2>
+<p>Make debate completely optional via configuration:</p>
+<pre><code class="language-javascript">// In coordinator-provider.js
+
+constructor({ enableDebate = false, ...rest }) {
+  this.enableDebate = enableDebate;
+  // ...
+}
+
+async handle({ command, content, metadata, reply }) {
+  switch (command) {
+    case &quot;mfr-debate&quot;:
+    case &quot;debate&quot;:
+      if (!this.enableDebate) {
+        return &quot;Debate feature not enabled. Use &#39;mfr-start&#39; instead.&quot;;
+      }
+      return await this.startDebateSession(content, metadata, reply);
+
+    // ... rest unchanged
+  }
+}
+</code></pre>
+<p><strong>Configuration sources:</strong></p>
+<pre><code class="language-turtle"># In config/agents/coordinator.ttl
+@prefix mfr: &lt;http://purl.org/stuff/mfr/&gt; .
+
+&lt;#coordinator&gt; a agent:ConversationalAgent ;
+  agent:nickname &quot;Coordinator&quot; ;
+  mfr:enableDebate &quot;true&quot;^^xsd:boolean ;
+  mfr:debateTimeout &quot;60000&quot;^^xsd:integer ;
+  # ... existing config
+</code></pre>
+<h2>Backward Compatibility Checklist</h2>
+<ul>
+<li><input disabled="" type="checkbox"> All existing unit tests pass unchanged</li>
+<li><input disabled="" type="checkbox"> All existing integration tests pass unchanged</li>
+<li><input disabled="" type="checkbox"> <code>mfr-start</code> command works identically to before</li>
+<li><input disabled="" type="checkbox"> Agents without debate methods work unchanged</li>
+<li><input disabled="" type="checkbox"> Message format unchanged for existing types</li>
+<li><input disabled="" type="checkbox"> RDF ontology unchanged (debate uses existing IBIS vocabulary)</li>
+<li><input disabled="" type="checkbox"> Phase transitions allow both paths (debate and direct)</li>
+<li><input disabled="" type="checkbox"> Timeout behavior preserved</li>
+<li><input disabled="" type="checkbox"> SHACL validation unchanged</li>
+<li><input disabled="" type="checkbox"> Solution generation unchanged</li>
+<li><input disabled="" type="checkbox"> Human-readable output format unchanged</li>
+</ul>
+<h2>Migration Path</h2>
+<h3>Step 1: Deploy Infrastructure (No Impact)</h3>
+<p>Edit <code>config/agents/coordinator.ttl</code> and set:</p>
+<pre><code>mfr:enableDebate &quot;false&quot;^^xsd:boolean ;
+</code></pre>
+<ul>
+<li>System works exactly as before</li>
+<li>New code present but not active</li>
+</ul>
+<h3>Step 2: Enable Feature (Opt-in)</h3>
+<p>Edit <code>config/agents/coordinator.ttl</code> and set:</p>
+<pre><code>mfr:enableDebate &quot;true&quot;^^xsd:boolean ;
+</code></pre>
+<ul>
+<li>Users can use <code>mfr-debate</code> if they want</li>
+<li>Users can still use <code>mfr-start</code> (unchanged)</li>
+</ul>
+<h3>Step 3: Add Agent Capabilities (Gradual)</h3>
+<ul>
+<li>Update Mistral agent with debate participation</li>
+<li>Test in isolation</li>
+<li>Update other agents one at a time</li>
+<li>Each agent update is independent</li>
+</ul>
+<h3>Step 4: Full Rollout</h3>
+<ul>
+<li>All agents have debate capability</li>
+<li>Users choose <code>mfr-start</code> or <code>mfr-debate</code></li>
+<li>Both workflows fully supported</li>
+</ul>
+<h2>New Contract Additions (Optional)</h2>
+<h3>Coordinator Agent Contract Addendum</h3>
+<p><strong>New inputs (optional):</strong></p>
+<ul>
+<li><code>mfr-debate &lt;problem&gt;</code> command</li>
+</ul>
+<p><strong>New outputs (optional):</strong></p>
+<ul>
+<li>Debate issue formatted for Chair</li>
+<li>Tool recommendation summary</li>
+</ul>
+<p><strong>New phases (optional):</strong></p>
+<ul>
+<li><code>TOOL_SELECTION_DEBATE</code></li>
+</ul>
+<p><strong>Backward compatibility:</strong></p>
+<ul>
+<li>All existing inputs/outputs unchanged</li>
+<li>New inputs/outputs are additive</li>
+</ul>
+<h3>Agent Contract Addendum (All Agents - Optional)</h3>
+<p><strong>New method (optional):</strong></p>
+<pre><code class="language-javascript">async handleDebateParticipation(problemDescription) {
+  // Optional: Return position/support/objection
+  // Or: Return null to not participate
+}
+</code></pre>
+<p><strong>Backward compatibility:</strong></p>
+<ul>
+<li>Method is completely optional</li>
+<li>If not implemented, agent works as before</li>
+<li>No breaking changes to existing contract</li>
+</ul>
+<h2>Risk Mitigation</h2>
+<h3>Risk 1: Debate breaks existing MFR flow</h3>
+<p><strong>Mitigation:</strong></p>
+<ul>
+<li>Separate code paths (<code>mfr-start</code> vs <code>mfr-debate</code>)</li>
+<li>Config toggle to disable debate entirely</li>
+<li>Comprehensive regression tests</li>
+</ul>
+<p><strong>Rollback plan:</strong></p>
+<ul>
+<li>Set <code>mfr:enableDebate &quot;false&quot;^^xsd:boolean</code> in <code>config/agents/coordinator.ttl</code></li>
+<li>System returns to original behavior</li>
+</ul>
+<h3>Risk 2: Agents break when they don&#39;t understand debate</h3>
+<p><strong>Mitigation:</strong></p>
+<ul>
+<li>Debate participation is optional method</li>
+<li>Agents without method just don&#39;t participate</li>
+<li>System works with zero debate participants</li>
+</ul>
+<p><strong>Rollback plan:</strong></p>
+<ul>
+<li>Remove optional methods from agents</li>
+<li>Core functionality unchanged</li>
+</ul>
+<h3>Risk 3: Chair agent changes break IBIS detection</h3>
+<p><strong>Mitigation:</strong></p>
+<ul>
+<li>Tool extraction is new method</li>
+<li>Existing IBIS methods unchanged</li>
+<li>Extensive tests for existing behavior</li>
+</ul>
+<p><strong>Rollback plan:</strong></p>
+<ul>
+<li>Remove new methods</li>
+<li>Chair continues to work for regular debates</li>
+</ul>
+<h2>Conclusion</h2>
+<p>The debate integration can be added with <strong>zero breaking changes</strong> by following these principles:</p>
+<ol>
+<li><strong>Additive only</strong>: New commands, new methods, new phases - nothing removed or changed</li>
+<li><strong>Optional everywhere</strong>: Debate is opt-in, agent participation is optional</li>
+<li><strong>Separate code paths</strong>: <code>mfr-start</code> and <code>mfr-debate</code> don&#39;t interfere</li>
+<li><strong>Feature flags</strong>: Can be disabled entirely if needed</li>
+<li><strong>Gradual rollout</strong>: Infrastructure first, agents later, fully independent</li>
+</ol>
+<p><strong>Current system capabilities:</strong> Unchanged, fully preserved
+<strong>New system capabilities:</strong> Debate-driven tool selection, optional, additive</p>
+<p>The implementation can proceed incrementally with confidence that existing functionality will not be impacted.</p>
+
+    </main>
+  </body>
+</html>

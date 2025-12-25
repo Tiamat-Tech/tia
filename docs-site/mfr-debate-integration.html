@@ -1,0 +1,556 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>MFR Debate Integration: Tool Selection Through Structured Dialogue</title>
+    <style>
+      body { margin: 0; padding: 48px 20px; font-family: "Helvetica Neue", Arial, sans-serif; background: #f7f4ef; color: #1f1b16; }
+      main { max-width: 920px; margin: 0 auto; background: #fffdf9; padding: 48px; border: 1px solid #e3d8c7; box-shadow: 6px 8px 0 #e3d8c7; }
+      h1, h2, h3 { font-weight: 600; margin-top: 2rem; }
+      pre { background: #1f1b16; color: #f7f4ef; padding: 16px; overflow: auto; }
+      code { font-family: "SFMono-Regular", ui-monospace, Menlo, Monaco, Consolas, monospace; }
+      a { color: #8a3b12; }
+      img { max-width: 100%; height: auto; }
+      table { border-collapse: collapse; width: 100%; }
+      th, td { border: 1px solid #e3d8c7; padding: 8px; }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>MFR Debate Integration: Tool Selection Through Structured Dialogue</h1>
+<p><strong>Status:</strong> ✅ Phase 1 Complete - Enabled by default via <code>config/agents/coordinator.ttl</code> (<code>mfr:enableDebate true</code>)</p>
+<h2>How to Try This Out</h2>
+<h3>Step 1: Confirm Debate is Enabled</h3>
+<p>Debate is enabled by default in <code>config/agents/coordinator.ttl</code>:</p>
+<pre><code class="language-turtle">mfr:enableDebate &quot;true&quot;^^xsd:boolean ;
+mfr:debateTimeout &quot;60000&quot;^^xsd:integer
+</code></pre>
+<h3>Step 2: Start the Agents</h3>
+<p>Start the MFR system with the Chair agent included:</p>
+<pre><code class="language-bash">./start-all.sh mfr
+</code></pre>
+<p>This will start:</p>
+<ul>
+<li><strong>Coordinator</strong> (with debate feature enabled)</li>
+<li><strong>Chair</strong> (debate facilitator)</li>
+<li><strong>Mistral</strong> (entity extraction + debate participant)</li>
+<li><strong>Data</strong> (knowledge grounding)</li>
+<li><strong>Prolog</strong> (reasoning)</li>
+<li><strong>MFR-Semantic</strong> (constraint extraction)</li>
+<li><strong>Executor</strong> (plan execution)</li>
+</ul>
+<h3>Step 3: Connect via REPL</h3>
+<p>In another terminal, connect to the chatroom:</p>
+<pre><code class="language-bash">NODE_TLS_REJECT_UNAUTHORIZED=0 node src/client/repl.js &lt;your-username&gt; &lt;your-password&gt;
+</code></pre>
+<h3>Step 4: Start a Debate Session</h3>
+<p>Once connected, try the debate command or shorthand:</p>
+<pre><code>debate Schedule appointments for patients. Alice takes warfarin, Bob takes aspirin. Ensure no drug interactions.
+Q: Schedule appointments for patients. Alice takes warfarin, Bob takes aspirin. Ensure no drug interactions.
+</code></pre>
+<p>You should see:</p>
+<ol>
+<li><strong>Coordinator</strong> announces debate session started with the configured timeout</li>
+<li><strong>Chair</strong> presents the debate issue listing available agents</li>
+<li>Agents can contribute positions like:<ul>
+<li><code>Position: I recommend Mistral for entity extraction because...</code></li>
+<li><code>Position: Data agent would help ground drug names to Wikidata</code></li>
+<li><code>Support: Prolog is essential for checking constraint satisfaction</code></li>
+</ul>
+</li>
+<li>After the timeout (or if Chair detects consensus), the debate concludes</li>
+<li><strong>Coordinator</strong> requests contributions from the selected agents (or all agents if no consensus)</li>
+<li>System proceeds to normal MFR entity discovery phase</li>
+</ol>
+<h3>Comparison with Standard MFR</h3>
+<p>To see the difference, you can also run the standard MFR workflow:</p>
+<pre><code>mfr-start Schedule appointments for patients. Alice takes warfarin, Bob takes aspirin. Ensure no drug interactions.
+</code></pre>
+<p>The <code>mfr-start</code> command skips the debate phase and goes directly to entity discovery (existing behavior - no changes).</p>
+<h3>What Currently Responds</h3>
+<p><strong>Phase 1 (Current Implementation):</strong></p>
+<ul>
+<li>✅ <strong>Coordinator</strong> - Manages the debate session, broadcasts issue, enforces timeout</li>
+<li>✅ <strong>Chair</strong> - Detects debate start, tracks positions/arguments, reports consensus</li>
+<li>✅ <strong>Humans</strong> - Can contribute positions and arguments during the debate window</li>
+<li>❌ <strong>Other agents (Mistral, Data, Prolog)</strong> - Do NOT automatically participate yet (Phase 3 work)</li>
+</ul>
+<p><strong>How to participate as a human:</strong></p>
+<pre><code>Position: I recommend Data agent for grounding drug names to Wikidata
+Support: Prolog excels at constraint satisfaction for scheduling
+Objection: We should avoid Mistral for medical facts due to hallucination risk
+</code></pre>
+<p><strong>Check consensus:</strong></p>
+<pre><code>Chair: tool consensus
+</code></pre>
+<p>Or check debate status:</p>
+<pre><code>Chair: status
+</code></pre>
+<hr>
+<h2>Overview</h2>
+<p>This document describes the integration of the <strong>Chair agent</strong> into the MFR (Model-First Reasoning) workflow to enable structured debate about tool selection and problem-solving approaches. Rather than having the Coordinator implicitly decide which agents contribute what, a debate phase allows agents (and potentially humans) to discuss, argue for, and reach consensus on the best approach.</p>
+<h2>Current MFR Flow vs. Debate-Enhanced Flow</h2>
+<h3>Current Flow (Implicit Tool Selection)</h3>
+<pre><code>User Problem
+    ↓
+Coordinator broadcasts contribution request
+    ↓
+All agents contribute simultaneously
+    ↓
+Coordinator merges contributions
+    ↓
+Validation → Reasoning → Solution
+</code></pre>
+<p><strong>Issues:</strong></p>
+<ul>
+<li>No explicit discussion of <em>why</em> certain tools are appropriate</li>
+<li>Agents may contribute irrelevant information</li>
+<li>No mechanism for agents to suggest alternative approaches</li>
+<li>Humans can&#39;t easily guide the tool selection</li>
+</ul>
+<h3>Proposed Debate-Enhanced Flow</h3>
+<pre><code>User Problem
+    ↓
+Coordinator initiates TOOL_SELECTION_DEBATE phase
+    ↓
+Chair agent facilitates debate:
+  - Issue: &quot;Which tools/agents should address this problem?&quot;
+  - Agents propose Positions (tool recommendations)
+  - Agents provide Arguments (supporting/objecting)
+  - Humans can contribute positions
+    ↓
+Chair detects consensus
+    ↓
+Coordinator requests contributions from agreed-upon agents
+    ↓
+Model construction with selected tools
+    ↓
+Validation → Reasoning → Solution
+</code></pre>
+<h2>Integration Points</h2>
+<h3>1. New MFR Phase: <code>TOOL_SELECTION_DEBATE</code></h3>
+<p>Add to <code>src/lib/mfr/constants.js</code>:</p>
+<pre><code class="language-javascript">export const MFR_PHASES = {
+  // Existing phases
+  INITIALIZATION: &#39;initialization&#39;,
+  PROBLEM_INTERPRETATION: &#39;problem_interpretation&#39;,
+
+  // NEW: Debate phase for tool selection
+  TOOL_SELECTION_DEBATE: &#39;tool_selection_debate&#39;,
+
+  // Existing phases continue
+  ENTITY_DISCOVERY: &#39;entity_discovery&#39;,
+  // ... rest of phases
+};
+</code></pre>
+<p>Update phase transitions:</p>
+<pre><code class="language-javascript">[MFR_PHASES.PROBLEM_INTERPRETATION]: [
+  MFR_PHASES.TOOL_SELECTION_DEBATE,  // NEW path
+  MFR_PHASES.ENTITY_DISCOVERY        // Existing direct path
+],
+[MFR_PHASES.TOOL_SELECTION_DEBATE]: [
+  MFR_PHASES.ENTITY_DISCOVERY
+],
+</code></pre>
+<h3>2. Chair Agent Integration</h3>
+<p>The Chair agent already has the core IBIS (Issue-Based Information System) functionality:</p>
+<p><strong>Existing capabilities:</strong></p>
+<ul>
+<li>Detects Issues, Positions, Arguments</li>
+<li>Tracks debate state</li>
+<li>Summarizes IBIS structures</li>
+<li>Polls for consensus</li>
+</ul>
+<p><strong>Needed enhancements:</strong></p>
+<ul>
+<li>Understand MFR message types</li>
+<li>Recognize when consensus is reached</li>
+<li>Report consensus back to Coordinator</li>
+<li>Support tool/agent-specific vocabulary</li>
+</ul>
+<h3>3. Coordinator Modifications</h3>
+<h4>New Command: <code>mfr-debate</code></h4>
+<p>Initiates tool selection debate:</p>
+<pre><code class="language-javascript">case &quot;mfr-debate&quot;:
+case &quot;debate&quot;:
+  return await this.initiateToolSelectionDebate(content, metadata, reply);
+</code></pre>
+<h4>Implementation:</h4>
+<pre><code class="language-javascript">async initiateToolSelectionDebate(problemDescription, metadata, reply) {
+  const sessionId = randomUUID();
+  const state = new MfrProtocolState(sessionId, {
+    logger: this.logger,
+    initialPhase: MFR_PHASES.TOOL_SELECTION_DEBATE
+  });
+
+  this.activeSessions.set(sessionId, state);
+
+  // Format debate issue
+  const debateIssue = `Issue: Which tools and agents should we use to solve this problem?\n\nProblem: ${problemDescription}\n\nAvailable agents: Mistral (NLP), Data (Wikidata), Prolog (logic), MFR-Semantic (constraints)\n\nPlease provide:\n- Position: I recommend [agent] because...\n- Support: [Agent] would help because...\n- Objection: [Agent] may not work because...`;
+
+  // Send to Chair agent (or broadcast if Chair listening)
+  await this.sendStatusMessage(debateIssue);
+
+  // Set timeout for debate phase
+  setTimeout(() =&gt; {
+    this.concludeDebate(sessionId);
+  }, 60000); // 60 second debate window
+
+  return `Tool selection debate started for session ${sessionId}\n${debateIssue}`;
+}
+</code></pre>
+<h3>4. IBIS Message Types for MFR</h3>
+<p>Extend IBIS vocabulary with MFR-specific concepts:</p>
+<pre><code class="language-javascript">// In src/lib/ibis-detect.js or new file
+
+export const MFR_TOOL_VOCABULARY = {
+  // Agent names
+  agents: [&#39;mistral&#39;, &#39;data&#39;, &#39;prolog&#39;, &#39;semantic&#39;, &#39;wikidata&#39;, &#39;sparql&#39;],
+
+  // Tool capabilities
+  capabilities: [
+    &#39;entity extraction&#39;,
+    &#39;knowledge grounding&#39;,
+    &#39;logical reasoning&#39;,
+    &#39;constraint detection&#39;,
+    &#39;natural language&#39;,
+    &#39;semantic validation&#39;
+  ],
+
+  // Common position patterns
+  positionPatterns: [
+    /position:\s*use\s+(\w+)\s+for\s+(.+)/i,
+    /position:\s*(\w+)\s+is\s+best\s+for\s+(.+)/i,
+    /i\s+recommend\s+(\w+)\s+because\s+(.+)/i
+  ],
+
+  // Argument patterns
+  supportPatterns: [
+    /(\w+)\s+can\s+handle\s+(.+)/i,
+    /(\w+)\s+excels\s+at\s+(.+)/i,
+    /(\w+)\s+has\s+access\s+to\s+(.+)/i
+  ],
+
+  objectionPatterns: [
+    /(\w+)\s+cannot\s+(.+)/i,
+    /(\w+)\s+lacks\s+(.+)/i,
+    /(\w+)\s+would\s+struggle\s+with\s+(.+)/i
+  ]
+};
+</code></pre>
+<h3>5. Consensus Detection</h3>
+<p>The Chair agent needs to detect when consensus is reached:</p>
+<pre><code class="language-javascript">// In chair-provider.js
+
+detectConsensus() {
+  // Simple consensus: majority of positions agree on a set of tools
+  // Or: no objections in last N messages
+  // Or: explicit &quot;consensus&quot; or &quot;agreed&quot; messages
+
+  const toolVotes = new Map();
+
+  this.positions.forEach(position =&gt; {
+    const tools = extractToolsFromPosition(position.text);
+    tools.forEach(tool =&gt; {
+      toolVotes.set(tool, (toolVotes.get(tool) || 0) + 1);
+    });
+  });
+
+  // Consensus if any tool has &gt; 50% of positions
+  const totalPositions = this.positions.length;
+  const consensusTools = [];
+
+  for (const [tool, votes] of toolVotes) {
+    if (votes &gt; totalPositions / 2) {
+      consensusTools.push(tool);
+    }
+  }
+
+  // Also check for explicit objections
+  const hasUnresolvedObjections = this.arguments.some(arg =&gt;
+    arg.stance === &#39;object&#39; &amp;&amp; !this.isObjectionResolved(arg)
+  );
+
+  if (consensusTools.length &gt; 0 &amp;&amp; !hasUnresolvedObjections) {
+    return {
+      reached: true,
+      tools: consensusTools,
+      summary: this.summarizeConsensus(consensusTools)
+    };
+  }
+
+  return { reached: false };
+}
+
+summarizeConsensus(tools) {
+  return `Consensus reached: Use ${tools.join(&#39;, &#39;)} for this problem.\n` +
+         `Based on ${this.positions.length} positions and ${this.arguments.length} arguments.`;
+}
+</code></pre>
+<h3>6. Message Flow Example</h3>
+<h4>Step 1: User Initiates Debate</h4>
+<pre><code>User: mfr-debate Schedule appointments for patients. Alice takes warfarin, Bob takes aspirin. Ensure no drug interactions.
+</code></pre>
+<h4>Step 2: Coordinator → Chair</h4>
+<pre><code>Coordinator: Issue: Which tools and agents should we use to solve this problem?
+
+Problem: Schedule appointments for patients. Alice takes warfarin, Bob takes aspirin. Ensure no drug interactions.
+
+Available agents: Mistral (NLP), Data (Wikidata), Prolog (logic), MFR-Semantic (constraints)
+
+Please provide:
+- Position: I recommend [agent] because...
+- Support: [Agent] would help because...
+- Objection: [Agent] may not work because...
+</code></pre>
+<h4>Step 3: Agents Participate</h4>
+<pre><code>Mistral: Position: Use Data agent for drug information lookup because warfarin and aspirin are well-documented in Wikidata.
+
+Data: Support: I can ground drug entities and retrieve interaction data from Wikidata&#39;s pharmaceutical ontology.
+
+Prolog: Position: Use Prolog for scheduling constraints because appointment scheduling is a classic constraint satisfaction problem.
+
+MFR-Semantic: Support: I can extract drug interaction constraints from medical ontologies to feed into the planning phase.
+
+Human (optional): Position: We should also use MFR-Semantic to ensure we catch all safety constraints, not just known drug interactions.
+</code></pre>
+<h4>Step 4: Chair Detects Consensus</h4>
+<pre><code>Chair: IBIS summary
+Issue: Which tools and agents should we use to solve this problem
+- Position: Use Data agent for drug information lookup
+- Position: Use Prolog for scheduling constraints
+- Position: Use MFR-Semantic for safety constraints
+- Support: Data can ground drug entities
+- Support: Prolog excels at constraint satisfaction
+- Support: MFR-Semantic can extract constraints
+
+Consensus reached: Use Data, Prolog, MFR-Semantic for this problem.
+Based on 3 positions and 3 supporting arguments.
+</code></pre>
+<h4>Step 5: Coordinator Proceeds with Selected Tools</h4>
+<pre><code>Coordinator: MFR session started: abc-123
+Requesting contributions from agreed-upon agents: Data, Prolog, MFR-Semantic
+</code></pre>
+<h2>Implementation Phases</h2>
+<h3>Phase 1: Basic Integration (Minimal Viable Product) ✅ COMPLETE</h3>
+<p><strong>Implemented:</strong></p>
+<ol>
+<li>✅ Added <code>TOOL_SELECTION_DEBATE</code> phase to MFR constants</li>
+<li>✅ Added <code>debate</code> command to Coordinator (config: <code>mfr:enableDebate</code> in coordinator profile)</li>
+<li>✅ Coordinator formats debate issue and sends to general room</li>
+<li>✅ Chair agent responds to all messages to detect debate issues (<code>respondToAll: true</code>, <code>maxAgentRounds: 0</code>)</li>
+<li>✅ Chair agent participates using existing IBIS detection</li>
+<li>✅ Added tool extraction methods to Chair (<code>extractToolRecommendations()</code>, <code>detectToolConsensus()</code>)</li>
+<li>✅ Configured timeout with fallback to all agents (<code>mfr:debateTimeout</code>)</li>
+<li>✅ Zero breaking changes - existing <code>mfr-start</code> workflow unchanged</li>
+</ol>
+<p><strong>Files Modified:</strong></p>
+<ul>
+<li><code>src/lib/mfr/constants.js</code> - New phase and transitions</li>
+<li><code>src/agents/providers/coordinator-provider.js</code> - Debate session management</li>
+<li><code>src/services/coordinator-agent.js</code> - Feature flag integration</li>
+<li><code>src/agents/providers/chair-provider.js</code> - Tool extraction, consensus detection, and MFR-specific debate detection</li>
+<li><code>src/services/chair-agent.js</code> - Added <code>respondToAll: true</code> to detect debate issues</li>
+<li><code>test/mfr-debate.integration.test.js</code> - Comprehensive test suite (10/10 tests passing)</li>
+</ul>
+<p><strong>Key Implementation Details:</strong></p>
+<ol>
+<li>The Chair has <code>maxAgentRounds: 0</code> to disable agent-rounds limiting - this ensures Chair can see ALL messages including broadcasts from Coordinator (another agent)</li>
+<li>The Chair checks for MFR debate patterns (&quot;which tools and agents should we use&quot;, &quot;available agents:&quot;) BEFORE general IBIS detection</li>
+<li>The Chair ignores the <code>debate</code> command itself (returns null) so it doesn&#39;t interfere with Coordinator processing it</li>
+</ol>
+<p><strong>Deliverable:</strong> ✅ Chair can track debate, humans can guide tool selection, automated timeout</p>
+<h3>Phase 2: Automated Consensus (COMPLETE)</h3>
+<p><strong>Implemented:</strong></p>
+<ol>
+<li>✅ Basic consensus detection in Chair agent (majority voting on tool names)</li>
+<li>✅ Chair automatically emits a consensus message when tools are agreed</li>
+<li>✅ Coordinator extracts selected tools from consensus message</li>
+<li>✅ Coordinator filters contribution requests to selected agents</li>
+</ol>
+<p><strong>Deliverable:</strong> Automatic tool selection based on debate</p>
+<h3>Phase 3: Agent-Aware Debate</h3>
+<ol>
+<li>Extend IBIS detection with MFR tool vocabulary</li>
+<li>Agents can express tool recommendations in structured way</li>
+<li>Chair recognizes agent-specific position patterns</li>
+<li>Better extraction of tool names from natural language</li>
+</ol>
+<p><strong>Deliverable:</strong> Agents actively participate in tool selection</p>
+<h3>Phase 4: Advanced Features</h3>
+<ol>
+<li>Debate timeout with fallback to all-agents approach</li>
+<li>Weighted voting (expert agents have more influence in their domain)</li>
+<li>Learning from past debates (which tool combinations worked well)</li>
+<li>Visual debate summary in Turtle/RDF for audit trail</li>
+<li>Multi-round debates for complex problems</li>
+</ol>
+<p><strong>Deliverable:</strong> Production-ready debate-driven MFR</p>
+<h2>Benefits</h2>
+<h3>For Users</h3>
+<ul>
+<li><strong>Transparency</strong>: See <em>why</em> certain tools were selected</li>
+<li><strong>Control</strong>: Guide the system toward preferred approaches</li>
+<li><strong>Education</strong>: Learn which tools are appropriate for which problems</li>
+</ul>
+<h3>For Agents</h3>
+<ul>
+<li><strong>Specialization</strong>: Agents can advocate for their strengths</li>
+<li><strong>Collaboration</strong>: Agents can defer to others&#39; expertise</li>
+<li><strong>Efficiency</strong>: Avoid unnecessary work on irrelevant tasks</li>
+</ul>
+<h3>For the System</h3>
+<ul>
+<li><strong>Adaptability</strong>: Tool selection adapts to problem characteristics</li>
+<li><strong>Auditability</strong>: Complete record of decision rationale in IBIS format</li>
+<li><strong>Extensibility</strong>: New agents can participate without coordinator changes</li>
+<li><strong>Human-in-the-loop</strong>: Natural integration point for human oversight</li>
+</ul>
+<h2>Challenges &amp; Solutions</h2>
+<h3>Challenge 1: Debate Takes Too Long</h3>
+<p><strong>Solution:</strong></p>
+<ul>
+<li>Set reasonable timeout (30-60 seconds)</li>
+<li>Fallback to all-agents if no consensus</li>
+<li>Cache consensus for similar problems</li>
+</ul>
+<h3>Challenge 2: Agents Don&#39;t Participate</h3>
+<p><strong>Solution:</strong></p>
+<ul>
+<li>Each agent has a default position about its capabilities</li>
+<li>Coordinator can prompt non-responding agents</li>
+<li>Use agent profiles to infer recommendations</li>
+</ul>
+<h3>Challenge 3: Conflicting Positions</h3>
+<p><strong>Solution:</strong></p>
+<ul>
+<li>Chair facilitates argument exchange</li>
+<li>Allow objections to be addressed</li>
+<li>Human can break ties</li>
+<li>Majority vote as fallback</li>
+</ul>
+<h3>Challenge 4: Integration Complexity</h3>
+<p><strong>Solution:</strong></p>
+<ul>
+<li>Make debate phase optional (flag in coordinator)</li>
+<li>Preserve existing direct-contribution path</li>
+<li>Gradual rollout: start with logging only</li>
+</ul>
+<h2>Example Use Cases</h2>
+<h3>Use Case 1: Medical Problem (High Stakes)</h3>
+<p><strong>Scenario:</strong> Drug interaction checking requires validated data sources</p>
+<p><strong>Debate outcome:</strong></p>
+<ul>
+<li>Consensus to use Data agent (Wikidata) + MFR-Semantic (medical ontologies)</li>
+<li>Objection to using Mistral for medical facts (hallucination risk)</li>
+<li>Human confirms: &quot;Agreed, use only verified sources&quot;</li>
+</ul>
+<p><strong>Result:</strong> Higher confidence in solution, appropriate tool selection</p>
+<h3>Use Case 2: Creative Problem (Low Stakes)</h3>
+<p><strong>Scenario:</strong> Plan a dinner party with dietary restrictions</p>
+<p><strong>Debate outcome:</strong></p>
+<ul>
+<li>Quick consensus: Mistral for recipe suggestions, Prolog for constraint checking</li>
+<li>No objections, debate concludes in 15 seconds</li>
+</ul>
+<p><strong>Result:</strong> Fast tool selection, appropriate for informal problem</p>
+<h3>Use Case 3: Novel Problem (Unknown Territory)</h3>
+<p><strong>Scenario:</strong> Problem type not seen before</p>
+<p><strong>Debate outcome:</strong></p>
+<ul>
+<li>Multiple positions proposed</li>
+<li>Arguments exchanged about tool applicability</li>
+<li>Human provides domain expertise: &quot;This is actually a graph problem&quot;</li>
+<li>Consensus: Use Data agent for graph structure, Prolog for traversal</li>
+</ul>
+<p><strong>Result:</strong> System adapts to new problem class with human guidance</p>
+<h2>Technical Considerations</h2>
+<h3>RDF Representation</h3>
+<p>Debate outcomes can be serialized as RDF:</p>
+<pre><code class="language-turtle">@prefix mfr: &lt;http://purl.org/stuff/mfr/&gt; .
+@prefix ibis: &lt;http://purl.org/stuff/ibis/&gt; .
+@prefix schema: &lt;http://schema.org/&gt; .
+
+&lt;#debate-session-123&gt; a mfr:ToolSelectionDebate ;
+  mfr:forProblem &lt;#problem-456&gt; ;
+  ibis:hasIssue [
+    schema:name &quot;Which tools should solve this problem?&quot; ;
+    schema:description &quot;Schedule appointments with drug interaction checking&quot;
+  ] ;
+  ibis:hasPosition [
+    schema:name &quot;Use Data agent for drug lookup&quot; ;
+    schema:author &lt;#agent-data&gt; ;
+    mfr:recommendsTool &lt;#tool-data-agent&gt;
+  ] ;
+  ibis:hasArgument [
+    schema:name &quot;Data agent can access Wikidata pharmaceutical data&quot; ;
+    ibis:supports &lt;#position-1&gt; ;
+    ibis:argumentType ibis:Support
+  ] ;
+  mfr:consensusReached true ;
+  mfr:selectedTools ( &lt;#tool-data-agent&gt; &lt;#tool-prolog&gt; &lt;#tool-mfr-semantic&gt; ) .
+</code></pre>
+<h3>Lingue Mode Negotiation</h3>
+<p>Debate phase uses existing Lingue modes:</p>
+<ul>
+<li><code>lng:HumanChat</code> - For natural language debate</li>
+<li><code>lng:IBISText</code> - For structured Issue/Position/Argument</li>
+<li><code>lng:ModelNegotiation</code> - For tool selection metadata</li>
+</ul>
+<p>Agents negotiate which mode to use for debate participation.</p>
+<h3>Performance Impact</h3>
+<p><strong>Minimal for simple problems:</strong></p>
+<ul>
+<li>30-second debate with quick consensus</li>
+<li>Fallback to direct contribution on timeout</li>
+</ul>
+<p><strong>Valuable for complex problems:</strong></p>
+<ul>
+<li>Prevents wasted computation on wrong tools</li>
+<li>Explicit rationale prevents repeated debates for similar problems</li>
+</ul>
+<h2>Future Extensions</h2>
+<ol>
+<li><strong>Multi-stage debates:</strong> Debate tool selection, then debate solution approaches</li>
+<li><strong>Debate learning:</strong> Record which tool combinations worked well</li>
+<li><strong>Confidence levels:</strong> Agents express uncertainty about recommendations</li>
+<li><strong>Debate replay:</strong> Visualize debate history for education/audit</li>
+<li><strong>Cross-language debates:</strong> Humans participate in their native language</li>
+<li><strong>Formal argumentation:</strong> Use argumentation frameworks for conflict resolution</li>
+</ol>
+<h2>Conclusion</h2>
+<p>Integrating the Chair agent into MFR creates a more transparent, collaborative, and adaptable problem-solving system. The debate phase allows explicit discussion of tool selection, providing:</p>
+<ul>
+<li><strong>Transparency</strong> in decision-making</li>
+<li><strong>Human oversight</strong> at a natural intervention point</li>
+<li><strong>Agent collaboration</strong> based on expertise</li>
+<li><strong>Audit trails</strong> in structured IBIS format</li>
+</ul>
+<p>The implementation is gradual, with Phase 1 complete and working in production.</p>
+<hr>
+<p><strong>Status:</strong> ✅ Phase 1 Implemented and Tested (Dec 24, 2025)</p>
+<ul>
+<li>Feature enabled by default in <code>config/agents/coordinator.ttl</code></li>
+<li>Backward compatible (zero breaking changes)</li>
+<li>10/10 integration tests passing</li>
+<li>Ready for production use</li>
+</ul>
+<p><strong>Dependencies:</strong></p>
+<ul>
+<li>✅ Chair agent (implemented)</li>
+<li>✅ IBIS detection (implemented)</li>
+<li>✅ MFR coordinator (implemented)</li>
+<li>✅ Feature flag system (implemented)</li>
+</ul>
+<p><strong>Next Steps:</strong></p>
+<ul>
+<li>Phase 2: Automatic consensus notification from Chair to Coordinator</li>
+<li>Phase 2: Agent filtering based on consensus</li>
+<li>Phase 3: Enhanced IBIS detection with MFR vocabulary</li>
+<li>Phase 4: Advanced features (multi-round debates, learning, etc.)</li>
+</ul>
+
+    </main>
+  </body>
+</html>

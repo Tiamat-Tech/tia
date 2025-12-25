@@ -50,7 +50,9 @@
 <h3>1. Problem Interpretation</h3>
 <ul>
 <li>Accept <code>mfr-start &lt;problem&gt;</code> commands in the primary room.</li>
+<li>Accept <code>debate &lt;problem&gt;</code> (or <code>Q:</code> shorthand) to start a tool-selection debate via Chair.</li>
 <li>Create a session ID and initialize session state.</li>
+<li>If debate is enabled, wait for consensus or timeout before requesting contributions.</li>
 <li>Broadcast <code>mfr:ModelContributionRequest</code> with the session ID and problem text.</li>
 </ul>
 <h3>2. Model Construction</h3>
@@ -82,6 +84,7 @@
 <ul>
 <li><code>sessionId</code></li>
 <li><code>problemDescription</code></li>
+<li><code>requestedAgents</code> (optional list when debate selects tools)</li>
 <li><code>requestedContributions</code> (entity, constraint, action, goal)</li>
 </ul>
 <h3>Contribution Response</h3>

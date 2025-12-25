@@ -69,6 +69,7 @@ XMPP_DOMAIN=tensegrity.it
 <p>Check logs:</p>
 <pre><code class="language-bash">tail -f logs/coordinator.log
 </code></pre>
+<p>Debate mode is enabled by default (see <code>config/agents/coordinator.ttl</code>). You can use <code>debate &lt;problem&gt;</code> or the shorthand <code>Q: &lt;problem&gt;</code> from the chatroom to trigger a tool-selection debate before the MFR run.</p>
 <h2>Step 5: Run Your First MFR Session</h2>
 <h3>Example 1: Simple Scheduling</h3>
 <pre><code class="language-bash">node src/examples/run-mfr-session.js \
@@ -155,10 +156,7 @@ Solution generated:
 [Entity 2] must/cannot [constraint 2].
 </code></pre>
 <p><strong>Example</strong>:</p>
-<pre><code>Schedule meetings for team members.
-Alice is only available in mornings.
-Bob needs 2-hour slots.
-Carol can&#39;t meet before Bob.
+<pre><code>Schedule meetings for team members. Alice is only available in mornings. Bob needs 2-hour slots. Carol can&#39;t meet before Bob.
 </code></pre>
 <h3>Pattern 2: Resource Allocation</h3>
 <p><strong>Problem Template</strong>:</p>

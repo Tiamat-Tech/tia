@@ -1,5 +1,10 @@
 # Lingue Integration Guide
 
+Lingue is a lightweight protocol layer for negotiating language modes and
+exchanging structured payloads (RDF, JSON, Prolog) over XMPP. In TIA it powers
+structured agent-to-agent coordination while keeping human-readable summaries
+in the room.
+
 This guide describes how to advertise Lingue capabilities, negotiate modes, and exchange structured payloads.
 
 ## Capability Advertisement
@@ -11,6 +16,10 @@ Example features:
 - `http://purl.org/stuff/lingue/feature/lang/ibis-text`
 - `http://purl.org/stuff/lingue/feature/lang/prolog-program`
 - `http://purl.org/stuff/lingue/feature/lang/profile-exchange`
+- `http://purl.org/stuff/lingue/feature/lang/sparql-query`
+- `http://purl.org/stuff/lingue/feature/lang/model-first-rdf`
+- `http://purl.org/stuff/lingue/feature/lang/model-negotiation`
+- `http://purl.org/stuff/lingue/feature/lang/shacl-validation`
 
 ## Profile Declarations
 
@@ -40,6 +49,10 @@ Handlers implement mode-specific payloads:
 - `IBISTextHandler` - text/plain + text/turtle payload
 - `PrologProgramHandler` - text/x-prolog payload
 - `ProfileExchangeHandler` - text/turtle payload
+- `SparqlQueryHandler` - application/sparql-query payload
+- `ModelFirstRdfHandler` - text/turtle payload (MFR contributions)
+- `ModelNegotiationHandler` - application/json payload (MFR negotiation)
+- `ShaclValidationHandler` - application/json payload (MFR validation)
 
 Register handlers based on `profile.supportsLingueMode()` and pass them into `LingueNegotiator`.
 
@@ -59,3 +72,23 @@ The Prolog agent uses tau-prolog and supports:
 - Inline program + query using `?-` (program above, query below).
 
 The Lingue `PrologProgram` handler can carry program text in structured payloads.
+
+## MFR Session Runner Notes
+
+`src/examples/run-mfr-session.js` does not use Lingue negotiation. It joins the
+coordinator MUC and sends a plain text `mfr-start <problem>` command. The
+coordinator replies with plain text summaries, while agent-to-agent MFR
+messages can use Lingue modes when profiles enable them.
+
+## MFR Lingue Modes In Use
+
+The following profiles currently enable MFR Lingue modes (as defined in
+`config/agents/*.ttl`), so their services register the matching handlers at
+startup:
+
+- `config/agents/coordinator.ttl` - ModelFirstRDF, ModelNegotiation, ShaclValidation
+- `config/agents/mfr-semantic.ttl` - ModelFirstRDF, ModelNegotiation
+- `config/agents/mistral.ttl` - ModelFirstRDF, ModelNegotiation
+- `config/agents/prolog.ttl` - ModelFirstRDF, ModelNegotiation
+- `config/agents/data.ttl` - ModelFirstRDF, ModelNegotiation
+- `config/agents/semem.ttl` - ModelFirstRDF, ModelNegotiation, ShaclValidation

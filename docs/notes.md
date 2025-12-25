@@ -1,5 +1,3 @@
-We want it so that something like the following example will first start a debate (via Chair) and then agents chosen (Coordinator?) and then the agents decide on a plan then the agents carry out the plan. Right now Chair acknowledges the question but then it goes no further. "Q: how can we optimize delivery routes for 3 trucks serving 10 locations. Truck 1 has capacity 100, Truck 2 has capacity 150, Truck 3 has capacity 200. Location A needs delivery before 10 AM. Locations B and C must use same truck."
-
  DOCS_DIR=docs DOCS_OUT_DIR=docs-site node scripts/build-docs.mjs
 
 pkill -f 'node src/services'

@@ -97,6 +97,12 @@
 <li>Explains solutions in natural language</li>
 <li>Mediates human-machine communication</li>
 </ul>
+<h4><strong>Executor Agent</strong> (in progress)</h4>
+<ul>
+<li>Translates high-level plans into Prolog-ready execution queries</li>
+<li>Requests concrete bindings from the Prolog agent</li>
+<li>Feeds bindings back to the coordinator for final synthesis</li>
+</ul>
 <h3>3. Protocol Flow</h3>
 <pre><code>User Request
      ↓
@@ -129,9 +135,13 @@
      ↓
 8. Solution Validation (Against Model)
      ↓
-9. Synthesis &amp; Ranking (Coordinator)
+9. Plan Execution Preparation (Executor, in progress)
      ↓
-10. Explanation Generation (NL Agent)
+10. Plan Execution &amp; Binding (Prolog)
+     ↓
+11. Synthesis &amp; Ranking (Coordinator)
+     ↓
+12. Explanation Generation (NL Agent)
      ↓
 Response to User
 </code></pre>

@@ -19,146 +19,118 @@
   <body>
     <main>
       <h1>TIA Documentation</h1>
-<p>TIA is an XMPP agent framework that implements Lingue protocol flows and
-Model Context Protocol (MCP) integrations. It includes long-running agents,
-example scripts for message flow testing, and shared utilities for
-configuration, logging, and RDF-based profiles.</p>
-<h2>Documents</h2>
+<p><strong>TIA (The Intelligence Agency)</strong> is an experimental multi-agent system built on open standards: XMPP for messaging, RDF for knowledge representation, and semantic protocols for inter-agent coordination. The system implements Model-First Reasoning (MFR), where specialized agents collaboratively construct explicit problem models before generating solutions.</p>
+<p><strong>Key features:</strong></p>
 <ul>
-<li><a href="2024-09.html">2024-09.md</a></li>
-<li><a href="2025-12-21_tia-blog.html">2025-12-21_tia-blog.md</a></li>
-<li><a href="2025-12-21.html">2025-12-21.md</a></li>
-<li><a href="agent-dev-prompt.html">agent-dev-prompt.md</a></li>
-<li><a href="agents.html">agents.md</a></li>
-<li><a href="api-reference.html">api-reference.md</a></li>
-<li><a href="auto-registration.html">auto-registration.md</a></li>
-<li><a href="coordinator-agent-contract.html">coordinator-agent-contract.md</a></li>
-<li><a href="data-agent-contract.html">data-agent-contract.md</a></li>
-<li><a href="data-agent.html">data-agent.md</a></li>
-<li><a href="debating-society.html">debating-society.md</a></li>
-<li><a href="docs/2024-09.html">docs/2024-09.md</a></li>
-<li>[docs/kia (copy)/agents.md](docs/kia (copy)/agents.html)</li>
-<li>[docs/kia (copy)/design-chat.md](docs/kia (copy)/design-chat.html)</li>
-<li>[docs/kia (copy)/horsebot.md](docs/kia (copy)/horsebot.html)</li>
-<li>[docs/kia (copy)/README.md](docs/kia (copy)/README.html)</li>
-<li>[docs/kia (copy)/vocabs.md](docs/kia (copy)/vocabs.html)</li>
-<li><a href="docs/kia/agents.html">docs/kia/agents.md</a></li>
-<li><a href="docs/kia/architectures/continuous-learning-chat.html">docs/kia/architectures/continuous-learning-chat.md</a></li>
-<li><a href="docs/kia/architectures/danbri-challenge-me.html">docs/kia/architectures/danbri-challenge-me.md</a></li>
-<li><a href="docs/kia/architectures/prompts.html">docs/kia/architectures/prompts.md</a></li>
-<li><a href="docs/kia/bot-components.html">docs/kia/bot-components.md</a></li>
-<li><a href="docs/kia/culture.html">docs/kia/culture.md</a></li>
-<li><a href="docs/kia/deliverables.html">docs/kia/deliverables.md</a></li>
-<li><a href="docs/kia/deploy.html">docs/kia/deploy.md</a></li>
-<li><a href="docs/kia/design-chat.html">docs/kia/design-chat.md</a></li>
-<li><a href="docs/kia/horsebot.html">docs/kia/horsebot.md</a></li>
-<li><a href="docs/kia/mapping-language.html">docs/kia/mapping-language.md</a></li>
-<li><a href="docs/kia/messages.html">docs/kia/messages.md</a></li>
-<li><a href="docs/kia/misc-tools.html">docs/kia/misc-tools.md</a></li>
-<li><a href="docs/kia/next-steps.html">docs/kia/next-steps.md</a></li>
-<li><a href="docs/kia/prompts/copilot.html">docs/kia/prompts/copilot.md</a></li>
-<li><a href="docs/kia/raw-notes/agents.html">docs/kia/raw-notes/agents.md</a></li>
-<li><a href="docs/kia/raw-notes/bot-components.html">docs/kia/raw-notes/bot-components.md</a></li>
-<li><a href="docs/kia/raw-notes/culture.html">docs/kia/raw-notes/culture.md</a></li>
-<li><a href="docs/kia/raw-notes/deliverables.html">docs/kia/raw-notes/deliverables.md</a></li>
-<li><a href="docs/kia/raw-notes/deploy.html">docs/kia/raw-notes/deploy.md</a></li>
-<li><a href="docs/kia/raw-notes/design-chat.html">docs/kia/raw-notes/design-chat.md</a></li>
-<li><a href="docs/kia/raw-notes/horsebot.html">docs/kia/raw-notes/horsebot.md</a></li>
-<li><a href="docs/kia/raw-notes/mapping-language.html">docs/kia/raw-notes/mapping-language.md</a></li>
-<li><a href="docs/kia/raw-notes/messages.html">docs/kia/raw-notes/messages.md</a></li>
-<li><a href="docs/kia/raw-notes/misc-tools.html">docs/kia/raw-notes/misc-tools.md</a></li>
-<li><a href="docs/kia/raw-notes/next-steps.html">docs/kia/raw-notes/next-steps.md</a></li>
-<li><a href="docs/kia/raw-notes/technologies.html">docs/kia/raw-notes/technologies.md</a></li>
-<li><a href="docs/kia/raw-notes/translators.html">docs/kia/raw-notes/translators.md</a></li>
-<li><a href="docs/kia/raw-notes/vocabs.html">docs/kia/raw-notes/vocabs.md</a></li>
-<li><a href="docs/kia/raw-notes/yawns-chat.html">docs/kia/raw-notes/yawns-chat.md</a></li>
-<li><a href="docs/kia/README.html">docs/kia/README.md</a></li>
-<li><a href="docs/kia/technologies.html">docs/kia/technologies.md</a></li>
-<li><a href="docs/kia/translators.html">docs/kia/translators.md</a></li>
-<li><a href="docs/kia/vocabs.html">docs/kia/vocabs.md</a></li>
-<li><a href="docs/kia/write-up/bits.html">docs/kia/write-up/bits.md</a></li>
-<li><a href="docs/kia/write-up/formal_01.html">docs/kia/write-up/formal_01.md</a></li>
-<li><a href="docs/kia/write-up/formal_02.html">docs/kia/write-up/formal_02.md</a></li>
-<li><a href="docs/kia/write-up/index.html">docs/kia/write-up/index.md</a></li>
-<li><a href="docs/kia/wwworkspace.html">docs/kia/wwworkspace.md</a></li>
-<li><a href="docs/kia/yawns-chat.html">docs/kia/yawns-chat.md</a></li>
-<li><a href="docs/notes.html">docs/notes.md</a></li>
-<li><a href="ibis.html">ibis.md</a></li>
-<li><a href="kia/agents.html">kia/agents.md</a></li>
-<li><a href="kia/architectures/continuous-learning-chat.html">kia/architectures/continuous-learning-chat.md</a></li>
-<li><a href="kia/architectures/danbri-challenge-me.html">kia/architectures/danbri-challenge-me.md</a></li>
-<li><a href="kia/architectures/prompts.html">kia/architectures/prompts.md</a></li>
-<li><a href="kia/bot-components.html">kia/bot-components.md</a></li>
-<li><a href="kia/culture.html">kia/culture.md</a></li>
-<li><a href="kia/deliverables.html">kia/deliverables.md</a></li>
-<li><a href="kia/deploy.html">kia/deploy.md</a></li>
-<li><a href="kia/design-chat.html">kia/design-chat.md</a></li>
-<li><a href="kia/horsebot.html">kia/horsebot.md</a></li>
-<li><a href="kia/mapping-language.html">kia/mapping-language.md</a></li>
-<li><a href="kia/messages.html">kia/messages.md</a></li>
-<li><a href="kia/misc-tools.html">kia/misc-tools.md</a></li>
-<li><a href="kia/next-steps.html">kia/next-steps.md</a></li>
-<li><a href="kia/prompts/copilot.html">kia/prompts/copilot.md</a></li>
-<li><a href="kia/raw-notes/agents.html">kia/raw-notes/agents.md</a></li>
-<li><a href="kia/raw-notes/bot-components.html">kia/raw-notes/bot-components.md</a></li>
-<li><a href="kia/raw-notes/culture.html">kia/raw-notes/culture.md</a></li>
-<li><a href="kia/raw-notes/deliverables.html">kia/raw-notes/deliverables.md</a></li>
-<li><a href="kia/raw-notes/deploy.html">kia/raw-notes/deploy.md</a></li>
-<li><a href="kia/raw-notes/design-chat.html">kia/raw-notes/design-chat.md</a></li>
-<li><a href="kia/raw-notes/horsebot.html">kia/raw-notes/horsebot.md</a></li>
-<li><a href="kia/raw-notes/mapping-language.html">kia/raw-notes/mapping-language.md</a></li>
-<li><a href="kia/raw-notes/messages.html">kia/raw-notes/messages.md</a></li>
-<li><a href="kia/raw-notes/misc-tools.html">kia/raw-notes/misc-tools.md</a></li>
-<li><a href="kia/raw-notes/next-steps.html">kia/raw-notes/next-steps.md</a></li>
-<li><a href="kia/raw-notes/technologies.html">kia/raw-notes/technologies.md</a></li>
-<li><a href="kia/raw-notes/translators.html">kia/raw-notes/translators.md</a></li>
-<li><a href="kia/raw-notes/vocabs.html">kia/raw-notes/vocabs.md</a></li>
-<li><a href="kia/raw-notes/yawns-chat.html">kia/raw-notes/yawns-chat.md</a></li>
-<li><a href="kia/README.html">kia/README.md</a></li>
-<li><a href="kia/technologies.html">kia/technologies.md</a></li>
-<li><a href="kia/translators.html">kia/translators.md</a></li>
-<li><a href="kia/vocabs.html">kia/vocabs.md</a></li>
-<li><a href="kia/write-up/bits.html">kia/write-up/bits.md</a></li>
-<li><a href="kia/write-up/formal_01.html">kia/write-up/formal_01.md</a></li>
-<li><a href="kia/write-up/formal_02.html">kia/write-up/formal_02.md</a></li>
-<li><a href="kia/write-up/index.html">kia/write-up/index.md</a></li>
-<li><a href="kia/wwworkspace.html">kia/wwworkspace.md</a></li>
-<li><a href="kia/yawns-chat.html">kia/yawns-chat.md</a></li>
-<li><a href="lingue-integration.html">lingue-integration.md</a></li>
-<li><a href="LINGUE-PLAN.html">LINGUE-PLAN.md</a></li>
-<li><a href="mcp-client.html">mcp-client.md</a></li>
-<li><a href="MCP-PLAN.html">MCP-PLAN.md</a></li>
-<li><a href="mcp-server.html">mcp-server.md</a></li>
-<li><a href="mcp.html">mcp.md</a></li>
-<li><a href="mfr-agent-contracts.html">mfr-agent-contracts.md</a></li>
-<li><a href="mfr-api-reference.html">mfr-api-reference.md</a></li>
-<li><a href="mfr-architecture-overview.html">mfr-architecture-overview.md</a></li>
-<li><a href="mfr-quick-start.html">mfr-quick-start.md</a></li>
-<li><a href="mfr-room-creation-testing.html">mfr-room-creation-testing.md</a></li>
-<li><a href="mfr-semantic-agent-contract.html">mfr-semantic-agent-contract.md</a></li>
-<li><a href="mfr-usage-guide.html">mfr-usage-guide.md</a></li>
-<li><a href="mistral-agent-contract.html">mistral-agent-contract.md</a></li>
-<li><a href="notes.html">notes.md</a></li>
-<li><a href="postcraft/content/raw/articles/about.html">postcraft/content/raw/articles/about.md</a></li>
-<li><a href="postcraft/content/raw/articles/claude-vocab-artifacts/incentive-spec.html">postcraft/content/raw/articles/claude-vocab-artifacts/incentive-spec.md</a></li>
-<li><a href="postcraft/content/raw/articles/links.html">postcraft/content/raw/articles/links.md</a></li>
-<li><a href="postcraft/content/raw/entries/2023-10-27_hello.html">postcraft/content/raw/entries/2023-10-27_hello.md</a></li>
-<li><a href="postcraft/knowledge/about.html">postcraft/knowledge/about.md</a></li>
-<li><a href="postcraft/knowledge/prompts/2024-10-06_prompt-01.html">postcraft/knowledge/prompts/2024-10-06_prompt-01.md</a></li>
-<li><a href="postcraft/knowledge/prompts/about.html">postcraft/knowledge/prompts/about.md</a></li>
-<li><a href="postcraft/knowledge/prompts/system-prompt.html">postcraft/knowledge/prompts/system-prompt.md</a></li>
-<li><a href="postcraft/knowledge/references/about.html">postcraft/knowledge/references/about.md</a></li>
-<li><a href="postcraft/layout/inspiration.html">postcraft/layout/inspiration.md</a></li>
-<li><a href="postcraft/layout/mediocre/about.html">postcraft/layout/mediocre/about.md</a></li>
-<li><a href="prolog-agent-contract.html">prolog-agent-contract.md</a></li>
-<li><a href="provider-guide.html">provider-guide.md</a></li>
-<li><a href="quick-start.html">quick-start.md</a></li>
-<li><a href="semem-agent-contract.html">semem-agent-contract.md</a></li>
-<li><a href="server.html">server.md</a></li>
-<li><a href="tbox-note.html">tbox-note.md</a></li>
-<li><a href="TEMPLATE-PLAN.html">TEMPLATE-PLAN.md</a></li>
-<li><a href="testing.html">testing.md</a></li>
+<li>🤖 Multiple specialized AI agents (Mistral, Prolog, Data, Semantic)</li>
+<li>📊 RDF-based knowledge representation and SHACL validation</li>
+<li>🔄 Lingue protocol for language mode negotiation</li>
+<li>🌐 XMPP/Jabber for federated, real-time communication</li>
+<li>🔧 Model Context Protocol (MCP) integration</li>
+<li>✅ Constraint-based reasoning with verifiable solutions</li>
 </ul>
+<p><strong>Quick links:</strong></p>
+<ul>
+<li>💬 <a href="https://tensegrity.it/chat/">TIA Live Chat</a> - Join <code>general@conference.tensegrity.it</code></li>
+<li>🐙 <a href="https://github.com/danja/tia">GitHub Repository</a></li>
+<li>📖 <a href="https://danja.github.io/lingue/">Lingue Protocol Specification</a></li>
+</ul>
+<hr>
+<h2>🚀 Getting Started</h2>
+<ul>
+<li><strong><a href="2025-12-24_tia-progress.html">Progress Report (Dec 24, 2025)</a></strong> - Latest status and complete system walkthrough</li>
+<li><strong><a href="quick-start.html">Quick Start Guide</a></strong> - Get up and running with TIA agents</li>
+<li><strong><a href="mfr-quick-start.html">MFR Quick Start</a></strong> - Model-First Reasoning system setup</li>
+<li><strong><a href="agents.html">Agent Overview</a></strong> - Capabilities and commands for each agent</li>
+</ul>
+<h2>🏗️ Model-First Reasoning (MFR)</h2>
+<p>The core innovation of TIA: explicit model construction before reasoning.</p>
+<h3>Core Documentation</h3>
+<ul>
+<li><strong><a href="mfr-architecture-overview.html">MFR Architecture Overview</a></strong> - Four-phase problem solving workflow</li>
+<li><strong><a href="mfr-usage-guide.html">MFR Usage Guide</a></strong> - Practical guide to using MFR</li>
+<li><strong><a href="mfr-api-reference.html">MFR API Reference</a></strong> - Complete API documentation</li>
+<li><strong><a href="mfr-agent-contracts.html">MFR Agent Contracts</a></strong> - Expected agent behaviors</li>
+</ul>
+<h3>Agent Contracts</h3>
+<p>Individual specifications for each MFR agent:</p>
+<ul>
+<li><strong><a href="coordinator-agent-contract.html">Coordinator Agent</a></strong> - Orchestrates the MFR protocol</li>
+<li><strong><a href="data-agent-contract.html">Data Agent</a></strong> - Wikidata/DBpedia knowledge grounding</li>
+<li><strong><a href="mistral-agent-contract.html">Mistral Agent</a></strong> - NLP entity extraction and explanation</li>
+<li><strong><a href="prolog-agent-contract.html">Prolog Agent</a></strong> - Logical reasoning and plan generation</li>
+<li><strong><a href="mfr-semantic-agent-contract.html">MFR Semantic Agent</a></strong> - Constraint identification</li>
+<li><strong><a href="semem-agent-contract.html">Semem Agent</a></strong> - Knowledge base integration</li>
+</ul>
+<h3>Testing &amp; Room Setup</h3>
+<ul>
+<li><strong><a href="mfr-room-creation-testing.html">MFR Room Creation &amp; Testing</a></strong> - Prosody MUC configuration</li>
+</ul>
+<h3>Experimental Features</h3>
+<ul>
+<li><strong><a href="mfr-debate-integration.html">MFR Debate Integration</a></strong> ✅ - Tool selection through structured dialogue (Phase 1 complete, enabled by default in <code>config/agents/coordinator.ttl</code>)</li>
+<li><strong><a href="mfr-debate-agent-requirements.html">MFR Debate Requirements</a></strong> - Implementation requirements ensuring zero breaking changes</li>
+</ul>
+<h2>🔌 Integration Protocols</h2>
+<h3>Lingue Protocol</h3>
+<p>Language mode negotiation for multi-agent communication:</p>
+<ul>
+<li><strong><a href="lingue-integration.html">Lingue Integration</a></strong> - How agents negotiate communication modes</li>
+<li><strong><a href="ibis.html">IBIS Structured Dialogue</a></strong> - Issue-Based Information System vocabulary</li>
+<li><strong><a href="LINGUE-PLAN.html">Lingue Development Plan</a></strong> - Protocol development roadmap</li>
+</ul>
+<h3>Model Context Protocol (MCP)</h3>
+<p>Integration with external tools and services:</p>
+<ul>
+<li><strong><a href="mcp.html">MCP Overview</a></strong> - Model Context Protocol introduction</li>
+<li><strong><a href="mcp-server.html">MCP Server Guide</a></strong> - Exposing TIA as an MCP server</li>
+<li><strong><a href="mcp-client.html">MCP Client Guide</a></strong> - Consuming external MCP services</li>
+<li><strong><a href="MCP-PLAN.html">MCP Development Plan</a></strong> - MCP integration roadmap</li>
+</ul>
+<h2>🛠️ Development &amp; Customization</h2>
+<ul>
+<li><strong><a href="agent-dev-prompt.html">Agent Development Guide</a></strong> - Creating new agents</li>
+<li><strong><a href="provider-guide.html">Provider Guide</a></strong> - Building custom agent providers</li>
+<li><strong><a href="api-reference.html">API Reference</a></strong> - Core API documentation</li>
+<li><strong><a href="auto-registration.html">Auto-Registration</a></strong> - Automatic credential management</li>
+<li><strong><a href="testing.html">Testing Guide</a></strong> - Running tests and validation</li>
+</ul>
+<h2>📚 Specialized Topics</h2>
+<ul>
+<li><strong><a href="data-agent.html">Data Agent Deep Dive</a></strong> - SPARQL queries, Wikidata integration</li>
+<li><strong><a href="debating-society.html">Debating Society</a></strong> - Chair, Recorder, and structured debates</li>
+<li><strong><a href="server.html">Server Deployment</a></strong> - Production deployment considerations</li>
+<li><strong><a href="tbox-note.html">TBox Note</a></strong> - Ontology design notes</li>
+</ul>
+<h2>📝 Blog Posts &amp; Updates</h2>
+<ul>
+<li><strong><a href="2025-12-24_tia-progress.html">December 24, 2025 - TIA Progress</a></strong> - Complete system overview</li>
+<li><strong><a href="2025-12-21_tia-blog.html">December 21, 2025 - TIA Blog</a></strong> - MFR implementation update</li>
+<li><strong><a href="2025-12-21.html">December 21, 2025 - Notes</a></strong> - Development notes</li>
+<li><strong><a href="2024-09.html">September 2024 - Early Notes</a></strong> - Initial project notes</li>
+</ul>
+<h2>🔧 Internal Documentation</h2>
+<p>Planning documents and development notes:</p>
+<ul>
+<li><strong><a href="TEMPLATE-PLAN.html">Template Plan</a></strong> - Planning template for new features</li>
+<li><strong><a href="notes.html">Development Notes</a></strong> - Ongoing development notes</li>
+<li><strong><a href="temp.html">Temporary Notes</a></strong> - Scratch notes and ideas</li>
+</ul>
+<hr>
+<h2>Documentation Organization</h2>
+<p>This documentation is organized hierarchically:</p>
+<ol>
+<li><strong>Getting Started</strong> - For new users and quick setup</li>
+<li><strong>MFR System</strong> - Core multi-agent reasoning documentation</li>
+<li><strong>Integration Protocols</strong> - Lingue and MCP integration guides</li>
+<li><strong>Development</strong> - For developers extending TIA</li>
+<li><strong>Specialized Topics</strong> - Deep dives into specific components</li>
+<li><strong>Blog/Updates</strong> - Progress reports and announcements</li>
+</ol>
+<h2>Contributing</h2>
+<p>TIA is open source and welcomes contributions. See the <a href="https://github.com/danja/tia">GitHub repository</a> for issues, pull requests, and development discussion.</p>
+<h2>License</h2>
+<p>See repository for license information.</p>
 
     </main>
   </body>

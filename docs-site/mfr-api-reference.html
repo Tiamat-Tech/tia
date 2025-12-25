@@ -438,6 +438,8 @@ console.log(`Actions: ${counts[&#39;http://purl.org/stuff/mfr/Action&#39;]}`);
 <li><code>options.validator</code> (MfrShaclValidator): SHACL validator</li>
 <li><code>options.merger</code> (MfrModelMerger): Model merger</li>
 <li><code>options.multiRoomManager</code> (MultiRoomManager): Room manager</li>
+<li><code>options.debateTimeoutMs</code> (Number): Debate timeout in milliseconds</li>
+<li><code>options.contributionTimeoutMs</code> (Number): Contribution timeout in milliseconds</li>
 <li><code>options.logger</code> (Object): Logger instance</li>
 </ul>
 <h4>Commands</h4>
@@ -456,6 +458,10 @@ console.log(`Actions: ${counts[&#39;http://purl.org/stuff/mfr/Action&#39;]}`);
 <h5>mfr-solve <sessionId></h5>
 <p>Generates solutions for validated model.</p>
 <p><strong>Usage</strong>: <code>Coordinator: mfr-solve &lt;sessionId&gt;</code></p>
+<h5>mfr-debate <problem></h5>
+<p>Starts a debate-driven MFR session with Chair tool selection.</p>
+<p><strong>Usage</strong>: <code>Coordinator: mfr-debate &lt;problem description&gt;</code></p>
+<p><strong>Aliases</strong>: <code>debate &lt;problem&gt;</code>, <code>Q: &lt;problem&gt;</code></p>
 <hr>
 <h3>MistralProvider MFR Methods</h3>
 <p>Natural language entity and goal extraction.</p>

@@ -70,6 +70,8 @@ Check logs:
 tail -f logs/coordinator.log
 ```
 
+Debate mode is enabled by default (see `config/agents/coordinator.ttl`). You can use `debate <problem>` or the shorthand `Q: <problem>` from the chatroom to trigger a tool-selection debate before the MFR run.
+
 ## Step 5: Run Your First MFR Session
 
 ### Example 1: Simple Scheduling
@@ -181,10 +183,7 @@ Schedule [entities] with [constraints].
 
 **Example**:
 ```
-Schedule meetings for team members.
-Alice is only available in mornings.
-Bob needs 2-hour slots.
-Carol can't meet before Bob.
+Schedule meetings for team members. Alice is only available in mornings. Bob needs 2-hour slots. Carol can't meet before Bob.
 ```
 
 ### Pattern 2: Resource Allocation

@@ -33,7 +33,9 @@ The Coordinator orchestrates the MFR protocol, manages session state, validates 
 ### 1. Problem Interpretation
 
 - Accept `mfr-start <problem>` commands in the primary room.
+- Accept `debate <problem>` (or `Q:` shorthand) to start a tool-selection debate via Chair.
 - Create a session ID and initialize session state.
+- If debate is enabled, wait for consensus or timeout before requesting contributions.
 - Broadcast `mfr:ModelContributionRequest` with the session ID and problem text.
 
 ### 2. Model Construction
@@ -66,6 +68,7 @@ The Coordinator orchestrates the MFR protocol, manages session state, validates 
 Payload:
 - `sessionId`
 - `problemDescription`
+- `requestedAgents` (optional list when debate selects tools)
 - `requestedContributions` (entity, constraint, action, goal)
 
 ### Contribution Response

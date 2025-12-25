@@ -551,6 +551,8 @@ new CoordinatorProvider(options)
 - `options.validator` (MfrShaclValidator): SHACL validator
 - `options.merger` (MfrModelMerger): Model merger
 - `options.multiRoomManager` (MultiRoomManager): Room manager
+- `options.debateTimeoutMs` (Number): Debate timeout in milliseconds
+- `options.contributionTimeoutMs` (Number): Contribution timeout in milliseconds
 - `options.logger` (Object): Logger instance
 
 #### Commands
@@ -583,6 +585,14 @@ Validates the problem model.
 Generates solutions for validated model.
 
 **Usage**: `Coordinator: mfr-solve <sessionId>`
+
+##### mfr-debate <problem>
+
+Starts a debate-driven MFR session with Chair tool selection.
+
+**Usage**: `Coordinator: mfr-debate <problem description>`
+
+**Aliases**: `debate <problem>`, `Q: <problem>`
 
 ---
 

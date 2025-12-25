@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>temp</title>
+    <style>
+      body { margin: 0; padding: 48px 20px; font-family: "Helvetica Neue", Arial, sans-serif; background: #f7f4ef; color: #1f1b16; }
+      main { max-width: 920px; margin: 0 auto; background: #fffdf9; padding: 48px; border: 1px solid #e3d8c7; box-shadow: 6px 8px 0 #e3d8c7; }
+      h1, h2, h3 { font-weight: 600; margin-top: 2rem; }
+      pre { background: #1f1b16; color: #f7f4ef; padding: 16px; overflow: auto; }
+      code { font-family: "SFMono-Regular", ui-monospace, Menlo, Monaco, Consolas, monospace; }
+      a { color: #8a3b12; }
+      img { max-width: 100%; height: auto; }
+      table { border-collapse: collapse; width: 100%; }
+      th, td { border: 1px solid #e3d8c7; padding: 8px; }
+    </style>
+  </head>
+  <body>
+    <main>
+      <p>TIA Intelligence Agency Progress Report</p>
+<p>Introduction : why chat agents? (text is the lingua franca of humans online) why RDF? (the web is a global graph knowledgebase) why xmpp? (open spec, no owned by big tech)</p>
+<p> I must have mentioned using the Prolog engine for constraint solving at some point, because that&#39;s the direction this seems to have gone in. So the sample problem is : &quot;Schedule appointments for patients. Alice takes warfarin, Bob takes aspirin. Ensure no drug interactions.&quot;</p>
+<p>The data flow looks like this:</p>
+<p> <a href="dataflow.svg"><img src="dataflow.png" alt="dataflow diagram"></a></p>
+<p>See <a href="docs/mfr-architecture-overview.md">Architecture Overview</a></p>
+<p>The inter-agent comms happen in a set of MUCs - general, mfr-construct, mfr-reason, mfr-validate</p>
+<p>most of these messages are sent as minimal text + not-visible RDF payload, just a few human-readably notifications.</p>
+<p>See <a href="docs/mfr-architecture-overview.md">Architecture Overview</a></p>
+<p>Expand these :</p>
+<ul>
+<li>what is the purpose of SHACL validation in the system?</li>
+<li>where and how are JSON messages used?</li>
+<li>where and how are RDF messages used?</li>
+<li>brief overview of the vocabs used in the system (with links to vocabs/*)</li>
+<li>brief overview of how lingue works</li>
+<li>walkthrough of an mfr run</li>
+</ul>
+
+    </main>
+  </body>
+</html>

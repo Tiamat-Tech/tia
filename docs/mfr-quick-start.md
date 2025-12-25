@@ -70,6 +70,8 @@ Check logs:
 tail -f logs/coordinator.log
 ```
 
+Debate mode is enabled by default (see `config/agents/coordinator.ttl`). You can use `debate <problem>` or the shorthand `Q: <problem>` from the chatroom to trigger a tool-selection debate before the MFR run.
+
 ## Step 5: Run Your First MFR Session
 
 ### Example 1: Simple Scheduling

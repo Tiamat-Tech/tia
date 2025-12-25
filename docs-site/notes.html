@@ -18,15 +18,29 @@
   </head>
   <body>
     <main>
-      <p> DOCS_DIR=docs DOCS_OUT_DIR=docs-site node scripts/build-docs.mjs</p>
-<p>pkill -f &#39;node src/services&#39;
-./start-mfr-system.sh
-./start-all-agents.sh</p>
-<p>./start-all.sh mfr</p>
+      <p>Resolved: <code>Q:</code> now starts a Coordinator debate (via Chair), consensus selects agents, and the plan proceeds through MFR. Example: &quot;Q: how can we optimize delivery routes for 3 trucks serving 10 locations. Truck 1 has capacity 100, Truck 2 has capacity 150, Truck 3 has capacity 200. Location A needs delivery before 10 AM. Locations B and C must use same truck.&quot;</p>
+<p> DOCS_DIR=docs DOCS_OUT_DIR=docs-site node scripts/build-docs.mjs</p>
+<p>pkill -f &#39;node src/services&#39;</p>
+<p>./start-all.sh
+./stop-all.sh
+./restart-all.sh</p>
+<p>#./start-mfr-system.sh
+#./start-all-agents.sh
+#./start-all.sh mfr</p>
 <p>npm pack</p>
 <p>  Then from your test project (/home/danny/hyperdata/tia-test):</p>
 <p>  npm install ../tia/tia-agents-0.3.0.tgz</p>
 <p>npm install @mistralai/mistralai</p>
+<ul>
+<li>Map class - not included</li>
+<li>Properties: refersTo, pro, con - not implemented</li>
+</ul>
+<p>  The system currently uses these properties instead:</p>
+<ul>
+<li>ibis:supports (for support arguments)</li>
+<li>ibis:objects-to (for objections)</li>
+<li>ibis:responds-to (positions to issues)</li>
+</ul>
 <p> If you want the history store size or any other provider options to be 100%
   config‑driven too, we can add those to the profile and wire them in the
   provider config.</p>
@@ -55,6 +69,8 @@ mfr-semanticpass</p>
 <p>prosodyctl adduser <a href="mailto:semem@tensegrity.it">semem@tensegrity.it</a>
 prosodyctl adduser <a href="mailto:mistral@tensegrity.it">mistral@tensegrity.it</a>
 prosodyctl adduser <a href="mailto:demo@tensegrity.it">demo@tensegrity.it</a></p>
+<p>prosodyctl adduser <a href="mailto:groqbot@tensegrity.it">groqbot@tensegrity.it</a>
+groqbotpass</p>
 <p>prosodyctl adduser <a href="mailto:prolog@tensegrity.it">prolog@tensegrity.it</a></p>
 <p>prosodyctl adduser <a href="mailto:coordinator@tensegrity.it">coordinator@tensegrity.it</a>
 coordinatorpass</p>
@@ -62,6 +78,8 @@ coordinatorpass</p>
 <p>prosodyctl adduser <a href="mailto:mfruser@tensegrity.it">mfruser@tensegrity.it</a>
 mfrpass
 prosodyctl adduser <a href="mailto:testuser@tensegrity.it">testuser@tensegrity.it</a></p>
+<p>prosodyctl adduser <a href="mailto:executor@tensegrity.it">executor@tensegrity.it</a>
+executorpass</p>
 <p> sudo prosodyctl register mistral-analyst tensegrity.it analystpass???</p>
 <h2> sudo prosodyctl adduser <a href="mailto:mistral-analyst@tensegrity.it">mistral-analyst@tensegrity.it</a> analystpass
   sudo prosodyctl adduser <a href="mailto:mistral-creative@tensegrity.it">mistral-creative@tensegrity.it</a> creativepass

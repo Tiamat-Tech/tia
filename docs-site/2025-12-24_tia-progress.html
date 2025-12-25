@@ -1,0 +1,260 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>TIA Intelligence Agency: Building a Multi-Agent System for Collaborative Problem Solving</title>
+    <style>
+      body { margin: 0; padding: 48px 20px; font-family: "Helvetica Neue", Arial, sans-serif; background: #f7f4ef; color: #1f1b16; }
+      main { max-width: 920px; margin: 0 auto; background: #fffdf9; padding: 48px; border: 1px solid #e3d8c7; box-shadow: 6px 8px 0 #e3d8c7; }
+      h1, h2, h3 { font-weight: 600; margin-top: 2rem; }
+      pre { background: #1f1b16; color: #f7f4ef; padding: 16px; overflow: auto; }
+      code { font-family: "SFMono-Regular", ui-monospace, Menlo, Monaco, Consolas, monospace; }
+      a { color: #8a3b12; }
+      img { max-width: 100%; height: auto; }
+      table { border-collapse: collapse; width: 100%; }
+      th, td { border: 1px solid #e3d8c7; padding: 8px; }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>TIA Intelligence Agency: Building a Multi-Agent System for Collaborative Problem Solving</h1>
+<ul>
+<li><a href="https://tensegrity.it/chat/">TIA Live Chat</a> - register and join the <code>general@conference.tensegrity.it</code> chatroom to play</li>
+<li><a href="https://github.com/danja/tia">GitHub Repo</a></li>
+<li><a href="https://danja.github.io/tia/">Documentation</a> - <em>in progress, needs organising</em></li>
+</ul>
+<p><strong>Status Report : December 24, 2025</strong></p>
+<h2>Introduction: Why This Stack?</h2>
+<p>The foundation of TIA (The Intelligence Agency) rests on three key technology choices, each selected for specific philosophical and practical reasons:</p>
+<p><strong>Why chat agents?</strong> Text is the universal lingua franca of humans online. From command lines to messaging apps, text-based interaction remains the most accessible and flexible interface for human-computer communication. Chat agents meet users where they already are, speaking a language everyone understands.</p>
+<p><strong>Why RDF?</strong> The web isn&#39;t just a collection of documents—it&#39;s a global graph knowledge base. RDF (Resource Description Framework) provides the semantic infrastructure to represent, link, and reason about knowledge in a way that machines can process while humans can audit. It&#39;s the native language of the Semantic Web.</p>
+<p><strong>Why XMPP?</strong> In an era of platform lock-in and proprietary APIs, XMPP (Extensible Messaging and Presence Protocol) stands as an open specification not owned by big tech. It provides federation, extensibility, and proven reliability for real-time messaging—essential features for a multi-agent system that needs to coordinate across organizational boundaries.</p>
+<h2>The Challenge: Scheduling with Constraints</h2>
+<p>The sample problem demonstrates TIA&#39;s approach to constraint-based reasoning: <em>&quot;Schedule appointments for patients. Alice takes warfarin, Bob takes aspirin. Ensure no drug interactions.&quot;</em></p>
+<p>This seemingly simple task requires:</p>
+<ul>
+<li>Entity recognition (Alice, Bob, warfarin, aspirin)</li>
+<li>Knowledge grounding (what are these drugs?)</li>
+<li>Constraint identification (which drugs interact?)</li>
+<li>Action planning (how to schedule safely?)</li>
+<li>Solution validation (does this actually work?)</li>
+</ul>
+<p>No single agent can handle all these aspects. TIA orchestrates multiple specialized agents to collaboratively solve the problem.</p>
+<h2>The Architecture: Four Phases of Problem Solving</h2>
+<h3>Dataflow Overview</h3>
+<p>The complete workflow involves four distinct phases, each with specialized responsibilities:</p>
+<p><img src="dataflow.svg" alt="Dataflow Diagram"></p>
+<p>See the full <a href="mfr-architecture-overview.md">Architecture Overview</a> for technical details.</p>
+<h3>Phase 1: Entity Discovery</h3>
+<p>When a user poses a problem, multiple agents contribute their expertise:</p>
+<ul>
+<li><strong>Mistral Agent</strong>: Uses LLM capabilities to extract entities from natural language (&quot;Alice&quot;, &quot;Bob&quot;, &quot;warfarin&quot;, &quot;aspirin&quot;)</li>
+<li><strong>Data Agent</strong>: Grounds these entities in external knowledge bases (Wikidata), discovering that warfarin and aspirin are anticoagulants</li>
+<li><strong>Prolog Agent</strong>: Identifies potential actions (schedule_appointment, check_interactions)</li>
+<li><strong>MFR-Semantic Agent</strong>: Extracts semantic constraints from the problem domain</li>
+</ul>
+<p>Each agent contributes RDF triples describing what it discovered. These contributions flow through XMPP Multi-User Chat (MUC) rooms, primarily using the <code>general@conference</code> room, though the system also supports specialized rooms (<code>mfr-construct</code>, <code>mfr-validate</code>, <code>mfr-reason</code>) for different phases.</p>
+<h3>Phase 2: Validation</h3>
+<p>The <strong>Coordinator Agent</strong> merges all contributions into a unified <strong>Problem Model</strong>—an RDF graph containing:</p>
+<ul>
+<li>Entities (<code>mfr:Entity</code>)</li>
+<li>Actions (<code>mfr:Action</code>)</li>
+<li>Constraints (<code>mfr:Constraint</code>)</li>
+<li>Goals (<code>mfr:Goal</code>)</li>
+</ul>
+<p>This model is then validated using <strong>SHACL (Shapes Constraint Language)</strong>. SHACL shapes define what a valid problem model must contain:</p>
+<pre><code class="language-turtle"># Example: Every ProblemModel must have at least one entity
+mfr:ProblemModelShape a sh:NodeShape ;
+  sh:targetClass mfr:ProblemModel ;
+  sh:property [
+    sh:path mfr:hasEntity ;
+    sh:minCount 1 ;
+    sh:message &quot;Problem model must define at least one entity&quot;
+  ] .
+</code></pre>
+<p>If validation reveals errors or conflicts (e.g., two agents provide contradictory information), the coordinator initiates a conflict negotiation phase. If only warnings appear, the system proceeds.</p>
+<h3>Phase 3: Constrained Reasoning</h3>
+<p>With a validated model in hand, the coordinator broadcasts a <strong>Solution Request</strong>. Agents now reason <em>within</em> the constraints of the explicit model:</p>
+<ul>
+<li>The <strong>Prolog Agent</strong> generates a logical plan using tau-prolog, respecting the identified constraints</li>
+<li>Other agents can propose alternative solutions</li>
+<li>Each solution references specific entities and constraints from the shared model</li>
+</ul>
+<p>The key innovation: agents aren&#39;t improvising or hallucinating solutions. They&#39;re working from an explicit, validated representation of the problem space.</p>
+<h3>Phase 4: Execution &amp; Binding (In Progress)</h3>
+<p>The <strong>Executor Agent</strong> represents the next phase of development:</p>
+<ol>
+<li>Receives high-level solution plans</li>
+<li>Translates them into concrete Prolog queries</li>
+<li>Requests specific variable bindings from the Prolog agent</li>
+<li>Returns executable results to the coordinator</li>
+</ol>
+<p>This phase transforms abstract plans (&quot;schedule_appointment&quot;) into concrete actions (&quot;schedule Alice at 10:00 AM, Bob at 2:00 PM&quot;).</p>
+<h2>Communication Protocols</h2>
+<h3>Lingue: Language Mode Negotiation</h3>
+<p>Different agents speak different languages. The <strong>Lingue protocol</strong> (see <a href="https://danja.github.io/lingue/">Lingue Ontology</a>) enables agents to negotiate which communication modes they&#39;ll use:</p>
+<ul>
+<li><code>lng:ModelFirstRDF</code> - RDF-based problem models</li>
+<li><code>lng:SparqlQuery</code> - Knowledge retrieval queries</li>
+<li><code>lng:PrologProgram</code> - Logical rules and programs</li>
+<li><code>lng:HumanChat</code> - Natural language interaction</li>
+<li><code>lng:ModelNegotiation</code> - Collaborative model construction</li>
+</ul>
+<p>Each agent publishes its capabilities in an RDF profile. When agents need to collaborate, they negotiate to find compatible modes.</p>
+<h3>Message Formats</h3>
+<p>TIA uses a hybrid messaging approach:</p>
+<p><strong>JSON Messages</strong>: Used for lightweight protocol coordination</p>
+<pre><code class="language-json">{
+  &quot;type&quot;: &quot;mfr:SolutionRequest&quot;,
+  &quot;sessionId&quot;: &quot;abc-123&quot;,
+  &quot;timestamp&quot;: &quot;2025-12-24T10:00:00Z&quot;
+}
+</code></pre>
+<p><strong>RDF Messages</strong>: Used for semantic content</p>
+<pre><code class="language-turtle">@prefix mfr: &lt;http://purl.org/stuff/mfr/&gt; .
+
+&lt;#entity-alice&gt; a mfr:Entity ;
+  schema:name &quot;Alice&quot; ;
+  mfr:entityType &quot;Patient&quot; ;
+  mfr:relatedTo &lt;#medication-warfarin&gt; .
+</code></pre>
+<p>Most XMPP stanzas carry minimal human-readable text with RDF payloads attached. Only critical notifications appear as readable text in the chat room, keeping communication efficient while maintaining transparency.</p>
+<h2>The Vocabulary Stack</h2>
+<p>TIA&#39;s semantic capabilities rest on a layered vocabulary architecture (see <code>vocabs/</code> directory):</p>
+<h3>Foundation Vocabularies</h3>
+<ul>
+<li><strong><code>lingue.ttl</code></strong> (8.3 KB): Core Lingue protocol vocabulary defining agents, profiles, and communication modes</li>
+<li><strong><code>lingue-shapes.ttl</code></strong> (5.2 KB): SHACL shapes validating Lingue profile structure</li>
+<li><strong><code>ibis.ttl</code></strong> (15.3 KB): Issue-Based Information System vocabulary for structured argumentation</li>
+<li><strong><code>mcp-ontology.ttl</code></strong> (4.3 KB): Model Context Protocol integration vocabulary</li>
+</ul>
+<h3>MFR Vocabularies</h3>
+<ul>
+<li><strong><code>mfr-ontology.ttl</code></strong> (14.0 KB): Problem model ontology (entities, actions, constraints, goals)</li>
+<li><strong><code>mfr-shapes.ttl</code></strong> (12.9 KB): SHACL shapes enforcing problem model validity</li>
+</ul>
+<p>These vocabularies work together: Lingue handles agent communication, IBIS structures debates and decisions, MCP bridges to external tools, and MFR defines problem models.</p>
+<h2>A Complete MFR Session Walkthrough</h2>
+<p>Let&#39;s trace the drug interaction problem through the system:</p>
+<h3>1. User Input</h3>
+<pre><code class="language-bash">mfr-start Schedule appointments for patients. Alice takes warfarin, Bob takes aspirin. Ensure no drug interactions.
+</code></pre>
+<h3>2. Coordinator Initiates Session</h3>
+<ul>
+<li>Creates session ID: <code>abc-123</code></li>
+<li>Broadcasts <code>mfr:ModelContributionRequest</code></li>
+<li>Sets 30-second timeout for contributions</li>
+</ul>
+<h3>3. Agent Contributions</h3>
+<p><strong>Mistral extracts entities</strong> (2.7 KB of RDF):</p>
+<pre><code class="language-turtle">&lt;#entity-alice&gt; a mfr:Entity ;
+  schema:name &quot;Alice&quot; ;
+  mfr:entityType &quot;Patient&quot; .
+
+&lt;#entity-warfarin&gt; a mfr:Entity ;
+  schema:name &quot;warfarin&quot; ;
+  mfr:entityType &quot;Medication&quot; .
+</code></pre>
+<p><strong>Data grounds in Wikidata</strong>:</p>
+<pre><code class="language-turtle">&lt;#entity-warfarin&gt;
+  owl:sameAs &lt;http://www.wikidata.org/entity/Q18216&gt; ;
+  mfr:wikidataLabel &quot;warfarin&quot; ;
+  mfr:wikidataDescription &quot;anticoagulant medication&quot; .
+</code></pre>
+<p><strong>MFR-Semantic identifies constraints</strong>:</p>
+<pre><code class="language-turtle">&lt;#constraint-1&gt; a mfr:Constraint ;
+  schema:name &quot;Drug interaction constraint&quot; ;
+  mfr:constraintType &quot;DrugInteraction&quot; ;
+  mfr:appliesTo &quot;warfarin&quot;, &quot;aspirin&quot; .
+</code></pre>
+<p><strong>Prolog defines actions</strong>:</p>
+<pre><code class="language-turtle">&lt;#action-schedule&gt; a mfr:Action ;
+  mfr:actionName &quot;schedule_appointment&quot; ;
+  mfr:hasParameter &quot;patient&quot;, &quot;time&quot; .
+</code></pre>
+<h3>4. Model Validation</h3>
+<p>The coordinator merges 11 entities, 4 actions, 1 constraint, 2 goals:</p>
+<pre><code>[CoordinatorProvider] Linked components: 11 entities, 2 goals, 4 actions, 1 constraints
+Model validation passed (10 warning(s), 11 info)
+Proceeding to reasoning phase...
+</code></pre>
+<h3>5. Solution Generation</h3>
+<p>Prolog agent generates:</p>
+<pre><code class="language-turtle">&lt;#solution-1&gt; a mfr:SolutionProposal ;
+  schema:name &quot;Drug-safe scheduling plan&quot; ;
+  mfr:hasPlan (
+    &quot;schedule_appointment&quot;
+    &quot;check_drug_interactions&quot;
+    &quot;avoid_interaction&quot;
+  ) .
+</code></pre>
+<h3>6. Human-Readable Output</h3>
+<pre><code>=== SOLUTION ===
+
+Solution from Prolog:
+  Generated plan with 3 actions
+  Plan steps:
+    1. schedule_appointment
+    2. check_drug_interactions
+    3. avoid_interaction
+</code></pre>
+<h2>What Makes This Different?</h2>
+<p>Traditional multi-agent systems often suffer from:</p>
+<ul>
+<li><strong>Implicit assumptions</strong>: Agents make unstated assumptions leading to misunderstandings</li>
+<li><strong>Opaque reasoning</strong>: Solutions appear without explanation</li>
+<li><strong>Fragile coordination</strong>: Ad-hoc protocols that break under edge cases</li>
+</ul>
+<p>TIA&#39;s Model-First Reasoning approach addresses these:</p>
+<ol>
+<li><strong>Explicit models</strong>: All assumptions encoded in validated RDF</li>
+<li><strong>Traceable reasoning</strong>: Every step references the shared model</li>
+<li><strong>Robust protocols</strong>: Lingue negotiation ensures compatible communication</li>
+<li><strong>Semantic validation</strong>: SHACL catches structural errors before reasoning begins</li>
+</ol>
+<h2>Current Status and Next Steps</h2>
+<p><strong>Working:</strong></p>
+<ul>
+<li>✅ Multi-agent entity discovery</li>
+<li>✅ RDF model construction and merging</li>
+<li>✅ SHACL validation with conflict detection</li>
+<li>✅ Prolog-based plan generation</li>
+<li>✅ Human-readable solution formatting</li>
+</ul>
+<p><strong>In Progress:</strong></p>
+<ul>
+<li>🚧 Executor agent for plan execution</li>
+<li>🚧 Multi-room architecture (specialized MUC rooms per phase)</li>
+<li>🚧 Enhanced conflict negotiation</li>
+</ul>
+<p><strong>Planned:</strong></p>
+<ul>
+<li>📋 Solution ranking and synthesis</li>
+<li>📋 Interactive model refinement</li>
+<li>📋 Learning from previous problem models</li>
+</ul>
+<h2>Try It Yourself</h2>
+<p>Start the system:</p>
+<pre><code class="language-bash">./start-all.sh
+</code></pre>
+<p>Connect via REPL:</p>
+<pre><code class="language-bash">NODE_TLS_REJECT_UNAUTHORIZED=0 node src/client/repl.js admin admin123
+</code></pre>
+<p>Pose a problem:</p>
+<pre><code>mfr-start Plan a dinner party for 6 people. Include one vegetarian, two with gluten allergies, and ensure balanced nutrition.
+</code></pre>
+<p>Watch as multiple agents collaborate to build a model, validate constraints, and generate a solution—all using open protocols and semantic technologies.</p>
+<hr>
+<p><em>TIA represents an experiment in building trustworthy AI systems through explicit knowledge representation, validated reasoning, and transparent multi-agent coordination. The code is open source and the protocols are based on open standards. Contributions welcome.</em></p>
+<p><strong>Links:</strong></p>
+<ul>
+<li><a href="https://github.com/danja/tia">GitHub Repository</a></li>
+<li><a href="mfr-architecture-overview.md">Architecture Overview</a></li>
+<li><a href="https://danja.github.io/lingue/">Lingue Specification</a></li>
+<li><a href="../AGENT_STARTUP_GUIDE.md">Agent Startup Guide</a></li>
+</ul>
+
+    </main>
+  </body>
+</html>

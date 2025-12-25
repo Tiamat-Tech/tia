@@ -28,6 +28,7 @@
 <p>Integrate complete Lingue protocol support into TIA, enabling structured agent-to-agent communication with language negotiation capabilities. The system will support XMPP-based capability discovery, profile exchange, and multi-modal communication (HumanChat, IBISText, PrologProgram, AgentProfileExchange).</p>
 <p><strong>Primary Goal</strong>: Make TIA agents fully Lingue-capable and prepare the codebase for release as an NPM library with clear, modular interfaces.</p>
 <h2>Current State</h2>
+<p><strong>Note</strong>: The Lingue negotiator and handlers are implemented in <code>src/lib/lingue/</code>, and MFR-specific modes (ModelFirstRDF, ModelNegotiation, ShaclValidation) are already used by coordinator and agent services. Some checklist items below are therefore partially complete even if the plan still lists them as pending.</p>
 <h3>Existing Infrastructure ✅</h3>
 <ul>
 <li>Basic disco#info responder (<code>src/lib/lingue-capabilities.js</code>)</li>
