@@ -81,6 +81,12 @@ node src/examples/run-mfr-session.js \
   "Schedule meetings for Alice, Bob, and Carol. Alice is only available in the morning."
 ```
 
+Quiet mode :
+
+```
+Q: -q Schedule meetings for Alice, Bob, and Carol. Alice is only available in the morning.
+```
+
 **What Happens**:
 1. Coordinator receives problem, creates session
 2. Mistral extracts entities (Alice, Bob, Carol)
@@ -109,6 +115,10 @@ node src/examples/run-mfr-session.js \
 ```bash
 node src/examples/run-mfr-session.js \
   "Allocate 3 servers to 5 tasks: database, web, cache, worker, backup. Database needs high memory."
+```
+
+```
+Q: Allocate 3 servers to 5 tasks: database, web, cache, worker, backup. Database needs high memory. -v
 ```
 
 ## Step 6: Monitor the Session

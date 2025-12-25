@@ -11,7 +11,7 @@ import {
   MFR_CONTRIBUTION_TYPES,
   VALIDATION_STATUS
 } from "../../lib/mfr/constants.js";
-import { LANGUAGE_MODES } from "../../lib/lingue/constants.js";
+import { LANGUAGE_MODES, LINGUE_NS, MIME_TYPES } from "../../lib/lingue/constants.js";
 import { randomUUID } from "crypto";
 import { xml } from "@xmpp/client";
 
@@ -258,7 +258,7 @@ export class CoordinatorProvider extends BaseProvider {
     // Send debate issue to primary room
     this.logger.info?.(`[CoordinatorProvider] Sending debate issue to room: ${this.primaryRoomJid}`);
     this.logger.debug?.(`[CoordinatorProvider] Debate issue text: ${debateIssue.substring(0, 100)}...`);
-    await this.sendStatusMessage(debateIssue);
+    await this.sendStatusMessage(debateIssue, { forceChat: true });
 
     if (!Number.isFinite(this.debateTimeoutMs)) {
       throw new Error("Debate timeout missing or invalid; check profile mfrConfig.");
@@ -310,7 +310,7 @@ export class CoordinatorProvider extends BaseProvider {
       ? `${hasSelection ? `Consensus reached. Selected agents: ${selected.join(", ")}.` : "Consensus reached."}`
       : "Debate timeout reached. Proceeding with all available agents.";
 
-    await this.sendStatusMessage(message);
+    await this.sendStatusMessage(message, { sessionId, system: true });
 
     // Create model
     await this.modelStore.createModel(sessionId, debateData.problemDescription);
@@ -606,11 +606,11 @@ export class CoordinatorProvider extends BaseProvider {
       const message = `Model validation passed for ${sessionId}\n${RdfUtils.countQuads(model)} quads validated\nProceeding to reasoning phase...`;
 
       this.logger.info?.(`[CoordinatorProvider] ${message}`);
-      await this.sendStatusMessage(message);
+      await this.sendStatusMessage(message, { sessionId, system: true });
 
       const reasoningMessage = await this.initiateReasoning(sessionId, {}, () => {});
       if (reasoningMessage) {
-        await this.sendStatusMessage(reasoningMessage);
+        await this.sendStatusMessage(reasoningMessage, { sessionId, system: true });
       }
 
       return message;
@@ -622,11 +622,11 @@ export class CoordinatorProvider extends BaseProvider {
       const message = `Model validation completed with warnings for ${sessionId}:\n${summary}\n\nProceeding to reasoning phase...`;
 
       this.logger.info?.(`[CoordinatorProvider] ${message}`);
-      await this.sendStatusMessage(message);
+      await this.sendStatusMessage(message, { sessionId, system: true });
 
       const reasoningMessage = await this.initiateReasoning(sessionId, {}, () => {});
       if (reasoningMessage) {
-        await this.sendStatusMessage(reasoningMessage);
+        await this.sendStatusMessage(reasoningMessage, { sessionId, system: true });
       }
 
       return message;
@@ -644,7 +644,7 @@ export class CoordinatorProvider extends BaseProvider {
           : "";
 
       const message = `Model validation issues for ${sessionId}:\n${summary}${conflictSummary}`;
-      await this.sendStatusMessage(message);
+      await this.sendStatusMessage(message, { sessionId, system: true });
       return message;
     }
   }
@@ -805,7 +805,7 @@ export class CoordinatorProvider extends BaseProvider {
         solution,
         receivedAt: new Date().toISOString()
       });
-      await this.sendStatusMessage(interim);
+      await this.sendStatusMessage(interim, { sessionId, system: true });
       await this.requestPlanExecution(sessionId, solution, sender);
       return `Plan received for ${sessionId}. Executing for bindings...`;
     }
@@ -914,7 +914,7 @@ export class CoordinatorProvider extends BaseProvider {
       lines.push("");
     });
 
-    await this.sendStatusMessage(lines.join("\n"));
+    await this.sendStatusMessage(lines.join("\n"), { forceChat: true });
   }
 
   formatSolutionEntry(entry, { index = 0, total = 1 } = {}) {
@@ -1024,15 +1024,25 @@ export class CoordinatorProvider extends BaseProvider {
   /**
    * Send a status message to the primary room if available
    * @param {string} message - Status message
+   * @param {Object} options - { sessionId, system, forceChat }
    */
-  async sendStatusMessage(message) {
+  async sendStatusMessage(message, { sessionId = null, system = false, forceChat = false } = {}) {
     if (!message) return;
-    if (this.negotiator?.xmppClient && this.primaryRoomJid) {
+    if (!this.primaryRoomJid || !this.negotiator?.xmppClient) return;
+
+    const verbose = sessionId ? this.getSessionVerbose(sessionId) : true;
+    const prefix = system ? "SYS: " : "";
+
+    if (system) {
+      await this.sendLingueStatusPayload({ message, sessionId });
+    }
+
+    if (forceChat || !system || verbose) {
       await this.negotiator.xmppClient.send(
         xml(
           "message",
           { to: this.primaryRoomJid, type: "groupchat" },
-          xml("body", {}, message)
+          xml("body", {}, `${prefix}${message}`)
         )
       );
     }
@@ -1056,7 +1066,32 @@ export class CoordinatorProvider extends BaseProvider {
     const modeLabel = mode?.split("/").pop() || mode || "unknown";
     const line = `Lingue ${direction} ${modeLabel} (${mimeType})${detail ? ` — ${detail}` : ""}`;
     this.logger.info?.(`[CoordinatorProvider] ${line} [${sessionId}]`);
-    await this.sendStatusMessage(line);
+    await this.sendStatusMessage(line, { sessionId, system: true, forceChat: true });
+  }
+
+  async sendLingueStatusPayload({ message, sessionId }) {
+    const payload = JSON.stringify({
+      type: "status",
+      sessionId,
+      message,
+      timestamp: new Date().toISOString()
+    });
+    await this.negotiator.xmppClient.send(
+      xml(
+        "message",
+        { to: this.primaryRoomJid, type: "groupchat" },
+        xml("body", {}, ""),
+        xml(
+          "payload",
+          {
+            xmlns: LINGUE_NS,
+            mime: MIME_TYPES.HUMAN_CHAT,
+            mode: LANGUAGE_MODES.HUMAN_CHAT
+          },
+          payload
+        )
+      )
+    );
   }
 
   /**
@@ -1149,7 +1184,8 @@ export class CoordinatorProvider extends BaseProvider {
     await this.sendStatusMessage(
       selectedAgents.length > 0
         ? `Consensus noted for ${sessionId}. Selected agents: ${selectedAgents.join(", ")}.`
-        : `Consensus noted for ${sessionId}.`
+        : `Consensus noted for ${sessionId}.`,
+      { sessionId, system: true }
     );
 
     await this.concludeDebate(sessionId, { selectedAgents });

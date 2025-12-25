@@ -77,6 +77,11 @@ export class AgentRunner {
       return;
     }
 
+    if (this.isSystemStatus(body)) {
+      this.logger.debug?.(`[AgentRunner] Ignoring system status message: ${body}`);
+      return;
+    }
+
     const senderIsAgent = this.isAgentSender(sender);
     if (senderIsAgent) {
       this.agentRoundCount += 1;
@@ -154,6 +159,16 @@ export class AgentRunner {
     const escaped = nick.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
     const pattern = new RegExp(`^@?${escaped}\\s+help$|^help\\s+@?${escaped}$`, "i");
     return pattern.test(body.trim());
+  }
+
+  isSystemStatus(body) {
+    if (!body) return false;
+    const trimmed = body.trim();
+    if (!trimmed) return false;
+    const lower = trimmed.toLowerCase();
+    return lower.startsWith("sys:") ||
+      lower.startsWith("[mfr]") ||
+      lower.startsWith("lingue ");
   }
 
   getHelpDescription() {

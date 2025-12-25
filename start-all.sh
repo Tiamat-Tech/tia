@@ -25,7 +25,7 @@ NC='\033[0m' # No Color
 
 # Preset agent groups
 ALL_AGENTS="coordinator,mistral,groqbot,analyst,creative,chair,recorder,semem,mfr-semantic,data,prolog,executor,demo"
-MFR_AGENTS="coordinator,mistral,groqbot,analyst,creative,chair,recorder,mfr-semantic,data,prolog,executor,demo"
+MFR_AGENTS="coordinator,mistral,groqbot,analyst,creative,chair,recorder,semem,mfr-semantic,data,prolog,executor,demo"
 DEBATE_AGENTS="chair,recorder,mistral,groqbot,analyst,creative"
 BASIC_AGENTS="mistral,groqbot,data,prolog,demo"
 
@@ -133,7 +133,13 @@ if [ -z "$SEMEM_AUTH_TOKEN" ] || [ "$SEMEM_AUTH_TOKEN" = "your-api-key" ]; then
   # Only warn if semem is explicitly requested
   if [[ "$AGENTS" == *"semem"* ]] || [[ "$AGENTS" == *"recorder"* ]]; then
     echo -e "${YELLOW}⚠️  Warning: SEMEM_AUTH_TOKEN not set or is placeholder${NC}"
-    echo "   Semem and Recorder agents will be skipped"
+    if [[ "$AGENTS" == *"semem"* ]] && [[ "$AGENTS" == *"recorder"* ]]; then
+      echo "   Semem and Recorder agents will be skipped"
+    elif [[ "$AGENTS" == *"semem"* ]]; then
+      echo "   Semem agent will be skipped"
+    else
+      echo "   Recorder agent will be skipped"
+    fi
     echo "   (This is optional - system will work without them)"
     echo ""
     WARNINGS=$((WARNINGS + 1))
