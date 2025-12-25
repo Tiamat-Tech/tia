@@ -9,7 +9,7 @@ An experimental XMPP (Jabber) agent framework that combines chat, Lingue/IBIS st
 
 *...a lot of chat later...*
 
-[solution](docs/solution.png)
+![solution](docs/solution.png)
 
 ## What TIA Is
 
