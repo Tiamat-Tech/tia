@@ -5,6 +5,7 @@ import { Readable } from "stream";
 
 const PREFIXES = {
   ibis: "https://vocab.methodandstructure.com/ibis#",
+  ibisLegacy: "http://purl.org/ibis#",
   rdfs: "http://www.w3.org/2000/01/rdf-schema#",
 };
 
@@ -60,6 +61,62 @@ export function structureToDataset(structure) {
     );
   });
 
+  // Legacy IBIS constructs
+  (structure.ideas || []).forEach((idea, idx) => {
+    const ideaId = idea.id || `idea-${idx + 1}`;
+    const ideaNode = rdf.namedNode(`#${ideaId}`);
+    dataset.add(
+      rdf.quad(ideaNode, rdf.namedNode(`${PREFIXES.rdfs}label`), rdf.literal(idea.label || "Idea"))
+    );
+    dataset.add(
+      rdf.quad(ideaNode, rdf.namedNode("http://www.w3.org/1999/02/22-rdf-syntax-ns#type"), rdf.namedNode(`${PREFIXES.ibisLegacy}Idea`))
+    );
+  });
+
+  (structure.questions || []).forEach((question, idx) => {
+    const questionId = question.id || `question-${idx + 1}`;
+    const questionNode = rdf.namedNode(`#${questionId}`);
+    dataset.add(
+      rdf.quad(questionNode, rdf.namedNode(`${PREFIXES.rdfs}label`), rdf.literal(question.label || "Question"))
+    );
+    dataset.add(
+      rdf.quad(questionNode, rdf.namedNode("http://www.w3.org/1999/02/22-rdf-syntax-ns#type"), rdf.namedNode(`${PREFIXES.ibisLegacy}Question`))
+    );
+  });
+
+  (structure.decisions || []).forEach((decision, idx) => {
+    const decisionId = decision.id || `decision-${idx + 1}`;
+    const decisionNode = rdf.namedNode(`#${decisionId}`);
+    dataset.add(
+      rdf.quad(decisionNode, rdf.namedNode(`${PREFIXES.rdfs}label`), rdf.literal(decision.label || "Decision"))
+    );
+    dataset.add(
+      rdf.quad(decisionNode, rdf.namedNode("http://www.w3.org/1999/02/22-rdf-syntax-ns#type"), rdf.namedNode(`${PREFIXES.ibisLegacy}Decision`))
+    );
+  });
+
+  (structure.references || []).forEach((reference, idx) => {
+    const referenceId = reference.id || `reference-${idx + 1}`;
+    const referenceNode = rdf.namedNode(`#${referenceId}`);
+    dataset.add(
+      rdf.quad(referenceNode, rdf.namedNode(`${PREFIXES.rdfs}label`), rdf.literal(reference.label || "Reference"))
+    );
+    dataset.add(
+      rdf.quad(referenceNode, rdf.namedNode("http://www.w3.org/1999/02/22-rdf-syntax-ns#type"), rdf.namedNode(`${PREFIXES.ibisLegacy}Reference`))
+    );
+  });
+
+  (structure.notes || []).forEach((note, idx) => {
+    const noteId = note.id || `note-${idx + 1}`;
+    const noteNode = rdf.namedNode(`#${noteId}`);
+    dataset.add(
+      rdf.quad(noteNode, rdf.namedNode(`${PREFIXES.rdfs}label`), rdf.literal(note.label || "Note"))
+    );
+    dataset.add(
+      rdf.quad(noteNode, rdf.namedNode("http://www.w3.org/1999/02/22-rdf-syntax-ns#type"), rdf.namedNode(`${PREFIXES.ibisLegacy}Note`))
+    );
+  });
+
   return dataset;
 }
 
@@ -104,6 +161,11 @@ export function datasetToStructure(dataset) {
   const issues = [];
   const positions = [];
   const argumentsList = [];
+  const ideas = [];
+  const questions = [];
+  const decisions = [];
+  const references = [];
+  const notes = [];
 
   dataset.forEach((quad) => {
     if (quad.predicate.value === `${PREFIXES.rdfs}label`) {
@@ -124,6 +186,37 @@ export function datasetToStructure(dataset) {
           id: stripHash(quad.subject.value),
           label: quad.object.value,
           stance: "neutral",
+        });
+      }
+      // Legacy IBIS constructs
+      if (quad.subject.value.includes("#idea-")) {
+        ideas.push({
+          id: stripHash(quad.subject.value),
+          label: quad.object.value,
+        });
+      }
+      if (quad.subject.value.includes("#question-")) {
+        questions.push({
+          id: stripHash(quad.subject.value),
+          label: quad.object.value,
+        });
+      }
+      if (quad.subject.value.includes("#decision-")) {
+        decisions.push({
+          id: stripHash(quad.subject.value),
+          label: quad.object.value,
+        });
+      }
+      if (quad.subject.value.includes("#reference-")) {
+        references.push({
+          id: stripHash(quad.subject.value),
+          label: quad.object.value,
+        });
+      }
+      if (quad.subject.value.includes("#note-")) {
+        notes.push({
+          id: stripHash(quad.subject.value),
+          label: quad.object.value,
         });
       }
     }
@@ -149,11 +242,18 @@ export function datasetToStructure(dataset) {
     }
   });
 
+  const legacyCount = ideas.length + questions.length + decisions.length + references.length + notes.length;
   return {
     issues,
     positions,
     arguments: argumentsList,
-    confidence: issues.length + positions.length > 0 ? 0.7 : 0.2,
+    // Legacy IBIS constructs
+    ideas,
+    questions,
+    decisions,
+    references,
+    notes,
+    confidence: issues.length + positions.length + legacyCount > 0 ? 0.7 : 0.2,
   };
 }
 

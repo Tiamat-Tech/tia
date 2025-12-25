@@ -8,19 +8,49 @@ export class ChairProvider {
     this.currentIssue = null;
     this.positions = [];
     this.arguments = [];
+    this.consensusSent = false;
+    // Legacy IBIS constructs
+    this.ideas = [];
+    this.questions = [];
+    this.decisions = [];
+    this.references = [];
+    this.notes = [];
   }
 
   updateState(structure, content, sender) {
     if (structure.issues.length) {
-      this.currentIssue = structure.issues[0].text || content;
+      this.currentIssue = structure.issues[0].label || content;
       this.positions = [];
       this.arguments = [];
+      this.consensusSent = false;
+      // Clear legacy constructs when new issue starts
+      this.ideas = [];
+      this.questions = [];
+      this.decisions = [];
+      this.references = [];
+      this.notes = [];
     }
     structure.positions.forEach((p) => {
-      this.positions.push({ text: p.text, sender });
+      this.positions.push({ text: p.label, sender });
     });
     structure.arguments.forEach((a) => {
-      this.arguments.push({ text: a.text, sender });
+      this.arguments.push({ text: a.label, sender, stance: a.stance });
+    });
+    // Capture legacy IBIS constructs
+    (structure.ideas || []).forEach((i) => {
+      this.ideas.push({ text: i.label, sender });
+    });
+    (structure.questions || []).forEach((q) => {
+      this.questions.push({ text: q.label, sender });
+    });
+    (structure.decisions || []).forEach((d) => {
+      this.decisions.push({ text: d.label, sender });
+    });
+    (structure.references || []).forEach((r) => {
+      this.references.push({ text: r.label, sender });
+    });
+    (structure.notes || []).forEach((n) => {
+      this.notes.push({ text: n.label, sender });
     });
   }
 
@@ -34,7 +64,27 @@ export class ChairProvider {
       this.arguments.length > 0
         ? `Arguments:\n- ${this.arguments.map((a) => a.text).join("\n- ")}`
         : "Arguments: (none yet)";
-    return `${issue}\n${positions}\n${argumentsText}`;
+
+    // Legacy IBIS constructs (only include if present)
+    const parts = [issue, positions, argumentsText];
+
+    if (this.ideas.length > 0) {
+      parts.push(`Ideas:\n- ${this.ideas.map((i) => i.text).join("\n- ")}`);
+    }
+    if (this.questions.length > 0) {
+      parts.push(`Questions:\n- ${this.questions.map((q) => q.text).join("\n- ")}`);
+    }
+    if (this.decisions.length > 0) {
+      parts.push(`Decisions:\n- ${this.decisions.map((d) => d.text).join("\n- ")}`);
+    }
+    if (this.references.length > 0) {
+      parts.push(`References:\n- ${this.references.map((r) => r.text).join("\n- ")}`);
+    }
+    if (this.notes.length > 0) {
+      parts.push(`Notes:\n- ${this.notes.map((n) => n.text).join("\n- ")}`);
+    }
+
+    return parts.join("\n");
   }
 
   async handle({ content, rawMessage, metadata }) {
@@ -67,6 +117,13 @@ export class ChairProvider {
       this.currentIssue = trimmedText.replace(/^issue:\s*/i, "").trim() || trimmedText;
       this.positions = [];
       this.arguments = [];
+      this.consensusSent = false;
+      // Clear legacy constructs
+      this.ideas = [];
+      this.questions = [];
+      this.decisions = [];
+      this.references = [];
+      this.notes = [];
       this.logger.info?.(`[Chair] Debate started for issue: ${this.currentIssue.substring(0, 50)}...`);
       return `Debate started. Issue: ${this.currentIssue}\nPlease provide Positions and Arguments.`;
     }
@@ -76,18 +133,46 @@ export class ChairProvider {
       this.currentIssue = text.replace(/^(issue|i):\s*/i, "").trim() || text;
       this.positions = [];
       this.arguments = [];
+      this.consensusSent = false;
+      // Clear legacy constructs
+      this.ideas = [];
+      this.questions = [];
+      this.decisions = [];
+      this.references = [];
+      this.notes = [];
       return `Debate started. Issue: ${this.currentIssue}\nPlease provide Positions and Arguments.`;
     }
 
     // General IBIS structure detection (for position/argument contributions)
     const structure = detectIBISStructure(text);
 
-    // Always acknowledge explicit IBIS markers (Position:, Support:, Objection:)
+    // Always acknowledge explicit IBIS markers (Position:, Support:, Objection:, Idea:, Question:, etc.)
     // Or acknowledge if confidence threshold is met
-    const hasExplicitIBIS = structure.positions.length > 0 || structure.arguments.length > 0;
-    if ((hasExplicitIBIS || structure.confidence >= 0.5) && (structure.issues.length || structure.positions.length || structure.arguments.length)) {
+    const hasExplicitIBIS = structure.positions.length > 0 ||
+                           structure.arguments.length > 0 ||
+                           (structure.ideas || []).length > 0 ||
+                           (structure.questions || []).length > 0 ||
+                           (structure.decisions || []).length > 0 ||
+                           (structure.references || []).length > 0 ||
+                           (structure.notes || []).length > 0;
+    const hasAnyContent = structure.issues.length ||
+                         structure.positions.length ||
+                         structure.arguments.length ||
+                         (structure.ideas || []).length ||
+                         (structure.questions || []).length ||
+                         (structure.decisions || []).length ||
+                         (structure.references || []).length ||
+                         (structure.notes || []).length;
+    if ((hasExplicitIBIS || structure.confidence >= 0.5) && hasAnyContent) {
       this.updateState(structure, text, metadata.sender);
       const summary = summarizeIBIS(structure);
+      const issueText = this.currentIssue?.toLowerCase() || "";
+      const isToolIssue = issueText.includes("tool") || issueText.includes("agent");
+      const consensus = this.detectToolConsensus();
+      if (isToolIssue && consensus.reached && !this.consensusSent) {
+        this.consensusSent = true;
+        return `Noted. ${summary}\n${consensus.summary}`;
+      }
       return `Noted. ${summary}`;
     }
 

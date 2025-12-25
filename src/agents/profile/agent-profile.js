@@ -86,6 +86,13 @@ export class AgentProfile {
   }
 
   /**
+   * Get all capabilities as an array (for iteration/command parsing)
+   */
+  getCapabilitiesArray() {
+    return Array.from(this.capabilities.values());
+  }
+
+  /**
    * Check if profile supports a Lingue language mode URI
    */
   supportsLingueMode(modeUri) {
@@ -120,6 +127,13 @@ export class AgentProfile {
     if (this.provider) {
       const providerType = this.provider.type;
       config[providerType] = this.provider.toConfig();
+    }
+
+    if (this.custom?.mfrConfig) {
+      config.mfrConfig = this.custom.mfrConfig;
+    }
+    if (this.custom?.mfrRooms) {
+      config.mfrRooms = this.custom.mfrRooms;
     }
 
     return config;

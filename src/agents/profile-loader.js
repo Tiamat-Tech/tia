@@ -5,7 +5,7 @@ import { Writer } from "n3";
 import { turtleToDataset } from "../lib/ibis-rdf.js";
 import { AgentProfile } from "./profile/agent-profile.js";
 import { XmppConfig } from "./profile/xmpp-config.js";
-import { MistralProviderConfig, SememProviderConfig, DataProviderConfig } from "./profile/provider-config.js";
+import { MistralProviderConfig, GroqProviderConfig, SememProviderConfig, DataProviderConfig } from "./profile/provider-config.js";
 import { Capability } from "./profile/capability.js";
 
 const DEFAULT_PROFILE_DIR = path.join(process.cwd(), "config", "agents");
@@ -26,6 +26,7 @@ const PREFIXES = {
   xsd: "http://www.w3.org/2001/XMLSchema#",
   lng: "http://purl.org/stuff/lingue/",
   ibis: "https://vocab.methodandstructure.com/ibis#",
+  mfr: "http://purl.org/stuff/mfr/",
   mcp: "http://purl.org/stuff/mcp/"
 };
 
@@ -122,6 +123,8 @@ export function datasetToProfile(dataset, subject, options = {}) {
   const capabilities = extractCapabilities(dataset, subject);
   const lingue = extractLingueCapabilities(dataset, subject);
   const mcp = extractMcpMetadata(dataset, subject);
+  const mfrConfig = extractMfrConfig(dataset, subject);
+  const mfrRooms = extractMfrRooms(dataset, subject);
 
   const metadata = {
     created: extractLiteral(dataset, subject, PREFIXES.dcterms + "created"),
@@ -139,7 +142,11 @@ export function datasetToProfile(dataset, subject, options = {}) {
     capabilities,
     lingue,
     metadata,
-    mcp
+    mcp,
+    customProperties: {
+      mfrConfig,
+      mfrRooms
+    }
   });
 }
 
@@ -179,6 +186,11 @@ function extractProviderConfig(dataset, subject) {
     return extractMistralProvider(dataset, providerNode);
   }
 
+  providerNode = extractObject(dataset, subject, PREFIXES.agent + "groqProvider");
+  if (providerNode) {
+    return extractGroqProvider(dataset, providerNode);
+  }
+
   providerNode = extractObject(dataset, subject, PREFIXES.agent + "mcpProvider");
   if (providerNode) {
     return extractSememProvider(dataset, providerNode);
@@ -197,6 +209,24 @@ function extractProviderConfig(dataset, subject) {
  */
 function extractMistralProvider(dataset, providerNode) {
   return new MistralProviderConfig({
+    model: extractLiteral(dataset, providerNode, PREFIXES.ai + "model"),
+    apiKeyEnv: extractLiteral(dataset, providerNode, PREFIXES.ai + "apiKeyEnv"),
+    maxTokens: extractInteger(dataset, providerNode, PREFIXES.ai + "maxTokens"),
+    temperature: extractFloat(dataset, providerNode, PREFIXES.ai + "temperature"),
+    lingueEnabled: extractBoolean(dataset, providerNode,
+      PREFIXES.agent + "lingueEnabled"),
+    lingueConfidenceMin: extractFloat(dataset, providerNode,
+      PREFIXES.agent + "lingueConfidenceMin"),
+    systemPrompt: extractLiteral(dataset, providerNode, PREFIXES.ai + "systemPrompt"),
+    systemTemplate: extractLiteral(dataset, providerNode, PREFIXES.ai + "systemTemplate")
+  });
+}
+
+/**
+ * Extract Groq provider config
+ */
+function extractGroqProvider(dataset, providerNode) {
+  return new GroqProviderConfig({
     model: extractLiteral(dataset, providerNode, PREFIXES.ai + "model"),
     apiKeyEnv: extractLiteral(dataset, providerNode, PREFIXES.ai + "apiKeyEnv"),
     maxTokens: extractInteger(dataset, providerNode, PREFIXES.ai + "maxTokens"),
@@ -255,8 +285,9 @@ function extractCapabilities(dataset, subject) {
     const label = extractLiteral(dataset, capUri, PREFIXES.rdfs + "label");
     const description = extractLiteral(dataset, capUri, PREFIXES.dcterms + "description");
     const command = extractLiteral(dataset, capUri, PREFIXES.agent + "command");
+    const aliases = extractLiterals(dataset, capUri, PREFIXES.agent + "commandAlias");
 
-    return new Capability({ name, label, description, command });
+    return new Capability({ name, label, description, command, aliases });
   });
 }
 
@@ -344,6 +375,38 @@ function extractMcpMetadata(dataset, subject) {
     resources,
     prompts,
     endpoints: resources.map(resource => resource.uri).filter(Boolean)
+  };
+}
+
+/**
+ * Extract MFR coordinator configuration
+ */
+function extractMfrConfig(dataset, subject) {
+  const configNode = extractObject(dataset, subject, PREFIXES.agent + "mfrConfig");
+  if (!configNode) return null;
+
+  return {
+    shapesPath: extractLiteral(dataset, configNode, PREFIXES.mfr + "shapesPath"),
+    enableMultiRoom: extractBoolean(dataset, configNode, PREFIXES.mfr + "enableMultiRoom"),
+    contributionTimeout: extractInteger(dataset, configNode, PREFIXES.mfr + "contributionTimeout"),
+    validationTimeout: extractInteger(dataset, configNode, PREFIXES.mfr + "validationTimeout"),
+    reasoningTimeout: extractInteger(dataset, configNode, PREFIXES.mfr + "reasoningTimeout"),
+    debateTimeout: extractInteger(dataset, configNode, PREFIXES.mfr + "debateTimeout"),
+    enableDebate: extractBoolean(dataset, configNode, PREFIXES.mfr + "enableDebate")
+  };
+}
+
+/**
+ * Extract MFR room configuration
+ */
+function extractMfrRooms(dataset, subject) {
+  const roomsNode = extractObject(dataset, subject, PREFIXES.agent + "mfrRooms");
+  if (!roomsNode) return null;
+
+  return {
+    construct: extractLiteral(dataset, roomsNode, PREFIXES.mfr + "constructRoom"),
+    validate: extractLiteral(dataset, roomsNode, PREFIXES.mfr + "validateRoom"),
+    reason: extractLiteral(dataset, roomsNode, PREFIXES.mfr + "reasonRoom")
   };
 }
 
@@ -679,6 +742,9 @@ function mergeProviderConfigs(baseProvider, derivedProvider) {
   if (baseProvider.type === "mistral") {
     return new MistralProviderConfig(mergedConfig);
   }
+  if (baseProvider.type === "groq") {
+    return new GroqProviderConfig(mergedConfig);
+  }
   if (baseProvider.type === "semem") {
     return new SememProviderConfig(mergedConfig);
   }
@@ -763,6 +829,14 @@ function hasType(dataset, subject, typeUri) {
 function extractObjects(dataset, subject, predicateUri) {
   return Array.from(dataset.match(subject, rdf.namedNode(predicateUri), null))
     .map(quad => quad.object);
+}
+
+/**
+ * Extract multiple literal values for a given predicate
+ */
+function extractLiterals(dataset, subject, predicateUri) {
+  return Array.from(dataset.match(subject, rdf.namedNode(predicateUri), null))
+    .map(quad => quad.object.value);
 }
 
 function extractBoolean(dataset, subject, predicateUri, defaultValue) {

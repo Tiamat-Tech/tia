@@ -8,6 +8,13 @@ const OBJECTION_PREFIXES = ["however", "but", "concern", "downside", "risk", "ag
 const OBJECTION_MARKERS = [/^objection\s*:/, /^oppose\s*:/, /^o\s*:/];
 const ARGUMENT_MARKERS = [/^argument\s*:/, /^arg\s*:/, /^a\s*:/];
 
+// Legacy IBIS constructs (http://purl.org/ibis#)
+const IDEA_MARKERS = [/^idea\s*:/, /^id\s*:/];
+const QUESTION_MARKERS = [/^question\s*:/, /^q\s*:/];
+const DECISION_MARKERS = [/^decision\s*:/, /^d\s*:/];
+const REFERENCE_MARKERS = [/^reference\s*:/, /^ref\s*:/];
+const NOTE_MARKERS = [/^note\s*:/, /^n\s*:/];
+
 const clamp = (val, min, max) => Math.max(min, Math.min(max, val));
 
 export function detectIBISStructure(text) {
@@ -18,8 +25,16 @@ export function detectIBISStructure(text) {
   const positions = detectPositions(normalized);
   const { supporting, objecting, neutral } = detectArguments(normalized);
 
+  // Legacy IBIS constructs
+  const ideas = detectIdeas(normalized);
+  const questions = detectQuestions(normalized);
+  const decisions = detectDecisions(normalized);
+  const references = detectReferences(normalized);
+  const notes = detectNotes(normalized);
+
   const argumentCount = supporting.length + objecting.length + neutral.length;
-  const signal = issues.length + positions.length + argumentCount * 0.5;
+  const legacyCount = ideas.length + questions.length + decisions.length + references.length + notes.length;
+  const signal = issues.length + positions.length + argumentCount * 0.5 + legacyCount;
   const confidence = clamp(signal / 4, 0, 1);
 
   return {
@@ -42,6 +57,12 @@ export function detectIBISStructure(text) {
         stance: "neutral",
       })),
     ],
+    // Legacy IBIS constructs
+    ideas,
+    questions,
+    decisions,
+    references,
+    notes,
     confidence,
     source: text,
   };
@@ -169,6 +190,83 @@ function inferArgumentStance(text) {
   return "neutral";
 }
 
+// Legacy IBIS detection functions
+
+function detectIdeas(normalized) {
+  const sentences = splitSentences(normalized);
+  const ideas = [];
+  sentences.forEach((sentence, idx) => {
+    const labeledIdea = IDEA_MARKERS.find((marker) => marker.test(sentence));
+    if (labeledIdea) {
+      ideas.push({
+        id: `idea-${idx + 1}`,
+        label: sentence.replace(labeledIdea, "").trim() || "Unlabeled idea",
+      });
+    }
+  });
+  return ideas;
+}
+
+function detectQuestions(normalized) {
+  const sentences = splitSentences(normalized);
+  const questions = [];
+  sentences.forEach((sentence, idx) => {
+    const labeledQuestion = QUESTION_MARKERS.find((marker) => marker.test(sentence));
+    if (labeledQuestion) {
+      questions.push({
+        id: `question-${idx + 1}`,
+        label: sentence.replace(labeledQuestion, "").trim() || "Unlabeled question",
+      });
+    }
+  });
+  return questions;
+}
+
+function detectDecisions(normalized) {
+  const sentences = splitSentences(normalized);
+  const decisions = [];
+  sentences.forEach((sentence, idx) => {
+    const labeledDecision = DECISION_MARKERS.find((marker) => marker.test(sentence));
+    if (labeledDecision) {
+      decisions.push({
+        id: `decision-${idx + 1}`,
+        label: sentence.replace(labeledDecision, "").trim() || "Unlabeled decision",
+      });
+    }
+  });
+  return decisions;
+}
+
+function detectReferences(normalized) {
+  const sentences = splitSentences(normalized);
+  const references = [];
+  sentences.forEach((sentence, idx) => {
+    const labeledReference = REFERENCE_MARKERS.find((marker) => marker.test(sentence));
+    if (labeledReference) {
+      references.push({
+        id: `reference-${idx + 1}`,
+        label: sentence.replace(labeledReference, "").trim() || "Unlabeled reference",
+      });
+    }
+  });
+  return references;
+}
+
+function detectNotes(normalized) {
+  const sentences = splitSentences(normalized);
+  const notes = [];
+  sentences.forEach((sentence, idx) => {
+    const labeledNote = NOTE_MARKERS.find((marker) => marker.test(sentence));
+    if (labeledNote) {
+      notes.push({
+        id: `note-${idx + 1}`,
+        label: sentence.replace(labeledNote, "").trim() || "Unlabeled note",
+      });
+    }
+  });
+  return notes;
+}
+
 export function summarizeIBIS(structure) {
   const issueText =
     structure.issues?.[0]?.label || structure.source || "Unspecified issue";
@@ -189,5 +287,15 @@ export function summarizeIBIS(structure) {
       )
       .join("\n") || "- No arguments detected";
 
-  return `IBIS summary\nIssue: ${issueText}\n${positions}\n${args}`;
+  // Legacy IBIS constructs
+  const ideas = structure.ideas?.map((i) => `- Idea: ${i.label}`).join("\n") || "";
+  const questions = structure.questions?.map((q) => `- Question: ${q.label}`).join("\n") || "";
+  const decisions = structure.decisions?.map((d) => `- Decision: ${d.label}`).join("\n") || "";
+  const references = structure.references?.map((r) => `- Reference: ${r.label}`).join("\n") || "";
+  const notes = structure.notes?.map((n) => `- Note: ${n.label}`).join("\n") || "";
+
+  const legacyParts = [ideas, questions, decisions, references, notes].filter(Boolean);
+  const legacySection = legacyParts.length > 0 ? "\n" + legacyParts.join("\n") : "";
+
+  return `IBIS summary\nIssue: ${issueText}\n${positions}\n${args}${legacySection}`;
 }

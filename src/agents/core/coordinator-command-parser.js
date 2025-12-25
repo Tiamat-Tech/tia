@@ -16,6 +16,24 @@ export function coordinatorCommandParser(text) {
     };
   }
 
+  if (lowered.startsWith("mfr-debate ") || lowered.startsWith("debate ")) {
+    const prefix = lowered.startsWith("mfr-debate ") ? "mfr-debate " : "debate ";
+    return {
+      command: "mfr-debate",
+      content: trimmed.slice(prefix.length).trim()
+    };
+  }
+
+  if (lowered.startsWith("q:") || lowered.startsWith("question:") || lowered.startsWith("issue:")) {
+    const content = trimmed.replace(/^(q|question|issue)\s*:/i, "").trim();
+    if (content) {
+      return {
+        command: "mfr-debate",
+        content
+      };
+    }
+  }
+
   if (lowered.startsWith("mfr-contribute ") || lowered.startsWith("contribute ")) {
     const prefix = lowered.startsWith("mfr-contribute ") ? "mfr-contribute " : "contribute ";
     return {

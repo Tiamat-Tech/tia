@@ -53,6 +53,46 @@ export class MistralProviderConfig extends ProviderConfig {
 }
 
 /**
+ * Groq-specific provider
+ */
+export class GroqProviderConfig extends ProviderConfig {
+  constructor({
+    model,
+    apiKeyEnv,
+    maxTokens,
+    temperature,
+    lingueEnabled,
+    lingueConfidenceMin,
+    systemPrompt,
+    systemTemplate
+  }) {
+    super('groq', {
+      model,
+      apiKeyEnv,
+      maxTokens,
+      temperature,
+      lingueEnabled,
+      lingueConfidenceMin,
+      systemPrompt,
+      systemTemplate
+    });
+  }
+
+  toConfig() {
+    const config = {};
+    if (this.config.model !== undefined) config.model = this.config.model;
+    if (this.config.apiKeyEnv !== undefined) config.apiKeyEnv = this.config.apiKeyEnv;
+    if (this.config.maxTokens !== undefined) config.maxTokens = this.config.maxTokens;
+    if (this.config.temperature !== undefined) config.temperature = this.config.temperature;
+    if (this.config.lingueEnabled !== undefined) config.lingueEnabled = this.config.lingueEnabled;
+    if (this.config.lingueConfidenceMin !== undefined) config.lingueConfidenceMin = this.config.lingueConfidenceMin;
+    if (this.config.systemPrompt !== undefined) config.systemPrompt = this.config.systemPrompt;
+    if (this.config.systemTemplate !== undefined) config.systemTemplate = this.config.systemTemplate;
+    return config;
+  }
+}
+
+/**
  * Semem-specific provider
  */
 export class SememProviderConfig extends ProviderConfig {

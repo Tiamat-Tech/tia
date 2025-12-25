@@ -24,10 +24,10 @@ CYAN='\033[0;36m'
 NC='\033[0m' # No Color
 
 # Preset agent groups
-ALL_AGENTS="coordinator,mistral,analyst,creative,chair,recorder,semem,mfr-semantic,data,prolog,executor,demo"
-MFR_AGENTS="coordinator,mistral,analyst,creative,chair,recorder,mfr-semantic,data,prolog,executor,demo"
-DEBATE_AGENTS="chair,recorder,mistral,analyst,creative"
-BASIC_AGENTS="mistral,data,prolog,demo"
+ALL_AGENTS="coordinator,mistral,groqbot,analyst,creative,chair,recorder,semem,mfr-semantic,data,prolog,executor,demo"
+MFR_AGENTS="coordinator,mistral,groqbot,analyst,creative,chair,recorder,mfr-semantic,data,prolog,executor,demo"
+DEBATE_AGENTS="chair,recorder,mistral,groqbot,analyst,creative"
+BASIC_AGENTS="mistral,groqbot,data,prolog,demo"
 
 echo -e "${BLUE}=== TIA Multi-Agent System ===${NC}"
 echo ""
@@ -77,6 +77,7 @@ if [ -n "$1" ]; then
       echo "Available agents:"
       echo "  coordinator - MFR orchestrator"
       echo "  mistral     - Mistral AI agent (requires MISTRAL_API_KEY)"
+      echo "  groqbot     - Groq AI agent (requires GROQ_API_KEY)"
       echo "  analyst     - Mistral analyst variant (requires MISTRAL_API_KEY)"
       echo "  creative    - Mistral creative variant (requires MISTRAL_API_KEY)"
       echo "  semem       - Semem MCP agent (optional)"
@@ -114,6 +115,18 @@ if [ -z "$MISTRAL_API_KEY" ] || [ "$MISTRAL_API_KEY" = "your_mistral_api_key_her
   echo "   Get your API key from: https://console.mistral.ai/"
   echo ""
   WARNINGS=$((WARNINGS + 1))
+fi
+
+if [ -z "$GROQ_API_KEY" ] || [ "$GROQ_API_KEY" = "your_groq_api_key_here" ]; then
+  # Only warn if groqbot is explicitly requested
+  if [[ "$AGENTS" == *"groqbot"* ]]; then
+    echo -e "${YELLOW}⚠️  Warning: GROQ_API_KEY not set or is placeholder${NC}"
+    echo "   Groq agent will be skipped"
+    echo "   Set GROQ_API_KEY in .env file to enable groqbot"
+    echo "   Get your API key from: https://console.groq.com/"
+    echo ""
+    WARNINGS=$((WARNINGS + 1))
+  fi
 fi
 
 if [ -z "$SEMEM_AUTH_TOKEN" ] || [ "$SEMEM_AUTH_TOKEN" = "your-api-key" ]; then

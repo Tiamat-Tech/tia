@@ -32,14 +32,81 @@
   # Primary room for receiving user requests
   agent:roomJid "general@conference.tensegrity.it" ;
 
+  # MFR command capabilities
+  agent:hasCapability [
+    a agent:Capability ;
+    rdfs:label "Start MFR Session" ;
+    dcterms:description "Initiate a Model-First Reasoning collaborative session" ;
+    agent:command "mfr-start" ;
+    agent:commandAlias "start"
+  ] ;
+
+  agent:hasCapability [
+    a agent:Capability ;
+    rdfs:label "Debate Tool Selection" ;
+    dcterms:description "Initiate collaborative debate for tool selection" ;
+    agent:command "mfr-debate" ;
+    agent:commandAlias "debate"
+  ] ;
+
+  agent:hasCapability [
+    a agent:Capability ;
+    rdfs:label "Contribute to MFR" ;
+    dcterms:description "Submit a model contribution to active MFR session" ;
+    agent:command "mfr-contribute" ;
+    agent:commandAlias "contribute"
+  ] ;
+
+  agent:hasCapability [
+    a agent:Capability ;
+    rdfs:label "Validate Model" ;
+    dcterms:description "Request SHACL validation of contributed models" ;
+    agent:command "mfr-validate" ;
+    agent:commandAlias "validate"
+  ] ;
+
+  agent:hasCapability [
+    a agent:Capability ;
+    rdfs:label "Solve with Constraints" ;
+    dcterms:description "Request constraint-based reasoning to solve the problem" ;
+    agent:command "mfr-solve" ;
+    agent:commandAlias "solve"
+  ] ;
+
+  agent:hasCapability [
+    a agent:Capability ;
+    rdfs:label "Get Session Status" ;
+    dcterms:description "Display current status of active MFR session" ;
+    agent:command "mfr-status" ;
+    agent:commandAlias "status"
+  ] ;
+
+  agent:hasCapability [
+    a agent:Capability ;
+    rdfs:label "List Sessions" ;
+    dcterms:description "List all active MFR sessions" ;
+    agent:command "mfr-list" ;
+    agent:commandAlias "list"
+  ] ;
+
+  agent:hasCapability [
+    a agent:Capability ;
+    rdfs:label "MFR Help" ;
+    dcterms:description "Display help information for MFR commands" ;
+    agent:command "mfr-help" ;
+    agent:commandAlias "help"
+  ] ;
+
   # MFR-specific configuration
   agent:mfrConfig [
     a mfr:CoordinatorConfig ;
     mfr:shapesPath "vocabs/mfr-shapes.ttl" ;
     mfr:enableMultiRoom "true"^^xsd:boolean ;
+    mfr:enableDebate "true"^^xsd:boolean ;
     mfr:contributionTimeout "30000"^^xsd:integer ;
     mfr:validationTimeout "10000"^^xsd:integer ;
-    mfr:reasoningTimeout "60000"^^xsd:integer
+    mfr:reasoningTimeout "60000"^^xsd:integer ;
+    mfr:debateTimeout "60000"^^xsd:integer
   ] ;
 
   # MFR rooms configuration

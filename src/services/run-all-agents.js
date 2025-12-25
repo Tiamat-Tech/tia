@@ -25,6 +25,12 @@ const AGENT_DEFINITIONS = {
     requiredEnv: ["MISTRAL_API_KEY"],
     env: { AGENT_PROFILE: "mistral" }
   },
+  groqbot: {
+    command: "node src/services/groqbot.js",
+    description: "Groq API-backed bot",
+    requiredEnv: ["GROQ_API_KEY"],
+    env: { AGENT_PROFILE: "groqbot" }
+  },
   analyst: {
     command: "node src/services/mistral-bot.js",
     description: "Mistral analyst variant",

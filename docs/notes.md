@@ -1,3 +1,5 @@
+We want it so that something like the following example will first start a debate (via Chair) and then agents chosen (Coordinator?) and then the agents decide on a plan then the agents carry out the plan. Right now Chair acknowledges the question but then it goes no further. "Q: how can we optimize delivery routes for 3 trucks serving 10 locations. Truck 1 has capacity 100, Truck 2 has capacity 150, Truck 3 has capacity 200. Location A needs delivery before 10 AM. Locations B and C must use same truck."
+
  DOCS_DIR=docs DOCS_OUT_DIR=docs-site node scripts/build-docs.mjs
 
 pkill -f 'node src/services'
@@ -17,6 +19,14 @@ npm pack
   npm install ../tia/tia-agents-0.3.0.tgz
 
 npm install @mistralai/mistralai
+
+  - Map class - not included
+  - Properties: refersTo, pro, con - not implemented
+
+  The system currently uses these properties instead:
+  - ibis:supports (for support arguments)
+  - ibis:objects-to (for objections)
+  - ibis:responds-to (positions to issues)
 
  If you want the history store size or any other provider options to be 100%
   config‑driven too, we can add those to the profile and wire them in the
@@ -58,6 +68,9 @@ mfr-semanticpass
 prosodyctl adduser semem@tensegrity.it
 prosodyctl adduser mistral@tensegrity.it
 prosodyctl adduser demo@tensegrity.it
+
+prosodyctl adduser groqbot@tensegrity.it
+groqbotpass
 
 prosodyctl adduser prolog@tensegrity.it
 

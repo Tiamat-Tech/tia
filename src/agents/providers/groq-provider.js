@@ -1,15 +1,15 @@
-import { Mistral } from "@mistralai/mistralai";
+import Groq from "groq-sdk";
 import { BaseLLMProvider } from "./base-llm-provider.js";
 
 /**
- * Mistral AI provider implementation
- * Extends BaseLLMProvider with Mistral-specific API integration
+ * Groq AI provider implementation
+ * Extends BaseLLMProvider with Groq-specific API integration
  */
-export class MistralProvider extends BaseLLMProvider {
+export class GroqProvider extends BaseLLMProvider {
   constructor({
     apiKey,
-    model = "mistral-small-latest",
-    nickname = "MistralBot",
+    model = "llama-3.3-70b-versatile",
+    nickname = "GroqBot",
     systemPrompt = null,
     systemTemplate = null,
     historyStore = null,
@@ -35,31 +35,30 @@ export class MistralProvider extends BaseLLMProvider {
   }
 
   /**
-   * Initialize Mistral API client
+   * Initialize Groq API client
    */
   initializeClient(apiKey) {
-    return new Mistral({ apiKey });
+    return new Groq({ apiKey });
   }
 
   /**
-   * Complete chat request using Mistral API
+   * Complete chat request using Groq API
    */
   async completeChatRequest({ messages, maxTokens, temperature }) {
-    return await this.client.chat.complete({
+    return await this.client.chat.completions.create({
       model: this.model,
       messages,
-      maxTokens,
+      max_tokens: maxTokens,
       temperature
     });
   }
 
   /**
-   * Extract response text from Mistral API response
+   * Extract response text from Groq API response
    */
   extractResponseText(response) {
     return response.choices[0]?.message?.content?.trim() || null;
   }
-
 }
 
-export default MistralProvider;
+export default GroqProvider;

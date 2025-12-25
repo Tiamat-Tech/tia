@@ -50,6 +50,7 @@ The design goal is a clean, library-ready architecture that supports both deploy
 
 - **Coordinator** — MFR (Model-First Reasoning) orchestrator for multi-agent problem solving.
 - **Mistral** — AI chat agent backed by Mistral API with Lingue/IBIS summaries.
+- **GroqBot** — AI chat agent backed by Groq API (llama-3.3-70b-versatile) with same capabilities as Mistral.
 - **Semem** — MCP-backed knowledge agent for `tell/ask/augment` flows.
 - **MFR Semantic** — Constraint-focused agent for MFR model construction.
 - **Data** — SPARQL knowledge query agent for Wikidata, DBpedia, and custom endpoints. [Guide](docs/data-agent.md)
@@ -122,6 +123,12 @@ Once connected to the chatroom, you can pose problems to the MFR system:
 # Start a new MFR session
 mfr-start Schedule appointments for patients. Alice takes warfarin, Bob takes aspirin. Ensure no drug interactions.
 
+# Start a debate-driven MFR session (tool selection via Chair)
+debate Optimize delivery routes for 3 trucks serving 10 locations.
+
+# Shorthand for debate-driven sessions
+Q: Optimize delivery routes for 3 trucks serving 10 locations.
+
 # Check session status
 mfr-status <sessionId>
 
@@ -132,6 +139,8 @@ mfr-list
 help
 ```
 
+Debate mode is enabled by default in `config/agents/coordinator.ttl`.
+
 **Short command versions:**
 - `start` instead of `mfr-start`
 - `status` instead of `mfr-status`
@@ -141,6 +150,7 @@ help
 - `mfr-contribute <sessionId> <rdf>` - Submit a contribution manually
 - `mfr-validate <sessionId>` - Validate a model
 - `mfr-solve <sessionId>` - Request solutions
+ - `debate <problem description>` - Start debate-driven MFR session
 
 ### Programmatic MFR Sessions
 

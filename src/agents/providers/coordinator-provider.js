@@ -29,6 +29,8 @@ export class CoordinatorProvider extends BaseProvider {
     negotiator = null,
     primaryRoomJid = null,
     enableDebate = false,
+    debateTimeoutMs = null,
+    contributionTimeoutMs = null,
     logger = console
   } = {}) {
     super();
@@ -42,6 +44,8 @@ export class CoordinatorProvider extends BaseProvider {
     this.negotiator = negotiator;
     this.primaryRoomJid = primaryRoomJid;
     this.enableDebate = enableDebate;
+    this.debateTimeoutMs = debateTimeoutMs;
+    this.contributionTimeoutMs = contributionTimeoutMs;
     this.logger = logger;
 
     // Active MFR sessions: Map<sessionId, MfrProtocolState>
@@ -105,8 +109,16 @@ export class CoordinatorProvider extends BaseProvider {
         case "mfr-help":
           return this.getHelpMessage();
 
-        case "chat":
         default:
+          if (this.enableDebate) {
+            const consensusResult = await this.handleDebateConsensus(
+              content || rawMessage || "",
+              metadata
+            );
+            if (consensusResult) {
+              return consensusResult;
+            }
+          }
           // Don't respond to regular chat messages
           return null;
       }
@@ -186,11 +198,14 @@ export class CoordinatorProvider extends BaseProvider {
       problemDescription,
       startTime: Date.now(),
       positions: [],
-      consensusReached: false
+      consensusReached: false,
+      selectedAgents: []
     });
 
     // Format debate issue for Chair and participants
     const debateIssue = [
+      `Session: ${sessionId}`,
+      ``,
       `Issue: Which tools and agents should we use to solve this problem?`,
       ``,
       `Problem: ${problemDescription}`,
@@ -213,12 +228,17 @@ export class CoordinatorProvider extends BaseProvider {
     this.logger.debug?.(`[CoordinatorProvider] Debate issue text: ${debateIssue.substring(0, 100)}...`);
     await this.sendStatusMessage(debateIssue);
 
-    // Set timeout for debate phase (60 seconds)
+    if (!Number.isFinite(this.debateTimeoutMs)) {
+      throw new Error("Debate timeout missing or invalid; check profile mfrConfig.");
+    }
+
+    // Set timeout for debate phase
     setTimeout(async () => {
       await this.concludeDebate(sessionId);
-    }, 60000);
+    }, this.debateTimeoutMs);
 
-    return `Debate session started: ${sessionId}\n\nDebate window: 60 seconds\nType positions and arguments or wait for Chair to detect consensus.`;
+    const debateSeconds = Math.round(this.debateTimeoutMs / 1000);
+    return `Debate session started: ${sessionId}\n\nDebate window: ${debateSeconds} seconds\nType positions and arguments or wait for Chair to detect consensus.`;
   }
 
   /**
@@ -226,7 +246,7 @@ export class CoordinatorProvider extends BaseProvider {
    * @param {string} sessionId - Session ID
    * @returns {Promise<void>}
    */
-  async concludeDebate(sessionId) {
+  async concludeDebate(sessionId, { selectedAgents } = {}) {
     const state = this.activeSessions.get(sessionId);
     const debateData = this.activeDebates.get(sessionId);
 
@@ -245,8 +265,12 @@ export class CoordinatorProvider extends BaseProvider {
     );
 
     // For now, proceed with all agents (consensus detection to be added with Chair integration)
+    const selected = Array.isArray(selectedAgents) && selectedAgents.length > 0
+      ? selectedAgents
+      : (debateData.selectedAgents || []);
+    const hasSelection = selected.length > 0;
     const message = debateData.consensusReached
-      ? `Consensus reached. Proceeding with selected tools.`
+      ? `Consensus reached. ${hasSelection ? `Selected agents: ${selected.join(", ")}.` : "Proceeding with selected tools."}`
       : `Debate timeout reached. Proceeding with all available agents.`;
 
     await this.sendStatusMessage(message);
@@ -258,7 +282,7 @@ export class CoordinatorProvider extends BaseProvider {
     state.transition(MFR_PHASES.ENTITY_DISCOVERY);
 
     // Broadcast contribution request (same as normal MFR session)
-    await this.broadcastContributionRequest(sessionId, debateData.problemDescription);
+    await this.broadcastContributionRequest(sessionId, debateData.problemDescription, selected);
 
     // Clean up debate data
     this.activeDebates.delete(sessionId);
@@ -270,7 +294,7 @@ export class CoordinatorProvider extends BaseProvider {
    * @param {string} problemDescription - Problem description
    * @returns {Promise<void>}
    */
-  async broadcastContributionRequest(sessionId, problemDescription) {
+  async broadcastContributionRequest(sessionId, problemDescription, requestedAgents = null) {
     this.logger.debug?.(
       `[CoordinatorProvider] Broadcasting contribution request for ${sessionId}`
     );
@@ -279,6 +303,9 @@ export class CoordinatorProvider extends BaseProvider {
       messageType: MFR_MESSAGE_TYPES.MODEL_CONTRIBUTION_REQUEST,
       sessionId,
       problemDescription,
+      requestedAgents: Array.isArray(requestedAgents) && requestedAgents.length > 0
+        ? requestedAgents
+        : undefined,
       requestedContributions: [
         MFR_CONTRIBUTION_TYPES.ENTITY,
         MFR_CONTRIBUTION_TYPES.CONSTRAINT,
@@ -394,6 +421,9 @@ export class CoordinatorProvider extends BaseProvider {
    * @param {string} sessionId - Session ID
    */
   setContributionTimeout(sessionId) {
+    if (!Number.isFinite(this.contributionTimeoutMs)) {
+      throw new Error("Contribution timeout missing or invalid; check profile mfrConfig.");
+    }
     setTimeout(async () => {
       const state = this.activeSessions.get(sessionId);
       if (!state || !state.isActive()) {
@@ -413,7 +443,7 @@ export class CoordinatorProvider extends BaseProvider {
         // Proceed to merge
         await this.proceedToMerge(sessionId);
       }
-    }, 30000); // 30 second timeout
+    }, this.contributionTimeoutMs);
   }
 
   /**
@@ -953,6 +983,61 @@ export class CoordinatorProvider extends BaseProvider {
     }
 
     return lines.join("\n");
+  }
+
+  getActiveDebateSessionId() {
+    let latest = null;
+    for (const [sessionId, debateData] of this.activeDebates.entries()) {
+      if (!latest || debateData.startTime > latest.startTime) {
+        latest = { sessionId, startTime: debateData.startTime };
+      }
+    }
+    return latest?.sessionId || null;
+  }
+
+  extractConsensusAgents(message) {
+    if (!message) return [];
+    const lower = message.toLowerCase();
+    const match = lower.match(/consensus reached.*use\s+(.+?)(?:\.|$)/i) ||
+      lower.match(/consensus reached.*tools?:\s*(.+?)(?:\.|$)/i);
+    if (!match) return [];
+    const normalized = match[1]
+      .split(",")
+      .map((item) => item.trim())
+      .filter(Boolean)
+      .map((item) => item.replace("mfr-semantic", "semantic").replace("mfr semantic", "semantic"));
+    return Array.from(new Set(normalized));
+  }
+
+  async handleDebateConsensus(message, metadata = {}) {
+    const text = (message || "").trim();
+    if (!text) return null;
+    if (!/consensus reached/i.test(text)) {
+      return null;
+    }
+
+    const sessionId = this.getActiveDebateSessionId();
+    if (!sessionId) {
+      return null;
+    }
+
+    const debateData = this.activeDebates.get(sessionId);
+    if (!debateData) {
+      return null;
+    }
+
+    const selectedAgents = this.extractConsensusAgents(text);
+    debateData.consensusReached = true;
+    debateData.selectedAgents = selectedAgents;
+
+    await this.sendStatusMessage(
+      selectedAgents.length > 0
+        ? `Consensus noted for ${sessionId}. Selected agents: ${selectedAgents.join(", ")}.`
+        : `Consensus noted for ${sessionId}. Proceeding with all available agents.`
+    );
+
+    await this.concludeDebate(sessionId, { selectedAgents });
+    return `Consensus received for ${sessionId}. Proceeding with contribution requests...`;
   }
 
   /**

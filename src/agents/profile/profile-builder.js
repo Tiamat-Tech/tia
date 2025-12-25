@@ -1,6 +1,6 @@
 import { AgentProfile } from "./agent-profile.js";
 import { XmppConfig } from "./xmpp-config.js";
-import { MistralProviderConfig, SememProviderConfig } from "./provider-config.js";
+import { MistralProviderConfig, GroqProviderConfig, SememProviderConfig } from "./provider-config.js";
 import { Capability } from "./capability.js";
 
 /**
@@ -59,6 +59,18 @@ export class ProfileBuilder {
 
   mistralProvider({ model, apiKeyEnv, maxTokens, temperature, lingueEnabled, lingueConfidenceMin }) {
     this.data.provider = new MistralProviderConfig({
+      model,
+      apiKeyEnv,
+      maxTokens,
+      temperature,
+      lingueEnabled,
+      lingueConfidenceMin
+    });
+    return this;
+  }
+
+  groqProvider({ model, apiKeyEnv, maxTokens, temperature, lingueEnabled, lingueConfidenceMin }) {
+    this.data.provider = new GroqProviderConfig({
       model,
       apiKeyEnv,
       maxTokens,

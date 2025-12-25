@@ -2,6 +2,7 @@ import dotenv from "dotenv";
 import { AgentRunner } from "../agents/core/agent-runner.js";
 import { createMentionDetector } from "../agents/core/mention-detector.js";
 import { coordinatorCommandParser } from "../agents/core/coordinator-command-parser.js";
+import { createCapabilityCommandParser } from "../agents/core/capability-command-parser.js";
 import { CoordinatorProvider } from "../agents/providers/coordinator-provider.js";
 import { MfrModelStore } from "../lib/mfr/model-store.js";
 import { MfrShaclValidator } from "../lib/mfr/shacl-validator.js";
@@ -67,16 +68,37 @@ const MUC_ROOM = fileConfig.roomJid;
 const BOT_NICKNAME = fileConfig.nickname;
 
 // MFR configuration
-const mfrConfig = fileConfig.mfrConfig || {};
-const mfrRooms = fileConfig.mfrRooms || {
-  construct: "mfr-construct@conference.tensegrity.it",
-  validate: "mfr-validate@conference.tensegrity.it",
-  reason: "mfr-reason@conference.tensegrity.it"
-};
+const mfrConfig = fileConfig.mfrConfig;
+if (!mfrConfig) {
+  throw new Error("Coordinator mfrConfig missing; check profile file.");
+}
+const mfrRooms = fileConfig.mfrRooms;
+if (!mfrRooms?.construct || !mfrRooms?.validate || !mfrRooms?.reason) {
+  throw new Error("Coordinator mfrRooms missing or incomplete; check profile file.");
+}
+
+if (!mfrConfig.shapesPath) {
+  throw new Error("Coordinator shapesPath missing; check profile mfrConfig.");
+}
+if (typeof mfrConfig.enableMultiRoom !== "boolean") {
+  throw new Error("Coordinator enableMultiRoom missing; check profile mfrConfig.");
+}
+if (!Number.isFinite(mfrConfig.contributionTimeout)) {
+  throw new Error("Coordinator contributionTimeout missing; check profile mfrConfig.");
+}
+if (!Number.isFinite(mfrConfig.debateTimeout)) {
+  throw new Error("Coordinator debateTimeout missing; check profile mfrConfig.");
+}
+if (typeof mfrConfig.enableDebate !== "boolean") {
+  throw new Error("Coordinator enableDebate missing; check profile mfrConfig.");
+}
 
 logger.info(`Coordinator MFR Configuration:`);
-logger.info(`  Shapes Path: ${mfrConfig.shapesPath || "vocabs/mfr-shapes.ttl"}`);
-logger.info(`  Multi-Room: ${mfrConfig.enableMultiRoom !== false}`);
+logger.info(`  Shapes Path: ${mfrConfig.shapesPath}`);
+logger.info(`  Multi-Room: ${mfrConfig.enableMultiRoom}`);
+logger.info(`  Debate Enabled: ${mfrConfig.enableDebate}`);
+logger.info(`  Debate Timeout: ${mfrConfig.debateTimeout}ms`);
+logger.info(`  Contribution Timeout: ${mfrConfig.contributionTimeout}ms`);
 logger.info(`  Construct Room: ${mfrRooms.construct}`);
 logger.info(`  Validate Room: ${mfrRooms.validate}`);
 logger.info(`  Reason Room: ${mfrRooms.reason}`);
@@ -87,7 +109,7 @@ const shapesLoader = new ShapesLoader({ logger });
 const merger = new MfrModelMerger({ logger });
 
 // Load SHACL shapes
-const shapesPath = mfrConfig.shapesPath || "vocabs/mfr-shapes.ttl";
+const shapesPath = mfrConfig.shapesPath;
 let validator = null;
 
 try {
@@ -107,7 +129,7 @@ for (const agentNick of agentRoster) {
 }
 
 // Debate feature flag (optional - defaults to false for backward compatibility)
-const enableDebate = process.env.MFR_ENABLE_DEBATE === 'true';
+const enableDebate = mfrConfig.enableDebate === true;
 if (enableDebate) {
   logger.info?.('[CoordinatorAgent] Debate feature enabled');
 }
@@ -122,6 +144,8 @@ const provider = new CoordinatorProvider({
   negotiator: null,
   primaryRoomJid: MUC_ROOM,
   enableDebate,
+  debateTimeoutMs: mfrConfig.debateTimeout,
+  contributionTimeoutMs: mfrConfig.contributionTimeout,
   logger
 });
 
@@ -176,6 +200,13 @@ const negotiator = new LingueNegotiator({
 
 provider.negotiator = negotiator;
 
+// Create command parser (capability-based with fallback to hardcoded)
+// If profile has capabilities defined, use them; otherwise use legacy parser
+const capabilities = profile.getCapabilitiesArray();
+const commandParser = capabilities && capabilities.length > 0
+  ? createCapabilityCommandParser(capabilities, coordinatorCommandParser)
+  : coordinatorCommandParser;
+
 // Create agent runner
 const runner = new AgentRunner({
   xmppConfig: XMPP_CONFIG,
@@ -184,7 +215,7 @@ const runner = new AgentRunner({
   provider,
   negotiator,
   mentionDetector: createMentionDetector(BOT_NICKNAME, [BOT_NICKNAME]),
-  commandParser: coordinatorCommandParser,
+  commandParser,
   allowSelfMessages: false,
   respondToAll: true,  // Coordinator should process all commands in room
   maxAgentRounds: systemConfig.maxAgentRounds,
@@ -207,7 +238,7 @@ async function start() {
   await runner.start();
 
   // Initialize multi-room manager if enabled
-  if (mfrConfig.enableMultiRoom !== false && runner.agent?.xmpp) {
+  if (mfrConfig.enableMultiRoom && runner.agent?.xmpp) {
     multiRoomManager = new MultiRoomManager({
       xmppClient: runner.agent.xmpp,
       rooms: mfrRooms,
