@@ -17,6 +17,7 @@ import { xml } from "@xmpp/client";
 import { InMemoryHistoryStore } from "../lib/history/index.js";
 import { loadAgentRoster } from "../agents/profile-roster.js";
 import { loadSystemConfig } from "../lib/system-config.js";
+import { reportLingueMode } from "../lib/lingue/verbose.js";
 
 dotenv.config();
 
@@ -90,6 +91,16 @@ if (profile.supportsLingueMode(LANGUAGE_MODES.MODEL_NEGOTIATION)) {
 
       const sessionId = payload?.sessionId;
       const targetRoom = roomJid || stanza?.attrs?.from?.split("/")?.[0];
+      await reportLingueMode({
+        logger,
+        xmppClient: negotiator?.xmppClient,
+        roomJid: targetRoom,
+        payload,
+        direction: "<-",
+        mode: LANGUAGE_MODES.MODEL_NEGOTIATION,
+        mimeType: "application/json",
+        detail: messageType
+      });
 
       if (messageType === MFR_MESSAGE_TYPES.MODEL_CONTRIBUTION_REQUEST) {
         if (!sessionId) {
@@ -113,6 +124,16 @@ if (profile.supportsLingueMode(LANGUAGE_MODES.MODEL_NEGOTIATION)) {
             { metadata: { sessionId } }
           );
           await negotiator.xmppClient.send(contributionStanza);
+          await reportLingueMode({
+            logger,
+            xmppClient: negotiator?.xmppClient,
+            roomJid: targetRoom,
+            payload,
+            direction: "->",
+            mode: LANGUAGE_MODES.MODEL_FIRST_RDF,
+            mimeType: "text/turtle",
+            detail: `ModelFirstRDF from ${BOT_NICKNAME}`
+          });
         } else {
           logger.warn?.(`[GroqBot] No RDF generated or missing handler (rdf=${!!rdf}, handler=${!!modelFirstRdfHandler})`);
         }
@@ -120,6 +141,16 @@ if (profile.supportsLingueMode(LANGUAGE_MODES.MODEL_NEGOTIATION)) {
         if (payload.requestedContributions?.includes(MFR_CONTRIBUTION_TYPES.ACTION)) {
           const actions = await provider.extractActions(payload.problemDescription);
           if (actions.length > 0 && negotiator?.xmppClient) {
+            await reportLingueMode({
+              logger,
+              xmppClient: negotiator?.xmppClient,
+              roomJid: targetRoom,
+              payload,
+              direction: "->",
+              mode: LANGUAGE_MODES.MODEL_NEGOTIATION,
+              mimeType: "application/json",
+              detail: "ActionSchema"
+            });
             await negotiator.send(targetRoom, {
               mode: LANGUAGE_MODES.MODEL_NEGOTIATION,
               payload: {

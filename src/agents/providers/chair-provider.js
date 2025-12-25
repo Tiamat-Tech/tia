@@ -9,6 +9,8 @@ export class ChairProvider {
     this.positions = [];
     this.arguments = [];
     this.consensusSent = false;
+    this.verbose = false;
+    this.quiet = false;
     // Legacy IBIS constructs
     this.ideas = [];
     this.questions = [];
@@ -23,6 +25,8 @@ export class ChairProvider {
       this.positions = [];
       this.arguments = [];
       this.consensusSent = false;
+      this.verbose = hasVerboseFlag(content);
+      this.quiet = hasQuietFlag(content);
       // Clear legacy constructs when new issue starts
       this.ideas = [];
       this.questions = [];
@@ -118,6 +122,8 @@ export class ChairProvider {
       this.positions = [];
       this.arguments = [];
       this.consensusSent = false;
+      this.verbose = hasVerboseFlag(trimmedText);
+      this.quiet = hasQuietFlag(trimmedText);
       // Clear legacy constructs
       this.ideas = [];
       this.questions = [];
@@ -125,7 +131,12 @@ export class ChairProvider {
       this.references = [];
       this.notes = [];
       this.logger.info?.(`[Chair] Debate started for issue: ${this.currentIssue.substring(0, 50)}...`);
-      return `Debate started. Issue: ${this.currentIssue}\nPlease provide Positions and Arguments.`;
+      if (this.quiet) {
+        return "Debate started.";
+      }
+      return this.verbose
+        ? `Debate started. Issue: ${this.currentIssue}\nPlease provide Positions and Arguments.`
+        : "Debate started. Provide Position/Support/Objection.";
     }
 
     // Check for explicit debate start commands
@@ -134,13 +145,20 @@ export class ChairProvider {
       this.positions = [];
       this.arguments = [];
       this.consensusSent = false;
+      this.verbose = hasVerboseFlag(text);
+      this.quiet = hasQuietFlag(text);
       // Clear legacy constructs
       this.ideas = [];
       this.questions = [];
       this.decisions = [];
       this.references = [];
       this.notes = [];
-      return `Debate started. Issue: ${this.currentIssue}\nPlease provide Positions and Arguments.`;
+      if (this.quiet) {
+        return "Debate started.";
+      }
+      return this.verbose
+        ? `Debate started. Issue: ${this.currentIssue}\nPlease provide Positions and Arguments.`
+        : "Debate started. Provide Position/Support/Objection.";
     }
 
     // General IBIS structure detection (for position/argument contributions)
@@ -165,6 +183,22 @@ export class ChairProvider {
                          (structure.notes || []).length;
     if ((hasExplicitIBIS || structure.confidence >= 0.5) && hasAnyContent) {
       this.updateState(structure, text, metadata.sender);
+      if (this.quiet) {
+        const consensus = this.detectToolConsensus();
+        if (consensus.reached && !this.consensusSent) {
+          this.consensusSent = true;
+          return consensus.summary;
+        }
+        return "Noted.";
+      }
+      if (!this.verbose) {
+        const consensus = this.detectToolConsensus();
+        if (consensus.reached && !this.consensusSent) {
+          this.consensusSent = true;
+          return `Noted. ${consensus.summary}`;
+        }
+        return "Noted.";
+      }
       const summary = summarizeIBIS(structure);
       const issueText = this.currentIssue?.toLowerCase() || "";
       const isToolIssue = issueText.includes("tool") || issueText.includes("agent");
@@ -177,6 +211,12 @@ export class ChairProvider {
     }
 
     if (lower.includes("status") || lower.includes("consensus") || lower.includes("summary")) {
+      if (this.quiet) {
+        return `Issue: ${this.currentIssue || "none"}\nPositions: ${this.positions.length}\nArguments: ${this.arguments.length}`;
+      }
+      if (!this.verbose) {
+        return `Issue: ${this.currentIssue || "none"}\nPositions: ${this.positions.length}\nArguments: ${this.arguments.length}`;
+      }
       return this.summarizeState();
     }
 
@@ -190,7 +230,12 @@ export class ChairProvider {
     }
 
     // Default prompt to contribute
-    return `Please contribute Position: ... or Argument: ...${this.currentIssue ? ` (Issue: ${this.currentIssue})` : ""}`;
+    if (this.quiet) {
+      return "Provide Position/Support/Objection.";
+    }
+    return this.verbose
+      ? `Please contribute Position: ... or Argument: ...${this.currentIssue ? ` (Issue: ${this.currentIssue})` : ""}`
+      : "Please contribute Position/Support/Objection.";
   }
 
   /**
@@ -252,3 +297,11 @@ export class ChairProvider {
 }
 
 export default ChairProvider;
+
+function hasVerboseFlag(text) {
+  return /(^|\s)-v(\s|$|[.,!?])/i.test(text || "");
+}
+
+function hasQuietFlag(text) {
+  return /(^|\s)-q(\s|$|[.,!?])/i.test(text || "");
+}

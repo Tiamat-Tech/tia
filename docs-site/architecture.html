@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Architecture Overview</title>
+    <style>
+      body { margin: 0; padding: 48px 20px; font-family: "Helvetica Neue", Arial, sans-serif; background: #f7f4ef; color: #1f1b16; }
+      main { max-width: 920px; margin: 0 auto; background: #fffdf9; padding: 48px; border: 1px solid #e3d8c7; box-shadow: 6px 8px 0 #e3d8c7; }
+      h1, h2, h3 { font-weight: 600; margin-top: 2rem; }
+      pre { background: #1f1b16; color: #f7f4ef; padding: 16px; overflow: auto; }
+      code { font-family: "SFMono-Regular", ui-monospace, Menlo, Monaco, Consolas, monospace; }
+      a { color: #8a3b12; }
+      img { max-width: 100%; height: auto; }
+      table { border-collapse: collapse; width: 100%; }
+      th, td { border: 1px solid #e3d8c7; padding: 8px; }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>Architecture Overview</h1>
+<p>This document summarizes the system architecture, agent lifecycle, and configuration model.</p>
+<h2>Core Components</h2>
+<ul>
+<li><strong>AgentRunner</strong> (<code>src/agents/core/agent-runner.js</code>): Connects to XMPP, joins rooms, and routes messages to a provider. It enforces mention detection, agent round limits, and command parsing.</li>
+<li><strong>Providers</strong> (<code>src/agents/providers/*.js</code>): Implement <code>handle()</code> (or similar) for agent behavior. Some providers are plain classes, some extend <code>BaseProvider</code> or <code>BaseLLMProvider</code>.</li>
+<li><strong>Profiles</strong> (<code>config/agents/*.ttl</code>): RDF profiles define XMPP accounts, rooms, Lingue modes, capabilities, and agent config.</li>
+<li><strong>Lingue</strong> (<code>src/lib/lingue/*</code>): Handles structured payloads (model negotiation, RDF, SHACL, IBIS, etc.).</li>
+<li><strong>MFR</strong> (<code>src/lib/mfr/*</code>): Model-First Reasoning protocol, state machine, and multi-room orchestration.</li>
+</ul>
+<h2>Runtime Flow</h2>
+<ol>
+<li><strong>Load profile</strong> via <code>loadAgentProfile()</code>, merge with base profiles if any.</li>
+<li><strong>Build config</strong> from profile (<code>profile.toConfig()</code>).</li>
+<li><strong>Create provider</strong> with required dependencies (LLM clients, validators, bridges).</li>
+<li><strong>Start AgentRunner</strong> to connect to XMPP and process messages.</li>
+<li><strong>Handle messages</strong> with <code>commandParser</code> → provider <code>handle()</code> → optional Lingue mode handlers.</li>
+</ol>
+<h2>Dependency Injection</h2>
+<p>TIA uses lightweight dependency injection:</p>
+<ul>
+<li>Providers accept dependencies via constructor arguments (logger, LLM client, model store, validator, negotiator, etc.).</li>
+<li><code>AgentRunner</code> is constructed with a provider instance, negotiator, command parser, and room config.</li>
+<li>Profiles are loaded at runtime; system behavior shifts by changing <code>config/agents/*.ttl</code>.</li>
+</ul>
+<p>There is no global IoC container; DI is explicit and composed in each <code>src/services/*-agent.js</code> entrypoint.</p>
+<h2>Inheritance &amp; Base Classes</h2>
+<ul>
+<li><code>BaseProvider</code> is a minimal base with <code>handle()</code> contract (<code>src/agents/providers/base-provider.js</code>).</li>
+<li><code>BaseLLMProvider</code> wraps LLM client logic and is extended by <code>MistralProvider</code> and <code>GroqProvider</code>.</li>
+<li>Many providers are plain classes with <code>handle()</code> or task-specific methods; inheritance is used sparingly.</li>
+</ul>
+<h2>Configuration Model</h2>
+<ul>
+<li><strong>XMPP credentials</strong> are stored in <code>config/agents/secrets.json</code> (gitignored).</li>
+<li><strong>Agent profiles</strong> are RDF Turtle files under <code>config/agents/</code>.</li>
+<li><strong>Runtime config</strong> is derived from profiles; avoid hard-coded defaults in services.</li>
+<li>Environment variables are used for remote service API keys.</li>
+</ul>
+<h2>MCP Loopback</h2>
+<p>The MCP Loopback agent (<code>src/services/mcp-loopback-agent.js</code>) runs a client bridge against a local echo MCP server for integration testing. It can run in-memory or via stdio transport and is configured by the <code>mcp-loopback.ttl</code> profile.</p>
+
+    </main>
+  </body>
+</html>

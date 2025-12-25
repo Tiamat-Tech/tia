@@ -23,6 +23,7 @@
 - **[Quick Start Guide](quick-start.html)** - Get up and running with TIA agents
 - **[MFR Quick Start](mfr-quick-start.html)** - Model-First Reasoning system setup
 - **[Agent Overview](agents.html)** - Capabilities and commands for each agent
+- **[System Architecture](architecture.html)** - Agent runtime, profiles, and DI overview
 
 ## 🏗️ Model-First Reasoning (MFR)
 

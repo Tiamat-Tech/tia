@@ -14,6 +14,7 @@ import {
   SparqlQueryHandler
 } from "../lib/lingue/handlers/index.js";
 import { MFR_MESSAGE_TYPES } from "../lib/mfr/constants.js";
+import { reportLingueMode } from "../lib/lingue/verbose.js";
 import { loadAgentRoster } from "../agents/profile-roster.js";
 import { loadSystemConfig } from "../lib/system-config.js";
 
@@ -111,6 +112,18 @@ if (profile.supportsLingueMode(LANGUAGE_MODES.MODEL_NEGOTIATION)) {
         return null;
       }
 
+      const targetRoom = roomJid || stanza?.attrs?.from?.split("/")?.[0];
+      await reportLingueMode({
+        logger,
+        xmppClient: negotiator?.xmppClient,
+        roomJid: targetRoom,
+        payload,
+        direction: "<-",
+        mode: LANGUAGE_MODES.MODEL_NEGOTIATION,
+        mimeType: "application/json",
+        detail: messageType
+      });
+
       const sessionId = payload?.sessionId;
       if (!sessionId) {
         logger.warn?.("[DataAgent] MFR contribution request missing sessionId");
@@ -127,7 +140,6 @@ if (profile.supportsLingueMode(LANGUAGE_MODES.MODEL_NEGOTIATION)) {
         return null;
       }
 
-      const targetRoom = roomJid || stanza?.attrs?.from?.split("/")?.[0];
       if (!targetRoom) {
         logger.warn?.("[DataAgent] Cannot determine target room for MFR contribution");
         return null;
@@ -141,6 +153,16 @@ if (profile.supportsLingueMode(LANGUAGE_MODES.MODEL_NEGOTIATION)) {
       );
 
       await negotiator.xmppClient.send(contributionStanza);
+      await reportLingueMode({
+        logger,
+        xmppClient: negotiator?.xmppClient,
+        roomJid: targetRoom,
+        payload,
+        direction: "->",
+        mode: LANGUAGE_MODES.MODEL_FIRST_RDF,
+        mimeType: "text/turtle",
+        detail: `ModelFirstRDF from ${BOT_NICKNAME}`
+      });
       return null;
     }
   });

@@ -139,6 +139,8 @@ export class CoordinatorProvider extends BaseProvider {
    */
   async startMfrSession(problemDescription, metadata, reply) {
     const sessionId = randomUUID();
+    const verbose = isVerboseRequest(problemDescription);
+    const quiet = isQuietRequest(problemDescription);
 
     this.logger.info?.(
       `[CoordinatorProvider] Starting MFR session: ${sessionId}`
@@ -154,7 +156,9 @@ export class CoordinatorProvider extends BaseProvider {
     // Transition to problem interpretation
     state.transition(MFR_PHASES.PROBLEM_INTERPRETATION, {
       problemDescription,
-      startedBy: metadata?.sender
+      startedBy: metadata?.sender,
+      verbose,
+      quiet
     });
 
     // Move to entity discovery
@@ -163,7 +167,12 @@ export class CoordinatorProvider extends BaseProvider {
     // Broadcast contribution request
     await this.broadcastContributionRequest(sessionId, problemDescription);
 
-    return `MFR session started: ${sessionId}\nWaiting for agent contributions...`;
+    if (quiet) {
+      return `MFR session started: ${sessionId}.`;
+    }
+    return verbose
+      ? `MFR session started: ${sessionId}\nWaiting for agent contributions...`
+      : `MFR session started: ${sessionId}.`;
   }
 
   /**
@@ -175,6 +184,8 @@ export class CoordinatorProvider extends BaseProvider {
    */
   async startDebateSession(problemDescription, metadata, reply) {
     const sessionId = randomUUID();
+    const verbose = isVerboseRequest(problemDescription);
+    const quiet = isQuietRequest(problemDescription);
 
     this.logger.info?.(
       `[CoordinatorProvider] Starting debate session: ${sessionId}`
@@ -190,7 +201,9 @@ export class CoordinatorProvider extends BaseProvider {
     // Transition to debate phase
     state.transition(MFR_PHASES.TOOL_SELECTION_DEBATE, {
       problemDescription,
-      startedBy: metadata?.sender
+      startedBy: metadata?.sender,
+      verbose,
+      quiet
     });
 
     // Store debate metadata
@@ -199,29 +212,48 @@ export class CoordinatorProvider extends BaseProvider {
       startTime: Date.now(),
       positions: [],
       consensusReached: false,
-      selectedAgents: []
+      selectedAgents: [],
+      verbose,
+      quiet
     });
 
     // Format debate issue for Chair and participants
-    const debateIssue = [
-      `Session: ${sessionId}`,
-      ``,
-      `Issue: Which tools and agents should we use to solve this problem?`,
-      ``,
-      `Problem: ${problemDescription}`,
-      ``,
-      `Available agents:`,
-      `  - Mistral: Natural language processing, entity extraction`,
-      `  - Data: Wikidata/DBpedia knowledge grounding`,
-      `  - Prolog: Logical reasoning, constraint satisfaction`,
-      `  - MFR-Semantic: Constraint extraction from domain knowledge`,
-      ``,
-      `Please contribute:`,
-      `  Position: I recommend [agent] because...`,
-      `  Support: [agent] would help because...`,
-      `  Objection: [agent] may not work because...`,
-      ``
-    ].join('\n');
+    const debateIssue = quiet
+      ? [
+        `Session: ${sessionId}`,
+        `Issue: Which tools and agents should we use to solve this problem?`,
+        `Problem: ${problemDescription}`,
+        `Respond with Position/Support/Objection.`,
+        ``
+      ].join('\n')
+      : verbose
+      ? [
+        `Session: ${sessionId}`,
+        ``,
+        `Issue: Which tools and agents should we use to solve this problem?`,
+        ``,
+        `Problem: ${problemDescription}`,
+        ``,
+        `Available agents:`,
+        `  - Mistral: Natural language processing, entity extraction`,
+        `  - Data: Wikidata/DBpedia knowledge grounding`,
+        `  - Prolog: Logical reasoning, constraint satisfaction`,
+        `  - MFR-Semantic: Constraint extraction from domain knowledge`,
+        ``,
+        `Please contribute:`,
+        `  Position: I recommend [agent] because...`,
+        `  Support: [agent] would help because...`,
+        `  Objection: [agent] may not work because...`,
+        ``
+      ].join('\n')
+      : [
+        `Session: ${sessionId}`,
+        `Issue: Which tools and agents should we use to solve this problem?`,
+        `Problem: ${problemDescription}`,
+        `Available agents: Mistral, Data, Prolog, MFR-Semantic.`,
+        `Respond with Position/Support/Objection.`,
+        ``
+      ].join('\n');
 
     // Send debate issue to primary room
     this.logger.info?.(`[CoordinatorProvider] Sending debate issue to room: ${this.primaryRoomJid}`);
@@ -238,7 +270,12 @@ export class CoordinatorProvider extends BaseProvider {
     }, this.debateTimeoutMs);
 
     const debateSeconds = Math.round(this.debateTimeoutMs / 1000);
-    return `Debate session started: ${sessionId}\n\nDebate window: ${debateSeconds} seconds\nType positions and arguments or wait for Chair to detect consensus.`;
+    if (quiet) {
+      return `Debate started: ${sessionId}.`;
+    }
+    return verbose
+      ? `Debate session started: ${sessionId}\n\nDebate window: ${debateSeconds} seconds\nType positions and arguments or wait for Chair to detect consensus.`
+      : `Debate started: ${sessionId}. Window: ${debateSeconds}s.`;
   }
 
   /**
@@ -270,8 +307,8 @@ export class CoordinatorProvider extends BaseProvider {
       : (debateData.selectedAgents || []);
     const hasSelection = selected.length > 0;
     const message = debateData.consensusReached
-      ? `Consensus reached. ${hasSelection ? `Selected agents: ${selected.join(", ")}.` : "Proceeding with selected tools."}`
-      : `Debate timeout reached. Proceeding with all available agents.`;
+      ? `${hasSelection ? `Consensus reached. Selected agents: ${selected.join(", ")}.` : "Consensus reached."}`
+      : "Debate timeout reached. Proceeding with all available agents.";
 
     await this.sendStatusMessage(message);
 
@@ -299,10 +336,18 @@ export class CoordinatorProvider extends BaseProvider {
       `[CoordinatorProvider] Broadcasting contribution request for ${sessionId}`
     );
 
+    await this.maybeReportLingueMode(sessionId, {
+      direction: "->",
+      mode: LANGUAGE_MODES.MODEL_NEGOTIATION,
+      mimeType: "application/json",
+      detail: "ModelContributionRequest"
+    });
+
     const message = {
       messageType: MFR_MESSAGE_TYPES.MODEL_CONTRIBUTION_REQUEST,
       sessionId,
       problemDescription,
+      verbose: this.getSessionVerbose(sessionId),
       requestedAgents: Array.isArray(requestedAgents) && requestedAgents.length > 0
         ? requestedAgents
         : undefined,
@@ -388,6 +433,13 @@ export class CoordinatorProvider extends BaseProvider {
     this.logger.debug?.(
       `[CoordinatorProvider] Receiving contribution from ${agentId} for ${sessionId}`
     );
+
+    await this.maybeReportLingueMode(sessionId, {
+      direction: "<-",
+      mode: LANGUAGE_MODES.MODEL_FIRST_RDF,
+      mimeType: "text/turtle",
+      detail: `ModelFirstRDF from ${agentId}`
+    });
 
     // Parse contribution
     let contributionRdf;
@@ -627,6 +679,13 @@ export class CoordinatorProvider extends BaseProvider {
       `[CoordinatorProvider] Initiating reasoning for ${sessionId}`
     );
 
+    await this.maybeReportLingueMode(sessionId, {
+      direction: "->",
+      mode: LANGUAGE_MODES.MODEL_NEGOTIATION,
+      mimeType: "application/json",
+      detail: "SolutionRequest"
+    });
+
     // Get validated model
     const model = await this.modelStore.getModel(sessionId);
     const modelTurtle = await RdfUtils.serializeTurtle(model);
@@ -636,6 +695,7 @@ export class CoordinatorProvider extends BaseProvider {
       messageType: MFR_MESSAGE_TYPES.SOLUTION_REQUEST,
       sessionId,
       model: modelTurtle,
+      verbose: this.getSessionVerbose(sessionId),
       timestamp: new Date().toISOString()
     };
 
@@ -691,6 +751,19 @@ export class CoordinatorProvider extends BaseProvider {
     if (messageType === MFR_MESSAGE_TYPES.SOLUTION_PROPOSAL) {
       return await this.handleSolutionProposal(payload, metadata);
     }
+    if (messageType === MFR_MESSAGE_TYPES.PLAN_EXECUTION_REQUEST) {
+      const sessionId = payload?.sessionId || metadata?.sessionId;
+      const detail = payload?.program && payload?.query
+        ? "PlanExecutionRequest (Prolog program + query)"
+        : "PlanExecutionRequest";
+      await this.maybeReportLingueMode(sessionId, {
+        direction: "<-",
+        mode: LANGUAGE_MODES.MODEL_NEGOTIATION,
+        mimeType: "application/json",
+        detail
+      });
+      return null;
+    }
     if (messageType === MFR_MESSAGE_TYPES.PLAN_EXECUTION_RESULT) {
       return await this.handleExecutionResult(payload, metadata);
     }
@@ -718,6 +791,13 @@ export class CoordinatorProvider extends BaseProvider {
     this.logger.info?.(
       `[CoordinatorProvider] Received solution proposal from ${sender} for ${sessionId}`
     );
+
+    await this.maybeReportLingueMode(sessionId, {
+      direction: "<-",
+      mode: LANGUAGE_MODES.MODEL_NEGOTIATION,
+      mimeType: "application/json",
+      detail: `SolutionProposal from ${sender}`
+    });
 
     if (this.shouldExecutePlan(solution)) {
       const interim = this.formatSolutionEntry({
@@ -751,6 +831,13 @@ export class CoordinatorProvider extends BaseProvider {
 
     this.pendingExecutions.set(sessionId, { solution, sender });
 
+    await this.maybeReportLingueMode(sessionId, {
+      direction: "->",
+      mode: LANGUAGE_MODES.MODEL_NEGOTIATION,
+      mimeType: "application/json",
+      detail: "PlanExecutionRequest (plan only; Prolog program added by Executor)"
+    });
+
     await this.negotiator.send(this.primaryRoomJid, {
       mode: LANGUAGE_MODES.MODEL_NEGOTIATION,
       payload: {
@@ -759,6 +846,7 @@ export class CoordinatorProvider extends BaseProvider {
         plan: solution.plan,
         problemDescription,
         model: modelTurtle,
+        verbose: this.getSessionVerbose(sessionId),
         timestamp: new Date().toISOString()
       },
       summary: `Plan execution request for ${sessionId}`
@@ -775,6 +863,13 @@ export class CoordinatorProvider extends BaseProvider {
     if (!pending) {
       return null;
     }
+
+    await this.maybeReportLingueMode(sessionId, {
+      direction: "<-",
+      mode: LANGUAGE_MODES.MODEL_NEGOTIATION,
+      mimeType: "application/json",
+      detail: "PlanExecutionResult"
+    });
 
     this.pendingExecutions.delete(sessionId);
 
@@ -943,6 +1038,27 @@ export class CoordinatorProvider extends BaseProvider {
     }
   }
 
+  getSessionVerbose(sessionId) {
+    const debateData = this.activeDebates.get(sessionId);
+    if (debateData?.verbose) return true;
+
+    const state = this.activeSessions.get(sessionId);
+    const problemData = state?.getPhaseData(MFR_PHASES.PROBLEM_INTERPRETATION);
+    if (problemData?.verbose) return true;
+    const debatePhase = state?.getPhaseData(MFR_PHASES.TOOL_SELECTION_DEBATE);
+    return !!debatePhase?.verbose;
+  }
+
+  async maybeReportLingueMode(sessionId, { direction, mode, mimeType, detail }) {
+    if (!sessionId || !this.getSessionVerbose(sessionId)) {
+      return;
+    }
+    const modeLabel = mode?.split("/").pop() || mode || "unknown";
+    const line = `Lingue ${direction} ${modeLabel} (${mimeType})${detail ? ` — ${detail}` : ""}`;
+    this.logger.info?.(`[CoordinatorProvider] ${line} [${sessionId}]`);
+    await this.sendStatusMessage(line);
+  }
+
   /**
    * Get session status
    * @param {string} sessionId - Session ID
@@ -1033,11 +1149,16 @@ export class CoordinatorProvider extends BaseProvider {
     await this.sendStatusMessage(
       selectedAgents.length > 0
         ? `Consensus noted for ${sessionId}. Selected agents: ${selectedAgents.join(", ")}.`
-        : `Consensus noted for ${sessionId}. Proceeding with all available agents.`
+        : `Consensus noted for ${sessionId}.`
     );
 
     await this.concludeDebate(sessionId, { selectedAgents });
-    return `Consensus received for ${sessionId}. Proceeding with contribution requests...`;
+    if (debateData.quiet) {
+      return `Consensus received for ${sessionId}.`;
+    }
+    return debateData.verbose
+      ? `Consensus received for ${sessionId}. Proceeding with contribution requests...`
+      : `Consensus received for ${sessionId}.`;
   }
 
   /**
@@ -1132,3 +1253,11 @@ export class CoordinatorProvider extends BaseProvider {
 }
 
 export default CoordinatorProvider;
+
+function isVerboseRequest(text) {
+  return /(^|\s)-v(\s|$|[.,!?])/i.test(text || "");
+}
+
+function isQuietRequest(text) {
+  return /(^|\s)-q(\s|$|[.,!?])/i.test(text || "");
+}

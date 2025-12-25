@@ -10,6 +10,7 @@ import { LingueNegotiator, LANGUAGE_MODES } from "../lib/lingue/index.js";
 import { HumanChatHandler, ModelNegotiationHandler } from "../lib/lingue/handlers/index.js";
 import { MFR_MESSAGE_TYPES } from "../lib/mfr/constants.js";
 import { ExecutorProvider } from "../agents/providers/executor-provider.js";
+import { reportLingueMode } from "../lib/lingue/verbose.js";
 
 dotenv.config();
 
@@ -83,6 +84,18 @@ if (profile.supportsLingueMode(LANGUAGE_MODES.MODEL_NEGOTIATION)) {
         return null;
       }
 
+      const targetRoom = roomJid || stanza?.attrs?.from?.split("/")?.[0];
+      await reportLingueMode({
+        logger,
+        xmppClient: negotiator?.xmppClient,
+        roomJid: targetRoom,
+        payload,
+        direction: "<-",
+        mode: LANGUAGE_MODES.MODEL_NEGOTIATION,
+        mimeType: "application/json",
+        detail: messageType
+      });
+
       if (payload.program && payload.query) {
         return null;
       }
@@ -94,7 +107,6 @@ if (profile.supportsLingueMode(LANGUAGE_MODES.MODEL_NEGOTIATION)) {
         return null;
       }
 
-      const targetRoom = roomJid || stanza?.attrs?.from?.split("/")?.[0];
       if (!targetRoom) {
         logger.warn?.("[ExecutorAgent] Cannot determine target room for plan execution");
         return null;
@@ -147,9 +159,20 @@ if (profile.supportsLingueMode(LANGUAGE_MODES.MODEL_NEGOTIATION)) {
           program: prepared.program,
           query: prepared.query,
           preparedBy: BOT_NICKNAME,
+          verbose: payload?.verbose,
           timestamp: new Date().toISOString()
         },
         summary: `Plan execution request prepared by ${BOT_NICKNAME} for ${sessionId}`
+      });
+      await reportLingueMode({
+        logger,
+        xmppClient: negotiator?.xmppClient,
+        roomJid: targetRoom,
+        payload,
+        direction: "->",
+        mode: LANGUAGE_MODES.MODEL_NEGOTIATION,
+        mimeType: "application/json",
+        detail: "PlanExecutionRequest (Prolog program + query)"
       });
 
       return null;

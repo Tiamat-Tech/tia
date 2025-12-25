@@ -108,6 +108,23 @@ pkill -f 'node src/services'
 
 ## Usage Examples
 
+## Verbose Mode (Lingue Indicators)
+
+Add `-v` to a request to show Lingue mode indicators in chat and logs. This is useful for seeing when agents exchange JSON, Turtle, or Prolog payloads.
+
+Examples:
+```
+debate Plan a delivery route with time windows. -v
+Q: Allocate trucks with capacity constraints. -v
+```
+
+With `-v`, you will see messages such as:
+- `Lingue <- ModelNegotiation (application/json) — ModelContributionRequest`
+- `Lingue -> ModelFirstRDF (text/turtle) — ModelFirstRDF from Mistral`
+- `Lingue -> ModelNegotiation (application/json) — PlanExecutionRequest (Prolog program + query)`
+
+Use `-q` to reduce chat output during a run (quiet mode).
+
 ### Example 1: Simple Scheduling
 
 ```bash

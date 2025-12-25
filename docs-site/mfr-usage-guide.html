@@ -107,6 +107,19 @@ tail -f logs/coordinator.log logs/mistral.log logs/data.log logs/prolog.log
 pkill -f &#39;node src/services&#39;
 </code></pre>
 <h2>Usage Examples</h2>
+<h2>Verbose Mode (Lingue Indicators)</h2>
+<p>Add <code>-v</code> to a request to show Lingue mode indicators in chat and logs. This is useful for seeing when agents exchange JSON, Turtle, or Prolog payloads.</p>
+<p>Examples:</p>
+<pre><code>debate Plan a delivery route with time windows. -v
+Q: Allocate trucks with capacity constraints. -v
+</code></pre>
+<p>With <code>-v</code>, you will see messages such as:</p>
+<ul>
+<li><code>Lingue &lt;- ModelNegotiation (application/json) — ModelContributionRequest</code></li>
+<li><code>Lingue -&gt; ModelFirstRDF (text/turtle) — ModelFirstRDF from Mistral</code></li>
+<li><code>Lingue -&gt; ModelNegotiation (application/json) — PlanExecutionRequest (Prolog program + query)</code></li>
+</ul>
+<p>Use <code>-q</code> to reduce chat output during a run (quiet mode).</p>
 <h3>Example 1: Simple Scheduling</h3>
 <pre><code class="language-bash">node src/examples/run-mfr-session.js \
   &quot;Schedule meetings for Alice, Bob, and Carol. Alice is only available in the morning, Bob needs 2 hours, Carol can&#39;t meet before Bob.&quot;
