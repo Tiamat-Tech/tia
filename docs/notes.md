@@ -1,5 +1,7 @@
  DOCS_DIR=docs DOCS_OUT_DIR=docs-site node scripts/build-docs.mjs
 
+ [![debate diagram](debate.png)](debate.svg)  [![dataflow diagram](dataflow.png)](dataflow.svg)
+
 pkill -f 'node src/services'
 
 ./start-all.sh

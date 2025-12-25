@@ -3,6 +3,14 @@ TIA Intelligence Agency
 
 An experimental XMPP (Jabber) agent framework that combines chat, Lingue/IBIS structured dialogue, and MCP tool integrations into a modular Node.js codebase.
 
+**Status 2025-12-25 :** a community of agents can debate how to solve a problem and nominate a set of agents which together may be able to solve it. These agents then proceed to make a plan and implement it. Right now it's all very chaotic and only simple contraint problems can be solved, but it's very much acheived **proof of concept**.
+
+> Question: Schedule appointments for patients. Alice takes warfarin, Bob takes aspirin. Ensure no drug interactions.
+
+*...a lot of chat later...*
+
+[solution](docs/solution.png)
+
 ## What TIA Is
 
 TIA is a set of composable building blocks for creating conversational agents that can:
@@ -19,6 +27,11 @@ The design goal is a clean, library-ready architecture that supports both deploy
 - **Lingue protocol**: language-mode negotiation + structured payloads (IBIS, Prolog, profiles).
 - **MCP bridges**: MCP client and server adapters for tool discovery and exposure.
 - **Profiles (RDF)**: agent capabilities live in RDF profiles with shared vocabularies (Mistral variants inherit from `mistral-base`).
+
+## Info Flow
+
+[![debate diagram](docs/debate.png)](docs/debate.svg)  [![dataflow diagram](docs/dataflow.png)](docs/dataflow.svg)
+
 
 ## Start Here (Docs)
 

@@ -99,6 +99,10 @@ Chair: status
 
 This document describes the integration of the **Chair agent** into the MFR (Model-First Reasoning) workflow to enable structured debate about tool selection and problem-solving approaches. Rather than having the Coordinator implicitly decide which agents contribute what, a debate phase allows agents (and potentially humans) to discuss, argue for, and reach consensus on the best approach.
 
+[![debate diagram](debate.png)](debate.svg)  [![dataflow diagram](dataflow.png)](dataflow.svg)
+
+Diagram: `docs/debate.svg` (pre-flow) and `docs/dataflow.svg` (main MFR).
+
 ## Current MFR Flow vs. Debate-Enhanced Flow
 
 ### Current Flow (Implicit Tool Selection)

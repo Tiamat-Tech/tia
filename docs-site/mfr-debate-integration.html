@@ -90,6 +90,8 @@ Objection: We should avoid Mistral for medical facts due to hallucination risk
 <hr>
 <h2>Overview</h2>
 <p>This document describes the integration of the <strong>Chair agent</strong> into the MFR (Model-First Reasoning) workflow to enable structured debate about tool selection and problem-solving approaches. Rather than having the Coordinator implicitly decide which agents contribute what, a debate phase allows agents (and potentially humans) to discuss, argue for, and reach consensus on the best approach.</p>
+<p><a href="debate.svg"><img src="debate.png" alt="debate diagram"></a>  <a href="dataflow.svg"><img src="dataflow.png" alt="dataflow diagram"></a></p>
+<p>Diagram: <code>docs/debate.svg</code> (pre-flow) and <code>docs/dataflow.svg</code> (main MFR).</p>
 <h2>Current MFR Flow vs. Debate-Enhanced Flow</h2>
 <h3>Current Flow (Implicit Tool Selection)</h3>
 <pre><code>User Problem

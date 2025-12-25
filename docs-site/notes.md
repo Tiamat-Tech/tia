@@ -1,5 +1,3 @@
-Resolved: `Q:` now starts a Coordinator debate (via Chair), consensus selects agents, and the plan proceeds through MFR. Example: "Q: how can we optimize delivery routes for 3 trucks serving 10 locations. Truck 1 has capacity 100, Truck 2 has capacity 150, Truck 3 has capacity 200. Location A needs delivery before 10 AM. Locations B and C must use same truck."
-
  DOCS_DIR=docs DOCS_OUT_DIR=docs-site node scripts/build-docs.mjs
 
 pkill -f 'node src/services'
