@@ -9,6 +9,7 @@ import { MfrShaclValidator } from "../lib/mfr/shacl-validator.js";
 import { MfrModelMerger } from "../lib/mfr/model-merger.js";
 import { ShapesLoader } from "../lib/mfr/shapes-loader.js";
 import { MultiRoomManager } from "../lib/mfr/multi-room-manager.js";
+import { GolemManager } from "../lib/mfr/golem-manager.js";
 import logger from "../lib/logger-lite.js";
 import { loadAgentProfile } from "../agents/profile-loader.js";
 import {
@@ -199,6 +200,12 @@ const negotiator = new LingueNegotiator({
 });
 
 provider.negotiator = negotiator;
+
+// Create Golem manager for role assignments
+const golemManager = new GolemManager({ logger, negotiator });
+provider.golemManager = golemManager;
+
+logger.info?.('[CoordinatorAgent] GolemManager initialized');
 
 // Create command parser (capability-based with fallback to hardcoded)
 // If profile has capabilities defined, use them; otherwise use legacy parser

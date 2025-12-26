@@ -50,7 +50,14 @@ export const MFR_MESSAGE_TYPES = {
   SESSION_INIT: `${MFR_NS}SessionInit`,
   SESSION_COMPLETE: `${MFR_NS}SessionComplete`,
   SESSION_ERROR: `${MFR_NS}SessionError`,
-  SESSION_ABORT: `${MFR_NS}SessionAbort`
+  SESSION_ABORT: `${MFR_NS}SessionAbort`,
+
+  // Golem Role Management
+  GOLEM_ROLE_ASSIGNMENT: `${MFR_NS}GolemRoleAssignment`,
+  GOLEM_ASSISTANCE_REQUEST: `${MFR_NS}GolemAssistanceRequest`,
+  GOLEM_ROLE_ACKNOWLEDGMENT: `${MFR_NS}GolemRoleAcknowledgment`,
+  GOLEM_ROLE_QUERY: `${MFR_NS}GolemRoleQuery`,
+  GOLEM_ROLE_STATUS: `${MFR_NS}GolemRoleStatus`
 };
 
 // ========================================

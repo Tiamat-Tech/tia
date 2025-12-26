@@ -25,8 +25,8 @@ NC='\033[0m' # No Color
 
 # Preset agent groups
 ALL_AGENTS="coordinator,mistral,groqbot,analyst,creative,golem,chair,recorder,semem,mfr-semantic,data,prolog,executor,demo"
-MFR_AGENTS="coordinator,mistral,groqbot,analyst,creative,chair,recorder,semem,mfr-semantic,data,prolog,executor,demo"
-DEBATE_AGENTS="chair,recorder,mistral,groqbot,analyst,creative"
+MFR_AGENTS="coordinator,mistral,golem,groqbot,analyst,creative,chair,recorder,semem,mfr-semantic,data,prolog,executor,demo"
+DEBATE_AGENTS="chair,recorder,mistral,golem,groqbot,analyst,creative"
 BASIC_AGENTS="mistral,groqbot,golem,data,prolog,demo"
 
 echo -e "${BLUE}=== TIA Multi-Agent System ===${NC}"

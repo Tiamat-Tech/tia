@@ -62,6 +62,9 @@ export class CoordinatorProvider extends BaseProvider {
 
     // Debate tracking: Map<sessionId, debateData>
     this.activeDebates = new Map();
+
+    // Golem manager (will be set externally)
+    this.golemManager = null;
   }
 
   /**
@@ -163,6 +166,9 @@ export class CoordinatorProvider extends BaseProvider {
 
     // Move to entity discovery
     state.transition(MFR_PHASES.ENTITY_DISCOVERY);
+
+    // Assign optimal Golem role for this session
+    await this.assignGolemRole(sessionId, problemDescription, MFR_PHASES.ENTITY_DISCOVERY);
 
     // Broadcast contribution request
     await this.broadcastContributionRequest(sessionId, problemDescription);
@@ -1241,6 +1247,41 @@ export class CoordinatorProvider extends BaseProvider {
       : '';
 
     return baseCommands + debateCommand;
+  }
+
+  /**
+   * Assign optimal Golem role for a session phase
+   * @param {string} sessionId - Session ID
+   * @param {string} problemDescription - Problem description
+   * @param {string} phase - Current MFR phase
+   * @returns {Promise<void>}
+   */
+  async assignGolemRole(sessionId, problemDescription, phase) {
+    if (!this.golemManager) {
+      this.logger.debug?.('[CoordinatorProvider] GolemManager not available, skipping role assignment');
+      return;
+    }
+
+    try {
+      const availableAgents = Array.from(this.agentRegistry.values());
+      const roomJid = this.primaryRoomJid;
+
+      const assignment = await this.golemManager.selectOptimalRole({
+        problemDescription,
+        currentPhase: phase,
+        availableAgents,
+        sessionId,
+        roomJid
+      });
+
+      if (assignment) {
+        this.logger.info?.(
+          `[CoordinatorProvider] Assigned Golem role: ${assignment.name} (${assignment.domain}/${assignment.roleName})`
+        );
+      }
+    } catch (error) {
+      this.logger.error?.(`[CoordinatorProvider] Failed to assign Golem role: ${error.message}`);
+    }
   }
 
   /**

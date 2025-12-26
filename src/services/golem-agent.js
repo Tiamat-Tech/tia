@@ -6,7 +6,8 @@ import { GolemProvider } from "../agents/providers/golem-provider.js";
 import logger from "../lib/logger-lite.js";
 import { loadAgentProfile } from "../agents/profile-loader.js";
 import { LingueNegotiator, LANGUAGE_MODES, featuresForModes } from "../lib/lingue/index.js";
-import { HumanChatHandler } from "../lib/lingue/handlers/index.js";
+import { HumanChatHandler, ModelNegotiationHandler } from "../lib/lingue/handlers/index.js";
+import { MFR_MESSAGE_TYPES } from "../lib/mfr/constants.js";
 import { InMemoryHistoryStore } from "../lib/history/index.js";
 import { loadAgentRoster } from "../agents/profile-roster.js";
 import { loadSystemConfig } from "../lib/system-config.js";
@@ -68,6 +69,69 @@ let negotiator = null;
 const handlers = {};
 if (profile.supportsLingueMode(LANGUAGE_MODES.HUMAN_CHAT)) {
   handlers[LANGUAGE_MODES.HUMAN_CHAT] = new HumanChatHandler({ logger });
+}
+
+// Add MODEL_NEGOTIATION handler for receiving role assignments
+if (profile.supportsLingueMode(LANGUAGE_MODES.MODEL_NEGOTIATION)) {
+  handlers[LANGUAGE_MODES.MODEL_NEGOTIATION] = new ModelNegotiationHandler({
+    logger,
+    onPayload: async ({ payload, roomJid, stanza }) => {
+      const messageType = payload?.messageType;
+      if (!messageType) {
+        return null;
+      }
+
+      // Handle role assignment messages
+      if (messageType === MFR_MESSAGE_TYPES.GOLEM_ROLE_ASSIGNMENT) {
+        logger.info?.(`[GolemAgent] Received role assignment: ${payload.roleName}`);
+
+        // Update provider with new role
+        provider.setRoleFromAssignment(payload);
+
+        // Send acknowledgment
+        if (negotiator?.xmppClient) {
+          await negotiator.send(roomJid, {
+            mode: LANGUAGE_MODES.MODEL_NEGOTIATION,
+            payload: {
+              messageType: MFR_MESSAGE_TYPES.GOLEM_ROLE_ACKNOWLEDGMENT,
+              sessionId: payload.sessionId,
+              roleName: payload.roleName,
+              domain: payload.domain,
+              timestamp: new Date().toISOString()
+            },
+            summary: `Golem acknowledged role: ${payload.roleName}`
+          });
+        }
+
+        return null;
+      }
+
+      // Handle role query messages
+      if (messageType === MFR_MESSAGE_TYPES.GOLEM_ROLE_QUERY) {
+        logger.info?.(`[GolemAgent] Received role query`);
+
+        const currentRole = provider.getCurrentRole();
+
+        // Send role status
+        if (negotiator?.xmppClient) {
+          await negotiator.send(roomJid, {
+            mode: LANGUAGE_MODES.MODEL_NEGOTIATION,
+            payload: {
+              messageType: MFR_MESSAGE_TYPES.GOLEM_ROLE_STATUS,
+              sessionId: payload.sessionId,
+              currentRole: currentRole,
+              timestamp: new Date().toISOString()
+            },
+            summary: `Golem current role: ${currentRole.name}`
+          });
+        }
+
+        return null;
+      }
+
+      return null;
+    }
+  });
 }
 
 negotiator = new LingueNegotiator({
