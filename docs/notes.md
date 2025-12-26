@@ -74,6 +74,9 @@ groqbotpass
 
 prosodyctl adduser prolog@tensegrity.it
 
+prosodyctl adduser golem@tensegrity.it
+golempass
+
 prosodyctl adduser coordinator@tensegrity.it
 coordinatorpass
 

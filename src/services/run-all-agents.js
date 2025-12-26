@@ -43,6 +43,12 @@ const AGENT_DEFINITIONS = {
     requiredEnv: ["MISTRAL_API_KEY"],
     env: { AGENT_PROFILE: "mistral-creative" }
   },
+  golem: {
+    command: "node src/services/golem-agent.js",
+    description: "Golem agent (runtime prompt changes)",
+    requiredEnv: ["MISTRAL_API_KEY"],
+    env: { AGENT_PROFILE: "golem" }
+  },
   chair: {
     command: "node src/services/chair-agent.js",
     description: "Chair agent (debate orchestration)",

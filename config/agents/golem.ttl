@@ -1,0 +1,28 @@
+@prefix agent: <https://tensegrity.it/vocab/agent#> .
+@prefix foaf: <http://xmlns.com/foaf/0.1/> .
+@prefix schema: <https://schema.org/> .
+@prefix xmpp: <https://tensegrity.it/vocab/xmpp#> .
+@prefix ai: <https://tensegrity.it/vocab/ai-provider#> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+@prefix lng: <http://purl.org/stuff/lingue/> .
+
+<#golem> a agent:ConversationalAgent, agent:AIAgent, lng:Agent ;
+  foaf:nick "Golem" ;
+  schema:identifier "golem" ;
+  dcterms:created "2025-12-26T00:00:00Z"^^xsd:dateTime ;
+  dcterms:description "A malleable agent whose system prompt can be changed at runtime" ;
+
+  lng:supports lng:HumanChat ;
+
+  agent:xmppAccount [
+    a xmpp:Account ;
+    xmpp:username "golem" ;
+    xmpp:passwordKey "golem" ;
+    xmpp:resource "Golem"
+  ] ;
+
+  agent:aiProvider [
+    a ai:MistralProvider ;
+    ai:systemPrompt "You are Golem, a helpful assistant whose purpose can be reshaped. Keep responses concise and conversational."
+  ] .

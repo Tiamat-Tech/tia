@@ -24,10 +24,10 @@ CYAN='\033[0;36m'
 NC='\033[0m' # No Color
 
 # Preset agent groups
-ALL_AGENTS="coordinator,mistral,groqbot,analyst,creative,chair,recorder,semem,mfr-semantic,data,prolog,executor,demo"
+ALL_AGENTS="coordinator,mistral,groqbot,analyst,creative,golem,chair,recorder,semem,mfr-semantic,data,prolog,executor,demo"
 MFR_AGENTS="coordinator,mistral,groqbot,analyst,creative,chair,recorder,semem,mfr-semantic,data,prolog,executor,demo"
 DEBATE_AGENTS="chair,recorder,mistral,groqbot,analyst,creative"
-BASIC_AGENTS="mistral,groqbot,data,prolog,demo"
+BASIC_AGENTS="mistral,groqbot,golem,data,prolog,demo"
 
 echo -e "${BLUE}=== TIA Multi-Agent System ===${NC}"
 echo ""
@@ -80,6 +80,7 @@ if [ -n "$1" ]; then
       echo "  groqbot     - Groq AI agent (requires GROQ_API_KEY)"
       echo "  analyst     - Mistral analyst variant (requires MISTRAL_API_KEY)"
       echo "  creative    - Mistral creative variant (requires MISTRAL_API_KEY)"
+      echo "  golem       - Malleable agent with runtime prompt changes (requires MISTRAL_API_KEY)"
       echo "  semem       - Semem MCP agent (optional)"
       echo "  mfr-semantic - MFR semantic constraint agent"
       echo "  data        - SPARQL knowledge query agent"
