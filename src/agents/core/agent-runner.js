@@ -52,6 +52,7 @@ export class AgentRunner {
     );
     this.maxAgentRounds = maxAgentRounds;
     this.agentRoundCount = 0;
+    this.consensusResponses = new Map();
 
     this.agent = new XmppRoomAgent({
       xmppConfig: resolvedXmppConfig,
@@ -66,6 +67,15 @@ export class AgentRunner {
   }
 
   async handleMessage({ body, sender, type, roomJid, reply, stanza }) {
+    if (type === "groupchat" && typeof this.provider?.recordConsensusMessage === "function") {
+      this.provider.recordConsensusMessage({
+        body,
+        sender,
+        roomJid,
+        type
+      });
+    }
+
     if (this.negotiator && stanza) {
       const handled = await this.negotiator.handleStanza(stanza, {
         sender,
@@ -76,10 +86,31 @@ export class AgentRunner {
       if (handled) return;
     }
 
+    const isConsensusDm = type === "chat" && this.isConsensusRequest(body);
+    const isConsensusPrompt = type === "groupchat" && this.isConsensusPrompt(body);
+    const consensusSessionId = isConsensusPrompt ? this.extractConsensusSessionId(body) : null;
+    if (isConsensusPrompt && consensusSessionId && this.consensusResponses.has(consensusSessionId)) {
+      this.logger.debug?.(
+        `[AgentRunner] Skipping duplicate consensus prompt for ${consensusSessionId}`
+      );
+      return;
+    }
+    const replyTarget = isConsensusDm
+      ? async (text) => {
+        if (!text || !text.trim()) return;
+        await this.agent.sendGroupMessage(text);
+        await this.sendToLog(`[Consensus DM Reply] ${this.nickname}: ${text}`);
+      }
+      : reply;
+
+    if (isConsensusDm) {
+      await this.sendToLog(`[Consensus DM Received] ${this.nickname}: ${body}`);
+    }
+
     if (this.isHelpRequest(body)) {
       const description = this.getHelpDescription();
       if (description) {
-        await reply(description);
+        await replyTarget(description);
       }
       return;
     }
@@ -96,8 +127,11 @@ export class AgentRunner {
       this.agentRoundCount = 0;
     }
 
-    const explicitHumanAddress = type === "chat" || this.mentionDetector(body);
-    if (this.shouldRequireHumanAddress() && (senderIsAgent || !explicitHumanAddress)) {
+    let explicitHumanAddress = type === "chat" || this.mentionDetector(body);
+    if (isConsensusPrompt) {
+      explicitHumanAddress = true;
+    }
+    if (!isConsensusDm && !isConsensusPrompt && this.shouldRequireHumanAddress() && (senderIsAgent || !explicitHumanAddress)) {
       this.logger.debug?.(
         `[AgentRunner] Suppressing message after agent rounds (${this.agentRoundCount})`
       );
@@ -111,19 +145,36 @@ export class AgentRunner {
     }
 
     const { command, content } = this.commandParser(body);
-    const metadata = { sender, type, roomJid };
+    const metadata = {
+      sender,
+      type,
+      roomJid,
+      consensusPrompt: isConsensusPrompt,
+      consensusSessionId
+    };
 
     const result = await this.provider.handle({
       command,
       content,
       rawMessage: body,
       metadata,
-      reply,
+      reply: replyTarget,
       sendToLog: this.sendToLog.bind(this)
     });
 
     if (typeof result === "string" && result.trim()) {
-      await reply(result);
+      await replyTarget(result);
+    }
+
+    if (isConsensusPrompt && consensusSessionId) {
+      this.consensusResponses.set(consensusSessionId, Date.now());
+      if (this.consensusResponses.size > 50) {
+        const oldest = Array.from(this.consensusResponses.entries())
+          .sort((a, b) => a[1] - b[1])[0];
+        if (oldest) {
+          this.consensusResponses.delete(oldest[0]);
+        }
+      }
     }
   }
 
@@ -206,6 +257,26 @@ export class AgentRunner {
     return lower.startsWith("sys:") ||
       lower.startsWith("[mfr]") ||
       lower.startsWith("lingue ");
+  }
+
+  isConsensusRequest(body) {
+    if (!body) return false;
+    return /^consensus request\b/i.test(body.trim());
+  }
+
+  isConsensusPrompt(body) {
+    if (!body) return false;
+    const trimmed = body.trim();
+    if (!trimmed) return false;
+    return /position\/support\/objection/i.test(trimmed) &&
+      /session:/i.test(trimmed) &&
+      /question:/i.test(trimmed);
+  }
+
+  extractConsensusSessionId(body) {
+    if (!body) return null;
+    const match = String(body).match(/session:\s*([0-9a-f-]{36})/i);
+    return match ? match[1] : null;
   }
 
   getHelpDescription() {

@@ -98,8 +98,9 @@ export class BaseLLMProvider {
   /**
    * Post IBIS summary if Lingue is enabled and confidence threshold met
    */
-  async maybePostLingueSummary(text, reply) {
+  async maybePostLingueSummary(text, reply, metadata) {
     if (!this.lingueEnabled) return;
+    if (metadata?.consensusPrompt) return;
     const structure = detectIBISStructure(text);
     if (structure.confidence < this.lingueConfidenceMin) return;
     const summary = summarizeIBIS(structure);
@@ -136,7 +137,7 @@ export class BaseLLMProvider {
       }
 
       if (this.lingueEnabled && replyText) {
-        await this.maybePostLingueSummary(content, reply);
+        await this.maybePostLingueSummary(content, reply, metadata);
       }
 
       return replyText || "I had trouble generating a response.";

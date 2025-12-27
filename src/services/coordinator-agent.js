@@ -21,6 +21,8 @@ import {
   ModelNegotiationHandler,
   ShaclValidationHandler
 } from "../lib/lingue/handlers/index.js";
+import fs from "fs/promises";
+import path from "path";
 import { loadAgentRoster } from "../agents/profile-roster.js";
 import { loadSystemConfig } from "../lib/system-config.js";
 
@@ -110,11 +112,35 @@ try {
   logger.warn(`Coordinator will start without validation capability`);
 }
 
-// Create agent registry (for tracking expected contributions)
+// Create agent registry (for tracking expected contributions + direct JIDs)
 const agentRegistry = new Map();
-// Populate from agent roster
+const profileDir = process.env.AGENT_PROFILE_DIR || path.join(process.cwd(), "config", "agents");
+try {
+  const entries = await fs.readdir(profileDir, { withFileTypes: true });
+  for (const entry of entries) {
+    if (!entry.isFile() || !entry.name.endsWith(".ttl")) continue;
+    const profileName = entry.name.replace(/\.ttl$/i, "");
+    const agentProfile = await loadAgentProfile(profileName, {
+      profileDir,
+      allowMissingPasswordKey: true
+    });
+    if (!agentProfile?.nickname) continue;
+    const xmpp = agentProfile?.xmppAccount;
+    const jid = xmpp?.username && xmpp?.domain ? `${xmpp.username}@${xmpp.domain}` : null;
+    agentRegistry.set(agentProfile.nickname.toLowerCase(), {
+      nickname: agentProfile.nickname,
+      jid
+    });
+  }
+} catch (error) {
+  logger.warn?.(`[CoordinatorAgent] Failed to load agent registry: ${error.message}`);
+}
+
+// Ensure roster entries exist even if profile scan fails
 for (const agentNick of agentRoster) {
-  agentRegistry.set(agentNick.toLowerCase(), { nickname: agentNick });
+  if (!agentRegistry.has(agentNick.toLowerCase())) {
+    agentRegistry.set(agentNick.toLowerCase(), { nickname: agentNick, jid: null });
+  }
 }
 
 // Debate feature flag (optional - defaults to false for backward compatibility)

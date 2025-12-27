@@ -81,6 +81,9 @@ export class CoordinatorProvider extends BaseProvider {
         case "start":
           return await this.startMfrSession(content, metadata, reply);
 
+        case "mfr-discover":
+          return await this.startAutoSession(content, metadata, reply);
+
         case "mfr-consensus":
           return await this.startConsensusSession(content, metadata, reply);
 
@@ -346,7 +349,8 @@ export class CoordinatorProvider extends BaseProvider {
       `Issue: Please provide Position/Support/Objection for the following question.`,
       `Question: ${problemDescription}`,
       agentMentions ? `Agents: ${agentMentions}` : null,
-      agentMentions ? `Agents listed above: reply in this room with "Position:", "Support:", or "Objection:" (one or more lines).` : null,
+      agentMentions ? `Direct request: ${agentMentions} — reply in this room with "Position:", "Support:", or "Objection:" (one or more lines).` : null,
+      `Example: Position: Prioritize stability for a reliable release.`,
       `Respond with Position/Support/Objection.`,
       ``
     ].filter(Boolean).join("\n");
@@ -368,6 +372,16 @@ export class CoordinatorProvider extends BaseProvider {
     return verbose
       ? `Consensus session started: ${sessionId}\n\nWindow: ${consensusSeconds} seconds\nWaiting for Position/Support/Objection entries...`
       : `Consensus started: ${sessionId}. Window: ${consensusSeconds}s.`;
+  }
+
+  async startAutoSession(problemDescription, metadata, reply) {
+    if (shouldUseDebate(problemDescription, this.enableDebate)) {
+      if (!this.enableDebate) {
+        return await this.startMfrSession(problemDescription, metadata, reply);
+      }
+      return await this.startDebateSession(problemDescription, metadata, reply);
+    }
+    return await this.startConsensusSession(problemDescription, metadata, reply);
   }
 
   /**
@@ -1254,6 +1268,13 @@ export class CoordinatorProvider extends BaseProvider {
     return latest?.sessionId || null;
   }
 
+  recordConsensusMessage({ body, sender }) {
+    if (!body) return;
+    const sessionId = this.getActiveConsensusSessionId();
+    if (!sessionId) return;
+    this.recordConsensusEntry(sessionId, body, { sender });
+  }
+
   extractConsensusAgents(message) {
     if (!message) return [];
     const lower = message.toLowerCase();
@@ -1309,16 +1330,27 @@ export class CoordinatorProvider extends BaseProvider {
     const debateData = this.activeDebates.get(sessionId);
     if (!debateData || debateData.mode !== "consensus") return;
 
-    const entries = parseConsensusEntries(message || "");
+    const text = String(message || "").trim();
+    const sender = metadata?.sender || "unknown";
+    const rawMessages = debateData.rawMessages || [];
+    if (rawMessages.length < 200) {
+      rawMessages.push({
+        sender,
+        text,
+        timestamp: new Date().toISOString()
+      });
+      debateData.rawMessages = rawMessages;
+    }
+
+    const entries = parseConsensusEntries(text);
     if (entries.length === 0) {
-      const rawMessages = debateData.rawMessages || [];
-      if (rawMessages.length < 200) {
-        rawMessages.push({
-          sender: metadata?.sender || "unknown",
-          text: String(message || "").trim(),
+      if (shouldTreatAsConsensusEntry(sender, text)) {
+        debateData.positions.push({
+          type: "position",
+          text,
+          sender,
           timestamp: new Date().toISOString()
         });
-        debateData.rawMessages = rawMessages;
       }
       return;
     }
@@ -1326,7 +1358,7 @@ export class CoordinatorProvider extends BaseProvider {
     entries.forEach((entry) => {
       debateData.positions.push({
         ...entry,
-        sender: metadata?.sender || "unknown",
+        sender,
         timestamp: new Date().toISOString()
       });
     });
@@ -1411,6 +1443,56 @@ export class CoordinatorProvider extends BaseProvider {
     }
 
     await this.sendLogMessage(lines.join("\n"));
+  }
+
+  async sendConsensusDirectPrompts(sessionId, problemDescription) {
+    if (!this.negotiator?.xmppClient) return;
+    const recipients = Array.from(this.agentRegistry.values() || [])
+      .map((entry) => ({
+        nickname: entry?.nickname,
+        jid: entry?.jid
+      }))
+      .filter((entry) => entry.nickname && entry.jid)
+      .filter((entry) => entry.nickname.toLowerCase() !== "coordinator");
+
+    if (recipients.length === 0) {
+      await this.sendLogMessage(`[Consensus DM] ${sessionId} no recipients with JIDs.`);
+      return;
+    }
+
+    const promptLines = [
+      `Consensus request ${sessionId}`,
+      `Question: ${problemDescription}`,
+      `Please reply in ${this.primaryRoomJid} with lines starting:`,
+      `Position: ...`,
+      `Support: ...`,
+      `Objection: ...`,
+      `Example: Position: Prioritize stability for a reliable release.`
+    ];
+    const prompt = promptLines.join("\n");
+
+    await this.sendLogMessage(
+      `[Consensus DM] ${sessionId} sending to ${recipients.length} agent(s).`
+    );
+
+    for (const recipient of recipients) {
+      try {
+        await this.negotiator.xmppClient.send(
+          xml(
+            "message",
+            { to: recipient.jid, type: "chat" },
+            xml("body", {}, prompt)
+          )
+        );
+        await this.sendLogMessage(
+          `[Consensus DM] ${sessionId} sent to ${recipient.nickname} (${recipient.jid}).`
+        );
+      } catch (error) {
+        await this.sendLogMessage(
+          `[Consensus DM] ${sessionId} failed for ${recipient.nickname} (${recipient.jid}): ${error.message}`
+        );
+      }
+    }
   }
 
   /**
@@ -1599,12 +1681,23 @@ function parseConsensusEntries(message) {
   if (!text) return [];
   const entries = [];
   const lines = text.split(/\r?\n/);
-  const pattern = /^(?:[-*•>]\s*)?(?:\*{1,2})?(position|support|objection)(?:\*{1,2})?\s*[:\-–—]\s*(.+)$/i;
+  const linePattern = /^(?:[-*•>]\s*)?(?:\*{1,2})?(position|support|objection)(?:\*{1,2})?\s*[:\-–—]\s*(.+)$/i;
   for (const line of lines) {
     const trimmed = line.trim();
     if (!trimmed) continue;
-    const match = trimmed.match(pattern);
+    const match = trimmed.match(linePattern);
     if (!match) continue;
+    entries.push({
+      type: match[1].toLowerCase(),
+      text: match[2].trim()
+    });
+  }
+
+  if (entries.length > 0) return entries;
+
+  const inlinePattern = /(position|support|objection)\s*[:\-–—]\s*([^\n]+)/ig;
+  let match = null;
+  while ((match = inlinePattern.exec(text)) !== null) {
     entries.push({
       type: match[1].toLowerCase(),
       text: match[2].trim()
@@ -1613,14 +1706,64 @@ function parseConsensusEntries(message) {
   return entries;
 }
 
+function shouldTreatAsConsensusEntry(sender, text) {
+  if (!text) return false;
+  const lower = text.toLowerCase();
+  if (["chair", "coordinator"].includes(String(sender || "").toLowerCase())) {
+    return false;
+  }
+  if (lower === "noted." || lower === "noted") return false;
+  if (lower.startsWith("session:") || lower.startsWith("consensus started")) return false;
+  if (lower.startsWith("consensus session complete")) return false;
+  if (lower.startsWith("issue:") || lower.startsWith("question:")) return false;
+  return true;
+}
+
+function shouldIgnoreConsensusEntry(entry) {
+  const sender = String(entry?.sender || "").toLowerCase();
+  const text = String(entry?.text || "").trim();
+  if (!text) return true;
+  if (["chair", "coordinator", "demo", "semem"].includes(sender)) return true;
+  if (sender === "data" && /^\\d+\\.\\s+\\w+:/i.test(text)) return true;
+  const lower = text.toLowerCase();
+  if (lower.includes("unavailable right now")) return true;
+  if (lower.includes("demo bot")) return true;
+  if (lower.startsWith("@coordinator")) return true;
+  if (/^hello there|^hi there|nice to meet you/i.test(text)) return true;
+  return false;
+}
+
+function shouldUseDebate(problemDescription, enableDebate) {
+  if (!enableDebate) return false;
+  const text = String(problemDescription || "").trim();
+  if (!text) return false;
+  if (deriveSyllogismAnswer(`Q: ${text}`)) {
+    return true;
+  }
+  if (/^if\\s+all\\s+.+\\s+are\\s+.+\\s+and\\s+no\\s+.+\\s+are\\s+.+/i.test(text)) {
+    return true;
+  }
+  if (/\\b(prove|therefore|implies|contradiction|entails)\\b/i.test(text)) {
+    return true;
+  }
+  return false;
+}
+
 function synthesizeConsensus(debateData) {
   const positions = debateData.positions || [];
   const positionCounts = new Map();
+  const seenSenders = new Set();
   const support = [];
   const objections = [];
 
   positions.forEach((entry) => {
     if (!entry?.text) return;
+    if (shouldIgnoreConsensusEntry(entry)) return;
+    const senderKey = String(entry.sender || "").toLowerCase();
+    if (entry.type === "position" && senderKey) {
+      if (seenSenders.has(senderKey)) return;
+      seenSenders.add(senderKey);
+    }
     if (entry.type === "position") {
       const key = entry.text.toLowerCase();
       positionCounts.set(key, {
