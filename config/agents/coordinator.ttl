@@ -105,7 +105,8 @@
     mfr:contributionTimeout "30000"^^xsd:integer ;
     mfr:validationTimeout "10000"^^xsd:integer ;
     mfr:reasoningTimeout "60000"^^xsd:integer ;
-    mfr:debateTimeout "60000"^^xsd:integer
+    mfr:debateTimeout "60000"^^xsd:integer ;
+    mfr:planningDefaultRoute "consensus"
   ] ;
 
   # Orchestrated phases

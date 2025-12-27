@@ -392,7 +392,8 @@ function extractMfrConfig(dataset, subject) {
     validationTimeout: extractInteger(dataset, configNode, PREFIXES.mfr + "validationTimeout"),
     reasoningTimeout: extractInteger(dataset, configNode, PREFIXES.mfr + "reasoningTimeout"),
     debateTimeout: extractInteger(dataset, configNode, PREFIXES.mfr + "debateTimeout"),
-    enableDebate: extractBoolean(dataset, configNode, PREFIXES.mfr + "enableDebate")
+    enableDebate: extractBoolean(dataset, configNode, PREFIXES.mfr + "enableDebate"),
+    planningDefaultRoute: extractLiteral(dataset, configNode, PREFIXES.mfr + "planningDefaultRoute")
   };
 }
 

@@ -75,6 +75,14 @@ export class AgentRunner {
         type
       });
     }
+    if (type === "groupchat" && typeof this.provider?.recordPlanningMessage === "function") {
+      this.provider.recordPlanningMessage({
+        body,
+        sender,
+        roomJid,
+        type
+      });
+    }
 
     if (this.negotiator && stanza) {
       const handled = await this.negotiator.handleStanza(stanza, {
@@ -88,6 +96,7 @@ export class AgentRunner {
 
     const isConsensusDm = type === "chat" && this.isConsensusRequest(body);
     const isConsensusPrompt = type === "groupchat" && this.isConsensusPrompt(body);
+    const isPlanningPrompt = type === "groupchat" && this.isPlanningPrompt(body);
     const consensusSessionId = isConsensusPrompt ? this.extractConsensusSessionId(body) : null;
     if (isConsensusPrompt && consensusSessionId && this.consensusResponses.has(consensusSessionId)) {
       this.logger.debug?.(
@@ -128,10 +137,10 @@ export class AgentRunner {
     }
 
     let explicitHumanAddress = type === "chat" || this.mentionDetector(body);
-    if (isConsensusPrompt) {
+    if (isConsensusPrompt || isPlanningPrompt) {
       explicitHumanAddress = true;
     }
-    if (!isConsensusDm && !isConsensusPrompt && this.shouldRequireHumanAddress() && (senderIsAgent || !explicitHumanAddress)) {
+    if (!isConsensusDm && !isConsensusPrompt && !isPlanningPrompt && this.shouldRequireHumanAddress() && (senderIsAgent || !explicitHumanAddress)) {
       this.logger.debug?.(
         `[AgentRunner] Suppressing message after agent rounds (${this.agentRoundCount})`
       );
@@ -271,6 +280,13 @@ export class AgentRunner {
     return /position\/support\/objection/i.test(trimmed) &&
       /session:/i.test(trimmed) &&
       /question:/i.test(trimmed);
+  }
+
+  isPlanningPrompt(body) {
+    if (!body) return false;
+    const trimmed = body.trim();
+    if (!trimmed) return false;
+    return /planning poll:/i.test(trimmed) && /route=/i.test(trimmed);
   }
 
   extractConsensusSessionId(body) {

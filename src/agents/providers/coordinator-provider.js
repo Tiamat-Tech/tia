@@ -29,6 +29,7 @@ export class CoordinatorProvider extends BaseProvider {
     primaryRoomJid = null,
     logRoomJid = process.env.LOG_ROOM_JID || "log@conference.tensegrity.it",
     enableDebate = false,
+    planningDefaultRoute = null,
     debateTimeoutMs = null,
     contributionTimeoutMs = null,
     logger = console
@@ -44,6 +45,7 @@ export class CoordinatorProvider extends BaseProvider {
     this.primaryRoomJid = primaryRoomJid;
     this.logRoomJid = logRoomJid;
     this.enableDebate = enableDebate;
+    this.planningDefaultRoute = planningDefaultRoute;
     this.debateTimeoutMs = debateTimeoutMs;
     this.contributionTimeoutMs = contributionTimeoutMs;
     this.logger = logger;
@@ -62,6 +64,7 @@ export class CoordinatorProvider extends BaseProvider {
 
     // Debate tracking: Map<sessionId, debateData>
     this.activeDebates = new Map();
+    this.activePlanning = new Map();
 
     // Golem manager (will be set externally)
     this.golemManager = null;
@@ -82,7 +85,7 @@ export class CoordinatorProvider extends BaseProvider {
           return await this.startMfrSession(content, metadata, reply);
 
         case "mfr-discover":
-          return await this.startAutoSession(content, metadata, reply);
+          return await this.startPlanningSession(content, metadata, reply);
 
         case "mfr-consensus":
           return await this.startConsensusSession(content, metadata, reply);
@@ -156,6 +159,9 @@ export class CoordinatorProvider extends BaseProvider {
     const sessionId = randomUUID();
     const verbose = isVerboseRequest(problemDescription);
     const quiet = isQuietRequest(problemDescription);
+    const planningRoute = metadata?.planningRoute || null;
+    const planningSessionId = metadata?.planningSessionId || null;
+    const golemRoleName = metadata?.golemRoleName || null;
 
     this.logger.info?.(
       `[CoordinatorProvider] Starting MFR session: ${sessionId}`
@@ -173,7 +179,10 @@ export class CoordinatorProvider extends BaseProvider {
       problemDescription,
       startedBy: metadata?.sender,
       verbose,
-      quiet
+      quiet,
+      planningRoute,
+      planningSessionId,
+      golemRoleName
     });
 
     // Move to entity discovery
@@ -374,14 +383,55 @@ export class CoordinatorProvider extends BaseProvider {
       : `Consensus started: ${sessionId}. Window: ${consensusSeconds}s.`;
   }
 
-  async startAutoSession(problemDescription, metadata, reply) {
-    if (shouldUseDebate(problemDescription, this.enableDebate)) {
-      if (!this.enableDebate) {
-        return await this.startMfrSession(problemDescription, metadata, reply);
-      }
-      return await this.startDebateSession(problemDescription, metadata, reply);
+  async startPlanningSession(problemDescription, metadata, reply) {
+    const sessionId = randomUUID();
+    const verbose = isVerboseRequest(problemDescription);
+    const quiet = isQuietRequest(problemDescription);
+
+    this.logger.info?.(
+      `[CoordinatorProvider] Starting planning poll: ${sessionId}`
+    );
+
+    this.activePlanning.set(sessionId, {
+      problemDescription,
+      startTime: Date.now(),
+      votes: new Map(),
+      selectedRoute: null,
+      verbose,
+      quiet,
+      concluded: false
+    });
+
+    const agentMentions = Array.from(this.agentRegistry.values() || [])
+      .map((entry) => entry?.nickname)
+      .filter(Boolean)
+      .filter((name) => name.toLowerCase() !== "coordinator")
+      .map((name) => `@${name}`)
+      .join(" ");
+
+    const pollLines = [
+      `Planning poll: ${sessionId}`,
+      `Question: ${problemDescription}`,
+      agentMentions ? `Agents: ${agentMentions}` : null,
+      `Choose route (reply in this room):`,
+      `Position: route=logic  (Use Prolog/MFR reasoning)`,
+      `Position: route=consensus  (Use community consensus)`,
+      `Position: route=golem-logic  (Assign Golem a logic role, then consensus)`,
+      `If a clear consensus emerges early, the system will proceed immediately.`
+    ].filter(Boolean);
+
+    await this.sendStatusMessage(pollLines.join("\n"), { forceChat: true });
+
+    setTimeout(async () => {
+      await this.concludePlanning(sessionId);
+    }, 30000);
+
+    if (quiet) {
+      return `Planning poll started: ${sessionId}.`;
     }
-    return await this.startConsensusSession(problemDescription, metadata, reply);
+    return verbose
+      ? `Planning poll started: ${sessionId}\nWindow: 30s`
+      : `Planning poll started: ${sessionId}. Window: 30s.`;
   }
 
   /**
@@ -982,12 +1032,12 @@ export class CoordinatorProvider extends BaseProvider {
 
     const summary = this.summarizeSolutions(sessionId, existing);
     await this.broadcastSessionComplete(sessionId, existing);
-    await this.sendSolutionMessage(existing);
+    await this.sendSolutionMessage(existing, sessionId);
     await this.sendFinalAnswer(sessionId, existing);
     return `MFR session complete: ${sessionId}\n${summary}`;
   }
 
-  async sendSolutionMessage(solutions = []) {
+  async sendSolutionMessage(solutions = [], sessionId = null) {
     if (solutions.length === 0) return;
 
     const lines = ["", "=== SOLUTION ===", ""];
@@ -995,6 +1045,21 @@ export class CoordinatorProvider extends BaseProvider {
       lines.push(this.formatSolutionEntry(entry, { index, total: solutions.length }));
       lines.push("");
     });
+
+    if (sessionId) {
+      const state = this.activeSessions.get(sessionId);
+      const planning = state?.getPhaseData(MFR_PHASES.PROBLEM_INTERPRETATION) || {};
+      if (planning.planningRoute) {
+        lines.push(`Route: ${planning.planningRoute}`);
+        if (planning.planningSessionId) {
+          lines.push(`Planning poll: ${planning.planningSessionId}`);
+        }
+        if (planning.golemRoleName) {
+          lines.push(`Golem role: ${planning.golemRoleName}`);
+        }
+        lines.push("");
+      }
+    }
 
     await this.sendStatusMessage(lines.join("\n"), { forceChat: true });
   }
@@ -1268,11 +1333,31 @@ export class CoordinatorProvider extends BaseProvider {
     return latest?.sessionId || null;
   }
 
+  getActivePlanningSessionId() {
+    let latest = null;
+    for (const [sessionId, planData] of this.activePlanning.entries()) {
+      if (planData.concluded) {
+        continue;
+      }
+      if (!latest || planData.startTime > latest.startTime) {
+        latest = { sessionId, startTime: planData.startTime };
+      }
+    }
+    return latest?.sessionId || null;
+  }
+
   recordConsensusMessage({ body, sender }) {
     if (!body) return;
     const sessionId = this.getActiveConsensusSessionId();
     if (!sessionId) return;
     this.recordConsensusEntry(sessionId, body, { sender });
+  }
+
+  recordPlanningMessage({ body, sender }) {
+    if (!body) return;
+    const sessionId = this.getActivePlanningSessionId();
+    if (!sessionId) return;
+    this.recordPlanningEntry(sessionId, body, { sender });
   }
 
   extractConsensusAgents(message) {
@@ -1361,6 +1446,87 @@ export class CoordinatorProvider extends BaseProvider {
         sender,
         timestamp: new Date().toISOString()
       });
+    });
+  }
+
+  recordPlanningEntry(sessionId, message, metadata = {}) {
+    const planData = this.activePlanning.get(sessionId);
+    if (!planData || planData.concluded) return;
+    const choice = parsePlanningRoute(message || "");
+    if (!choice) return;
+    const sender = String(metadata?.sender || "unknown").toLowerCase();
+    if (planData.votes.has(sender)) return;
+    planData.votes.set(sender, choice);
+    this.maybeConcludePlanning(sessionId);
+  }
+
+  maybeConcludePlanning(sessionId) {
+    const planData = this.activePlanning.get(sessionId);
+    if (!planData || planData.concluded) return;
+    const counts = tallyPlanningVotes(planData.votes);
+    const totalVotes = counts.total;
+    if (totalVotes < 2) return;
+    const top = counts.sorted[0];
+    const second = counts.sorted[1];
+    if (!top) return;
+    const lead = top.count - (second?.count || 0);
+    if (top.count >= Math.ceil(totalVotes / 2) && lead >= 1) {
+      this.concludePlanning(sessionId, top.route);
+    }
+  }
+
+  async concludePlanning(sessionId, forcedRoute = null) {
+    const planData = this.activePlanning.get(sessionId);
+    if (!planData || planData.concluded) return;
+    planData.concluded = true;
+
+    const counts = tallyPlanningVotes(planData.votes);
+    const route = forcedRoute || counts.sorted[0]?.route || this.planningDefaultRoute;
+    if (!route) {
+      throw new Error("Planning default route missing; check coordinator mfrConfig.");
+    }
+    planData.selectedRoute = route;
+    await this.sendStatusMessage(
+      `Planning poll complete: ${sessionId}\nSelected route: ${route}`,
+      { forceChat: true }
+    );
+
+    this.activePlanning.delete(sessionId);
+
+    if (route === "logic") {
+      if (!this.enableDebate) {
+        await this.startMfrSession(planData.problemDescription, {
+          planningRoute: route,
+          planningSessionId: sessionId
+        }, () => {});
+      } else {
+        await this.startDebateSession(planData.problemDescription, {}, () => {});
+      }
+      return;
+    }
+
+    if (route === "golem-logic") {
+      const assignment = await this.assignGolemLogicRole(sessionId, planData.problemDescription);
+      await this.startMfrSession(planData.problemDescription, {
+        planningRoute: route,
+        planningSessionId: sessionId,
+        golemRoleName: assignment?.name || assignment?.roleName || null
+      }, () => {});
+      return;
+    }
+
+    await this.startConsensusSession(planData.problemDescription, {}, () => {});
+  }
+
+  async assignGolemLogicRole(sessionId, problemDescription) {
+    if (!this.golemManager) return;
+    const desiredRole = "logical reasoning";
+    return await this.golemManager.handleAssistanceRequest({
+      requestingAgent: "coordinator",
+      sessionId,
+      desiredRole,
+      context: problemDescription,
+      roomJid: this.primaryRoomJid
     });
   }
 
@@ -1733,21 +1899,6 @@ function shouldIgnoreConsensusEntry(entry) {
   return false;
 }
 
-function shouldUseDebate(problemDescription, enableDebate) {
-  if (!enableDebate) return false;
-  const text = String(problemDescription || "").trim();
-  if (!text) return false;
-  if (deriveSyllogismAnswer(`Q: ${text}`)) {
-    return true;
-  }
-  if (/^if\\s+all\\s+.+\\s+are\\s+.+\\s+and\\s+no\\s+.+\\s+are\\s+.+/i.test(text)) {
-    return true;
-  }
-  if (/\\b(prove|therefore|implies|contradiction|entails)\\b/i.test(text)) {
-    return true;
-  }
-  return false;
-}
 
 function synthesizeConsensus(debateData) {
   const positions = debateData.positions || [];
@@ -1784,4 +1935,37 @@ function synthesizeConsensus(debateData) {
   }
 
   return { answer, support, objections };
+}
+
+function parsePlanningRoute(message) {
+  const text = String(message || "").trim();
+  if (!text) return null;
+  const match = text.match(/route\\s*[:=]\\s*([a-z-]+)/i);
+  const candidate = match ? match[1].toLowerCase() : null;
+  if (candidate && isPlanningRoute(candidate)) {
+    return candidate;
+  }
+  const lowered = text.toLowerCase();
+  const keyword = ["logic", "consensus", "golem-logic"].find((route) =>
+    new RegExp(`\\b${route}\\b`).test(lowered)
+  );
+  return isPlanningRoute(keyword) ? keyword : null;
+}
+
+function isPlanningRoute(route) {
+  return ["logic", "consensus", "golem-logic"].includes(route);
+}
+
+function tallyPlanningVotes(votes) {
+  const counts = new Map();
+  for (const route of votes.values()) {
+    counts.set(route, (counts.get(route) || 0) + 1);
+  }
+  const sorted = Array.from(counts.entries())
+    .map(([route, count]) => ({ route, count }))
+    .sort((a, b) => b.count - a.count);
+  return {
+    total: votes.size,
+    sorted
+  };
 }

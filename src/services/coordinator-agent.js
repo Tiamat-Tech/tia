@@ -87,6 +87,9 @@ if (!Number.isFinite(mfrConfig.debateTimeout)) {
 if (typeof mfrConfig.enableDebate !== "boolean") {
   throw new Error("Coordinator enableDebate missing; check profile mfrConfig.");
 }
+if (!mfrConfig.planningDefaultRoute) {
+  throw new Error("Coordinator planningDefaultRoute missing; check profile mfrConfig.");
+}
 
 logger.info(`Coordinator MFR Configuration:`);
 logger.info(`  Shapes Path: ${mfrConfig.shapesPath}`);
@@ -160,6 +163,7 @@ const provider = new CoordinatorProvider({
   primaryRoomJid: MUC_ROOM,
   logRoomJid: process.env.LOG_ROOM_JID || "log@conference.tensegrity.it",
   enableDebate,
+  planningDefaultRoute: mfrConfig.planningDefaultRoute,
   debateTimeoutMs: mfrConfig.debateTimeout,
   contributionTimeoutMs: mfrConfig.contributionTimeout,
   logger
