@@ -29,7 +29,11 @@ export class AgentRunner {
     const resolvedXmppConfig = profileConfig.xmpp || xmppConfig;
     const resolvedRoomJid = profileConfig.roomJid || roomJid;
     const resolvedNickname = profileConfig.nickname || nickname;
-    const resolvedLogRoomJid = logRoomJid || "log@conference.tensegrity.it";
+    const resolvedLogRoomJid =
+      logRoomJid ||
+      profileConfig.logRoomJid ||
+      process.env.LOG_ROOM_JID ||
+      "log@conference.tensegrity.it";
 
     this.nickname = resolvedNickname;
     this.profile = profile || null;

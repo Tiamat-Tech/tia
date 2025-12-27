@@ -80,8 +80,8 @@ Modify coordinator to log:
 
 ## Configuration
 - Default log room: `log@conference.tensegrity.it`
-- Can be overridden via `logRoomJid` parameter to AgentRunner
-- Set to `null` to disable log room entirely
+- Override via `LOG_ROOM_JID` or the `logRoomJid` parameter to `AgentRunner`
+- Set to `null` to disable the log room entirely
 
 ## Testing
 1. Start agents with log room enabled

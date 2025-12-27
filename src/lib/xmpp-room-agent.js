@@ -180,7 +180,7 @@ export class XmppRoomAgent {
    * @param {string} nickname - Optional nickname (defaults to current nickname)
    */
   async joinAdditionalRoom(roomJid, nickname = null) {
-    if (!this.xmpp || !this.isReady) {
+    if (!this.xmpp || !this.isOnline) {
       this.logger.warn(`Cannot join room ${roomJid} - XMPP not ready`);
       return;
     }
@@ -215,7 +215,7 @@ export class XmppRoomAgent {
    * @param {string} message - The message content
    */
   async sendToRoom(roomJid, message) {
-    if (!this.xmpp || !this.isReady) {
+    if (!this.xmpp || !this.isOnline) {
       this.logger.warn(`Cannot send to room ${roomJid} - XMPP not ready`);
       return;
     }

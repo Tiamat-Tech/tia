@@ -240,6 +240,7 @@ Respond with ONLY the JSON array, no other text.`;
    * @returns {Promise<Array<Object>>} Extracted actions
    */
   async extractActions(problemDescription) {
+    let jsonText = "";
     try {
       const prompt = `Extract actions from this problem description.
 Return ONLY a JSON array of actions with preconditions and effects.
@@ -269,7 +270,7 @@ Respond with ONLY the JSON array, no other text.`;
 
       const jsonMatch = content.match(/```(?:json)?\s*([\s\S]*?)\s*```/) ||
                        content.match(/(\[[\s\S]*\])/);
-      const jsonText = jsonMatch ? jsonMatch[1] : content;
+      jsonText = jsonMatch ? jsonMatch[1] : content;
 
       const actions = JSON.parse(jsonText);
       this.logger.debug?.(`[${this.constructor.name}] Extracted ${actions.length} actions`);

@@ -876,6 +876,7 @@ export class CoordinatorProvider extends BaseProvider {
     const summary = this.summarizeSolutions(sessionId, existing);
     await this.broadcastSessionComplete(sessionId, existing);
     await this.sendSolutionMessage(existing);
+    await this.sendFinalAnswer(sessionId, existing);
     return `MFR session complete: ${sessionId}\n${summary}`;
   }
 
@@ -889,6 +890,26 @@ export class CoordinatorProvider extends BaseProvider {
     });
 
     await this.sendStatusMessage(lines.join("\n"), { forceChat: true });
+  }
+
+  async sendFinalAnswer(sessionId, solutions = []) {
+    const state = this.activeSessions.get(sessionId);
+    const problemDescription =
+      state?.getPhaseData(MFR_PHASES.PROBLEM_INTERPRETATION)?.problemDescription || "";
+    if (!problemDescription || !/^\\s*Q:\\s*/i.test(problemDescription)) return;
+
+    const answer = deriveSyllogismAnswer(problemDescription);
+    if (!answer) {
+      const executionError = solutions.find((entry) => entry.solution?.executionError)
+        ?.solution?.executionError;
+      const fallback = executionError
+        ? `Answer: Unable to derive a concise answer (execution error: ${executionError}).`
+        : "Answer: Unable to derive a concise answer from the solution.";
+      await this.sendStatusMessage(fallback, { sessionId, forceChat: true });
+      return;
+    }
+
+    await this.sendStatusMessage(`Answer: ${answer}`, { sessionId, forceChat: true });
   }
 
   formatSolutionEntry(entry, { index = 0, total = 1 } = {}) {
@@ -1297,4 +1318,49 @@ function isVerboseRequest(text) {
 
 function isQuietRequest(text) {
   return /(^|\s)-q(\s|$|[.,!?])/i.test(text || "");
+}
+
+function deriveSyllogismAnswer(text) {
+  const question = String(text || "").replace(/^\s*Q:\s*/i, "").trim();
+  const normalized = question.replace(/\s+/g, " ");
+  const match = normalized.match(
+    /if all (.+?) are (.+?) and no (.+?) are (.+?), can any (.+?) be (.+?)\??$/i
+  );
+  if (!match) return null;
+
+  const subject1 = match[1];
+  const middle1 = match[2];
+  const middle2 = match[3];
+  const predicate1 = match[4];
+  const subject2 = match[5];
+  const predicate2 = match[6];
+
+  if (!termsMatch(subject1, subject2)) return null;
+  if (!termsMatch(middle1, middle2)) return null;
+  if (!termsMatch(predicate1, predicate2)) return null;
+
+  const subject = cleanTerm(subject1);
+  const middle = cleanTerm(middle1);
+  const predicate = cleanTerm(predicate1);
+  return `No. If all ${subject} are ${middle} and no ${middle} are ${predicate}, then no ${subject} are ${predicate}.`;
+}
+
+function termsMatch(a, b) {
+  return normalizeTerm(a) === normalizeTerm(b);
+}
+
+function normalizeTerm(value) {
+  const cleaned = cleanTerm(value).toLowerCase();
+  const noArticles = cleaned.replace(/\b(a|an|the)\b/g, "").trim();
+  if (noArticles.endsWith("s") && !noArticles.endsWith("ss")) {
+    return noArticles.slice(0, -1);
+  }
+  return noArticles;
+}
+
+function cleanTerm(value) {
+  return String(value || "")
+    .trim()
+    .replace(/[?.,!]+$/g, "")
+    .replace(/\s+/g, " ");
 }

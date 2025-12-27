@@ -104,6 +104,7 @@ AGENTS=mistral,data,prolog ./start-all.sh
 1. Configure `.env` file with API keys (see `.env.example`)
 2. Create `config/agents/secrets.json` with XMPP passwords
 3. For MFR system: Configure Prosody MUC rooms (see [MFR Room Setup](MFR_ROOM_SETUP.md))
+4. Optional: set `LOG_ROOM_JID` to override the default log room for verbose payloads
 
 **Agent Presets:**
 - `mfr` - MFR system (full suite): coordinator, mistral, analyst, creative, chair, recorder, mfr-semantic, data, prolog, demo
