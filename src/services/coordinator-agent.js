@@ -132,6 +132,7 @@ const provider = new CoordinatorProvider({
   agentRegistry,
   negotiator: null,
   primaryRoomJid: MUC_ROOM,
+  logRoomJid: process.env.LOG_ROOM_JID || "log@conference.tensegrity.it",
   enableDebate,
   debateTimeoutMs: mfrConfig.debateTimeout,
   contributionTimeoutMs: mfrConfig.contributionTimeout,

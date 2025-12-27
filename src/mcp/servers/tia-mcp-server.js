@@ -33,6 +33,7 @@ const stderrLogger = {
 
 const profileName = process.env.AGENT_PROFILE || null;
 const defaultRoomJid = process.env.MUC_ROOM || "general@conference.tensegrity.it";
+const defaultLogRoomJid = process.env.LOG_ROOM_JID || "log@conference.tensegrity.it";
 
 const buildRandomProfile = () => {
   const suffix = Math.floor(100 + Math.random() * 900);
@@ -120,7 +121,8 @@ const getChatAdapter = async () => {
         nickname: fileConfig.nickname,
         profile,
         negotiator,
-        logger: stderrLogger
+        logger: stderrLogger,
+        extraRooms: [defaultLogRoomJid]
       });
 
       await adapter.start();
@@ -131,17 +133,17 @@ const getChatAdapter = async () => {
 };
 
 const chatAdapter = {
-  sendMessage: async ({ text, directJid }) => {
+  sendMessage: async ({ text, directJid, roomJid }) => {
     const adapter = await getChatAdapter();
-    return adapter.sendMessage({ text, directJid });
+    return adapter.sendMessage({ text, directJid, roomJid });
   },
   offerLingueMode: async ({ peerJid, modes }) => {
     const adapter = await getChatAdapter();
     return adapter.offerLingueMode({ peerJid, modes });
   },
-  getRecentMessages: async ({ limit }) => {
+  getRecentMessages: async ({ limit, roomJid }) => {
     const adapter = await getChatAdapter();
-    return adapter.getRecentMessages({ limit });
+    return adapter.getRecentMessages({ limit, roomJid });
   },
   getProfileTurtle: async () => {
     if (!profile) return "";

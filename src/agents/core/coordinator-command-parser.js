@@ -28,7 +28,7 @@ export function coordinatorCommandParser(text) {
     const content = trimmed.replace(/^(q|question|issue)\s*:/i, "").trim();
     if (content) {
       return {
-        command: "mfr-debate",
+        command: "mfr-consensus",
         content
       };
     }

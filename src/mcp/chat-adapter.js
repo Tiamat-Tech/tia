@@ -9,7 +9,8 @@ export class McpChatAdapter {
     profile,
     negotiator = null,
     logger = console,
-    maxBufferedMessages = 50
+    maxBufferedMessages = 50,
+    extraRooms = []
   }) {
     this.xmppConfig = xmppConfig;
     this.roomJid = roomJid;
@@ -18,6 +19,7 @@ export class McpChatAdapter {
     this.negotiator = negotiator;
     this.logger = logger;
     this.maxBufferedMessages = maxBufferedMessages;
+    this.extraRooms = Array.isArray(extraRooms) ? extraRooms.filter(Boolean) : [];
     this.messageBuffer = [];
     this.agent = new XmppRoomAgent({
       xmppConfig,
@@ -49,23 +51,35 @@ export class McpChatAdapter {
     }
   }
 
-  getRecentMessages({ limit = 20 } = {}) {
+  getRecentMessages({ limit = 20, roomJid = null } = {}) {
     const safeLimit = Math.max(1, Math.min(limit, this.maxBufferedMessages));
-    return this.messageBuffer.slice(-safeLimit);
+    const messages = roomJid
+      ? this.messageBuffer.filter((entry) => entry.roomJid === roomJid)
+      : this.messageBuffer;
+    return messages.slice(-safeLimit);
   }
 
   async start() {
     await this.agent.start();
+    for (const room of this.extraRooms) {
+      if (room && room !== this.roomJid) {
+        await this.agent.joinAdditionalRoom(room);
+      }
+    }
   }
 
   async stop() {
     await this.agent.stop();
   }
 
-  async sendMessage({ text, directJid = null }) {
+  async sendMessage({ text, directJid = null, roomJid = null }) {
     if (directJid) {
       await this.agent.sendDirectMessage(directJid, text);
       return { sent: true, to: directJid, type: "chat" };
+    }
+    if (roomJid && roomJid !== this.roomJid) {
+      await this.agent.sendToRoom(roomJid, text);
+      return { sent: true, to: roomJid, type: "groupchat" };
     }
     await this.agent.sendGroupMessage(text);
     return { sent: true, to: this.roomJid, type: "groupchat" };

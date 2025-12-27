@@ -27,6 +27,7 @@ export class CoordinatorProvider extends BaseProvider {
     agentRegistry = new Map(),
     negotiator = null,
     primaryRoomJid = null,
+    logRoomJid = process.env.LOG_ROOM_JID || "log@conference.tensegrity.it",
     enableDebate = false,
     debateTimeoutMs = null,
     contributionTimeoutMs = null,
@@ -41,6 +42,7 @@ export class CoordinatorProvider extends BaseProvider {
     this.agentRegistry = agentRegistry;
     this.negotiator = negotiator;
     this.primaryRoomJid = primaryRoomJid;
+    this.logRoomJid = logRoomJid;
     this.enableDebate = enableDebate;
     this.debateTimeoutMs = debateTimeoutMs;
     this.contributionTimeoutMs = contributionTimeoutMs;
@@ -79,6 +81,9 @@ export class CoordinatorProvider extends BaseProvider {
         case "start":
           return await this.startMfrSession(content, metadata, reply);
 
+        case "mfr-consensus":
+          return await this.startConsensusSession(content, metadata, reply);
+
         case "mfr-debate":
         case "debate":
           if (!this.enableDebate) {
@@ -111,6 +116,12 @@ export class CoordinatorProvider extends BaseProvider {
           return this.getHelpMessage();
 
         default:
+          if (command === "chat") {
+            const consensusSessionId = this.getActiveConsensusSessionId();
+            if (consensusSessionId) {
+              this.recordConsensusEntry(consensusSessionId, rawMessage, metadata);
+            }
+          }
           if (this.enableDebate) {
             const consensusResult = await this.handleDebateConsensus(
               content || rawMessage || "",
@@ -283,6 +294,83 @@ export class CoordinatorProvider extends BaseProvider {
   }
 
   /**
+   * Start consensus session for community answers
+   * @param {string} problemDescription - Problem description
+   * @param {Object} metadata - Message metadata
+   * @param {Function} reply - Reply function
+   * @returns {Promise<string>} Response message
+   */
+  async startConsensusSession(problemDescription, metadata, reply) {
+    const sessionId = randomUUID();
+    const verbose = isVerboseRequest(problemDescription);
+    const quiet = isQuietRequest(problemDescription);
+
+    this.logger.info?.(
+      `[CoordinatorProvider] Starting consensus session: ${sessionId}`
+    );
+
+    const state = new MfrProtocolState(sessionId, {
+      logger: this.logger,
+      initialPhase: MFR_PHASES.PROBLEM_INTERPRETATION
+    });
+    this.activeSessions.set(sessionId, state);
+
+    state.transition(MFR_PHASES.CONSENSUS_DISCOVERY, {
+      problemDescription,
+      startedBy: metadata?.sender,
+      verbose,
+      quiet
+    });
+
+    this.activeDebates.set(sessionId, {
+      mode: "consensus",
+      problemDescription,
+      startTime: Date.now(),
+      positions: [],
+      rawMessages: [],
+      consensusReached: false,
+      selectedAgents: [],
+      verbose,
+      quiet
+    });
+
+    const agentMentions = Array.from(this.agentRegistry.values() || [])
+      .map((entry) => entry?.nickname)
+      .filter(Boolean)
+      .filter((name) => name.toLowerCase() !== "coordinator")
+      .map((name) => `@${name}`)
+      .join(" ");
+
+    const consensusIssue = [
+      `Session: ${sessionId}`,
+      `Issue: Please provide Position/Support/Objection for the following question.`,
+      `Question: ${problemDescription}`,
+      agentMentions ? `Agents: ${agentMentions}` : null,
+      agentMentions ? `Agents listed above: reply in this room with "Position:", "Support:", or "Objection:" (one or more lines).` : null,
+      `Respond with Position/Support/Objection.`,
+      ``
+    ].filter(Boolean).join("\n");
+
+    await this.sendStatusMessage(consensusIssue, { forceChat: true });
+
+    if (!Number.isFinite(this.debateTimeoutMs)) {
+      throw new Error("Consensus timeout missing or invalid; check profile mfrConfig.");
+    }
+
+    setTimeout(async () => {
+      await this.concludeConsensus(sessionId);
+    }, this.debateTimeoutMs);
+
+    const consensusSeconds = Math.round(this.debateTimeoutMs / 1000);
+    if (quiet) {
+      return `Consensus started: ${sessionId}.`;
+    }
+    return verbose
+      ? `Consensus session started: ${sessionId}\n\nWindow: ${consensusSeconds} seconds\nWaiting for Position/Support/Objection entries...`
+      : `Consensus started: ${sessionId}. Window: ${consensusSeconds}s.`;
+  }
+
+  /**
    * Conclude debate and transition to entity discovery
    * @param {string} sessionId - Session ID
    * @returns {Promise<void>}
@@ -304,6 +392,11 @@ export class CoordinatorProvider extends BaseProvider {
     this.logger.info?.(
       `[CoordinatorProvider] Concluding debate for ${sessionId}`
     );
+
+    if (debateData.mode === "consensus") {
+      await this.concludeConsensus(sessionId);
+      return;
+    }
 
     // For now, proceed with all agents (consensus detection to be added with Chair integration)
     const selected = Array.isArray(selectedAgents) && selectedAgents.length > 0
@@ -1035,6 +1128,18 @@ export class CoordinatorProvider extends BaseProvider {
     }
   }
 
+  async sendLogMessage(message) {
+    if (!message) return;
+    if (!this.logRoomJid || !this.negotiator?.xmppClient) return;
+    await this.negotiator.xmppClient.send(
+      xml(
+        "message",
+        { to: this.logRoomJid, type: "groupchat" },
+        xml("body", {}, message)
+      )
+    );
+  }
+
   getSessionVerbose(sessionId) {
     const debateData = this.activeDebates.get(sessionId);
     if (debateData?.verbose) return true;
@@ -1126,6 +1231,22 @@ export class CoordinatorProvider extends BaseProvider {
   getActiveDebateSessionId() {
     let latest = null;
     for (const [sessionId, debateData] of this.activeDebates.entries()) {
+      if (debateData.mode === "consensus") {
+        continue;
+      }
+      if (!latest || debateData.startTime > latest.startTime) {
+        latest = { sessionId, startTime: debateData.startTime };
+      }
+    }
+    return latest?.sessionId || null;
+  }
+
+  getActiveConsensusSessionId() {
+    let latest = null;
+    for (const [sessionId, debateData] of this.activeDebates.entries()) {
+      if (debateData.mode !== "consensus") {
+        continue;
+      }
       if (!latest || debateData.startTime > latest.startTime) {
         latest = { sessionId, startTime: debateData.startTime };
       }
@@ -1182,6 +1303,114 @@ export class CoordinatorProvider extends BaseProvider {
     return debateData.verbose
       ? `Consensus received for ${sessionId}. Proceeding with contribution requests...`
       : `Consensus received for ${sessionId}.`;
+  }
+
+  recordConsensusEntry(sessionId, message, metadata = {}) {
+    const debateData = this.activeDebates.get(sessionId);
+    if (!debateData || debateData.mode !== "consensus") return;
+
+    const entries = parseConsensusEntries(message || "");
+    if (entries.length === 0) {
+      const rawMessages = debateData.rawMessages || [];
+      if (rawMessages.length < 200) {
+        rawMessages.push({
+          sender: metadata?.sender || "unknown",
+          text: String(message || "").trim(),
+          timestamp: new Date().toISOString()
+        });
+        debateData.rawMessages = rawMessages;
+      }
+      return;
+    }
+
+    entries.forEach((entry) => {
+      debateData.positions.push({
+        ...entry,
+        sender: metadata?.sender || "unknown",
+        timestamp: new Date().toISOString()
+      });
+    });
+  }
+
+  async concludeConsensus(sessionId) {
+    const state = this.activeSessions.get(sessionId);
+    const debateData = this.activeDebates.get(sessionId);
+
+    if (!state || !debateData) {
+      this.logger.warn?.(`[CoordinatorProvider] No active consensus for ${sessionId}`);
+      return;
+    }
+
+    if (!state.isPhase(MFR_PHASES.CONSENSUS_DISCOVERY)) {
+      return;
+    }
+
+    this.logger.info?.(
+      `[CoordinatorProvider] Concluding consensus for ${sessionId}`
+    );
+
+    const summary = synthesizeConsensus(debateData);
+    const lines = [
+      `Consensus session complete: ${sessionId}`,
+      `Answer: ${summary.answer || "No clear consensus reached."}`
+    ];
+    if (summary.support.length > 0) {
+      lines.push(`Support: ${summary.support.join(" | ")}`);
+    }
+    if (summary.objections.length > 0) {
+      lines.push(`Objections: ${summary.objections.join(" | ")}`);
+    }
+
+    await this.sendStatusMessage(lines.join("\n"), { sessionId, forceChat: true });
+    await this.sendConsensusLog(sessionId, debateData, summary);
+
+    state.transition(MFR_PHASES.COMPLETE, {
+      consensus: summary.answer || null
+    });
+    this.activeDebates.delete(sessionId);
+  }
+
+  async sendConsensusLog(sessionId, debateData, summary) {
+    if (!debateData || debateData.mode !== "consensus") return;
+    const question = debateData.problemDescription || "";
+    const entries = debateData.positions || [];
+    const rawMessages = debateData.rawMessages || [];
+    const lines = [
+      `[Consensus Log] ${sessionId}`,
+      `Question: ${question}`,
+      `Answer: ${summary.answer || "No clear consensus reached."}`,
+      `Entries: ${entries.length}`,
+      ""
+    ];
+
+    if (entries.length > 0) {
+      lines.push("Parsed entries:");
+      entries.forEach((entry, index) => {
+        const sender = entry.sender || "unknown";
+        const type = entry.type || "note";
+        const text = entry.text || "";
+        const timestamp = entry.timestamp || "";
+        lines.push(`${index + 1}. [${type}] ${sender} ${timestamp}`.trim());
+        if (text) {
+          lines.push(`   ${text}`);
+        }
+      });
+    }
+
+    if (rawMessages.length > 0) {
+      lines.push("", "Raw messages:");
+      rawMessages.slice(0, 50).forEach((entry, index) => {
+        const sender = entry.sender || "unknown";
+        const text = entry.text || "";
+        const timestamp = entry.timestamp || "";
+        lines.push(`${index + 1}. ${sender} ${timestamp}`.trim());
+        if (text) {
+          lines.push(`   ${text}`);
+        }
+      });
+    }
+
+    await this.sendLogMessage(lines.join("\n"));
   }
 
   /**
@@ -1363,4 +1592,53 @@ function cleanTerm(value) {
     .trim()
     .replace(/[?.,!]+$/g, "")
     .replace(/\s+/g, " ");
+}
+
+function parseConsensusEntries(message) {
+  const text = String(message || "").trim();
+  if (!text) return [];
+  const entries = [];
+  const lines = text.split(/\r?\n/);
+  const pattern = /^(?:[-*•>]\s*)?(?:\*{1,2})?(position|support|objection)(?:\*{1,2})?\s*[:\-–—]\s*(.+)$/i;
+  for (const line of lines) {
+    const trimmed = line.trim();
+    if (!trimmed) continue;
+    const match = trimmed.match(pattern);
+    if (!match) continue;
+    entries.push({
+      type: match[1].toLowerCase(),
+      text: match[2].trim()
+    });
+  }
+  return entries;
+}
+
+function synthesizeConsensus(debateData) {
+  const positions = debateData.positions || [];
+  const positionCounts = new Map();
+  const support = [];
+  const objections = [];
+
+  positions.forEach((entry) => {
+    if (!entry?.text) return;
+    if (entry.type === "position") {
+      const key = entry.text.toLowerCase();
+      positionCounts.set(key, {
+        count: (positionCounts.get(key)?.count || 0) + 1,
+        text: entry.text
+      });
+    } else if (entry.type === "support") {
+      if (support.length < 3) support.push(entry.text);
+    } else if (entry.type === "objection") {
+      if (objections.length < 3) objections.push(entry.text);
+    }
+  });
+
+  let answer = null;
+  if (positionCounts.size > 0) {
+    const sorted = Array.from(positionCounts.values()).sort((a, b) => b.count - a.count);
+    answer = sorted[0]?.text || null;
+  }
+
+  return { answer, support, objections };
 }

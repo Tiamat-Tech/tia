@@ -8,10 +8,11 @@ export function createChatTools({ chatAdapter } = {}) {
       description: "Send a message to the MUC room or a direct JID.",
       inputSchema: {
         text: z.string().describe("Message text to send"),
-        directJid: z.string().optional().describe("Optional direct JID to message")
+        directJid: z.string().optional().describe("Optional direct JID to message"),
+        roomJid: z.string().optional().describe("Optional room JID to message")
       },
-      handler: async ({ text, directJid }) => {
-        const result = await chatAdapter.sendMessage({ text, directJid });
+      handler: async ({ text, directJid, roomJid }) => {
+        const result = await chatAdapter.sendMessage({ text, directJid, roomJid });
         return {
           content: [{ type: "text", text: JSON.stringify(result, null, 2) }]
         };
@@ -46,10 +47,11 @@ export function createChatTools({ chatAdapter } = {}) {
       name: "getRecentMessages",
       description: "Return recent chat messages seen by the MCP agent.",
       inputSchema: {
-        limit: z.number().int().positive().max(200).optional().describe("Max messages to return")
+        limit: z.number().int().positive().max(200).optional().describe("Max messages to return"),
+        roomJid: z.string().optional().describe("Optional room JID to filter")
       },
-      handler: async ({ limit }) => {
-        const messages = await chatAdapter.getRecentMessages({ limit });
+      handler: async ({ limit, roomJid }) => {
+        const messages = await chatAdapter.getRecentMessages({ limit, roomJid });
         return {
           content: [{ type: "text", text: JSON.stringify(messages, null, 2) }]
         };

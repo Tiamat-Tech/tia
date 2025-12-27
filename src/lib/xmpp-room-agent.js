@@ -129,14 +129,14 @@ export class XmppRoomAgent {
           }
           return;
         }
-        const sender = from.split("/")[1] || "unknown";
+        const [roomJid, sender] = from.split("/");
         this.logger.debug?.(`Groupchat from ${sender}: ${body}`);
         if (this.onMessage) {
           await this.onMessage({
             body,
-            sender,
+            sender: sender || "unknown",
             from,
-            roomJid: this.roomJid,
+            roomJid: roomJid || this.roomJid,
             type: "groupchat",
             reply: (text) => this.sendGroupMessage(text),
             stanza

@@ -71,6 +71,7 @@ export const MFR_PHASES = {
   // Phase 1: Collaborative Model Construction
   PROBLEM_INTERPRETATION: 'problem_interpretation',
   TOOL_SELECTION_DEBATE: 'tool_selection_debate',  // Optional debate phase for tool selection
+  CONSENSUS_DISCOVERY: 'consensus_discovery',
   ENTITY_DISCOVERY: 'entity_discovery',
   CONSTRAINT_IDENTIFICATION: 'constraint_identification',
   ACTION_DEFINITION: 'action_definition',
@@ -104,10 +105,14 @@ export const VALID_PHASE_TRANSITIONS = {
   ],
   [MFR_PHASES.PROBLEM_INTERPRETATION]: [
     MFR_PHASES.TOOL_SELECTION_DEBATE,  // Optional debate path
+    MFR_PHASES.CONSENSUS_DISCOVERY,
     MFR_PHASES.ENTITY_DISCOVERY         // Direct path (existing behavior)
   ],
   [MFR_PHASES.TOOL_SELECTION_DEBATE]: [
     MFR_PHASES.ENTITY_DISCOVERY
+  ],
+  [MFR_PHASES.CONSENSUS_DISCOVERY]: [
+    MFR_PHASES.COMPLETE
   ],
   [MFR_PHASES.ENTITY_DISCOVERY]: [
     MFR_PHASES.CONSTRAINT_IDENTIFICATION,
