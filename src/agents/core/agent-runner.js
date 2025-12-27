@@ -7,6 +7,7 @@ export class AgentRunner {
     profile,
     xmppConfig,
     roomJid,
+    logRoomJid = null,
     nickname,
     provider,
     negotiator = null,
@@ -28,11 +29,13 @@ export class AgentRunner {
     const resolvedXmppConfig = profileConfig.xmpp || xmppConfig;
     const resolvedRoomJid = profileConfig.roomJid || roomJid;
     const resolvedNickname = profileConfig.nickname || nickname;
+    const resolvedLogRoomJid = logRoomJid || "log@conference.tensegrity.it";
 
     this.nickname = resolvedNickname;
     this.profile = profile || null;
     this.provider = provider;
     this.negotiator = negotiator;
+    this.logRoomJid = resolvedLogRoomJid;
     this.mentionDetector =
       mentionDetector || createMentionDetector(resolvedNickname, [resolvedNickname?.toLowerCase()]);
     this.commandParser = commandParser || defaultCommandParser;
@@ -111,7 +114,8 @@ export class AgentRunner {
       content,
       rawMessage: body,
       metadata,
-      reply
+      reply,
+      sendToLog: this.sendToLog.bind(this)
     });
 
     if (typeof result === "string" && result.trim()) {
@@ -129,6 +133,35 @@ export class AgentRunner {
       } else {
         this.negotiator.xmppClient = this.agent.xmpp;
       }
+    }
+
+    // Join log room if specified
+    if (this.logRoomJid) {
+      try {
+        await this.agent.joinAdditionalRoom(this.logRoomJid);
+        this.logger.info?.(`[AgentRunner] Joined log room: ${this.logRoomJid}`);
+      } catch (error) {
+        this.logger.warn?.(`[AgentRunner] Failed to join log room ${this.logRoomJid}: ${error.message}`);
+      }
+    }
+  }
+
+  /**
+   * Send a message to the log room
+   * @param {string} message - The message to send
+   */
+  async sendToLog(message) {
+    if (!this.logRoomJid) {
+      this.logger.debug?.("[AgentRunner] No log room configured, message not sent");
+      return;
+    }
+    if (!message || !message.trim()) {
+      return;
+    }
+    try {
+      await this.agent.sendToRoom(this.logRoomJid, message);
+    } catch (error) {
+      this.logger.error?.(`[AgentRunner] Failed to send to log room: ${error.message}`);
     }
   }
 

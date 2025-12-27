@@ -6,14 +6,24 @@
 @prefix dcterms: <http://purl.org/dc/terms/> .
 @prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
 @prefix lng: <http://purl.org/stuff/lingue/> .
+@prefix mfr: <http://purl.org/stuff/mfr/> .
 
-<#golem> a agent:ConversationalAgent, agent:AIAgent, lng:Agent ;
+<#golem> a agent:ConversationalAgent, agent:AIAgent, lng:Agent, mfr:NaturalLanguageAgent ;
   foaf:nick "Golem" ;
   schema:identifier "golem" ;
   dcterms:created "2025-12-26T00:00:00Z"^^xsd:dateTime ;
-  dcterms:description "A malleable agent whose system prompt can be changed at runtime" ;
+  dcterms:description "A malleable agent whose system prompt can be changed at runtime to adapt to different problem domains and MFR phases" ;
 
-  lng:supports lng:HumanChat, lng:ModelNegotiation ;
+  lng:supports lng:HumanChat, lng:ModelFirstRDF, lng:ModelNegotiation ;
+
+  mfr:capabilities [
+    mfr:extractsEntities true ;
+    mfr:identifiesGoals true ;
+    mfr:identifiesConstraints true ;
+    mfr:definesActions true ;
+    mfr:generatesNaturalLanguageExplanations true ;
+    mfr:contributionTypes mfr:EntityDiscovery, mfr:GoalIdentification, mfr:ConstraintIdentification, mfr:ActionDefinition
+  ] ;
 
   agent:xmppAccount [
     a xmpp:Account ;

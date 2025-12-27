@@ -52,6 +52,7 @@ const BOT_NICKNAME = fileConfig.nickname;
 const provider = new PrologProvider({ nickname: BOT_NICKNAME, logger });
 
 let negotiator = null;
+let sendToLogFn = null;  // Will be set after runner starts
 const handlers = {};
 if (profile.supportsLingueMode(LANGUAGE_MODES.HUMAN_CHAT)) {
   handlers[LANGUAGE_MODES.HUMAN_CHAT] = new HumanChatHandler({ logger });
@@ -160,6 +161,21 @@ if (profile.supportsLingueMode(LANGUAGE_MODES.MODEL_NEGOTIATION)) {
         }
 
         logger.info?.(`[PrologAgent] Executing plan program for session ${sessionId}`);
+
+        // Log the Prolog code to the log room using runner's sendToLog
+        if (sendToLogFn) {
+          try {
+            logger.info?.(`[PrologAgent] Sending Prolog code to log room`);
+            await sendToLogFn(`[Prolog Execution - ${sessionId}]\n\nProgram:\n${program}\n\nQuery:\n${query}`);
+            logger.info?.(`[PrologAgent] Prolog code sent to log room`);
+          } catch (error) {
+            logger.error?.(`[PrologAgent] Failed to send to log room: ${error.message}`);
+          }
+        } else {
+          logger.warn?.(`[PrologAgent] sendToLogFn not available - cannot log Prolog code`);
+        }
+
+        // Send status message to main room
         if (negotiator?.xmppClient) {
           await negotiator.xmppClient.send(
             xml(
@@ -308,6 +324,10 @@ async function start() {
   console.log(`Resource: ${XMPP_CONFIG.resource}`);
   console.log(`Room: ${MUC_ROOM}`);
   await runner.start();
+
+  // Provide sendToLog function to the handler closures
+  sendToLogFn = runner.sendToLog.bind(runner);
+  logger.info?.(`[PrologAgent] sendToLog function configured`);
 }
 
 async function stop() {

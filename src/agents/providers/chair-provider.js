@@ -113,6 +113,20 @@ export class ChairProvider {
       return null;
     }
 
+    // Ignore MFR workflow/technical messages to reduce noise
+    if (lower.includes("mfr contribution from") ||
+        lower.includes("action schema from") ||
+        lower.includes("role assignment:") ||
+        lower.includes("solution proposal from") ||
+        lower.includes("mfr session started:") ||
+        lower.includes("mfr session complete:") ||
+        lower.includes("mfr contribution request") ||
+        lower.includes("mfr solution request") ||
+        lower.includes("plan execution request")) {
+      this.logger.debug?.(`[Chair] Ignoring MFR workflow message: ${trimmedText.substring(0, 50)}`);
+      return null;
+    }
+
     // Check for MFR debate initiation FIRST (before general IBIS detection)
     // This ensures Coordinator's debate issue gets explicit response
     if (lower.includes("which tools and agents should we use") ||
@@ -229,7 +243,12 @@ export class ChairProvider {
       return this.summarizeState();  // Fallback to regular summary
     }
 
-    // Default prompt to contribute
+    // Default prompt to contribute - only if there's an active issue
+    if (!this.currentIssue) {
+      // No active debate, don't prompt
+      return null;
+    }
+
     if (this.quiet) {
       return "Provide Position/Support/Objection.";
     }

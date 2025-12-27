@@ -6,8 +6,9 @@ import { GolemProvider } from "../agents/providers/golem-provider.js";
 import logger from "../lib/logger-lite.js";
 import { loadAgentProfile } from "../agents/profile-loader.js";
 import { LingueNegotiator, LANGUAGE_MODES, featuresForModes } from "../lib/lingue/index.js";
-import { HumanChatHandler, ModelNegotiationHandler } from "../lib/lingue/handlers/index.js";
-import { MFR_MESSAGE_TYPES } from "../lib/mfr/constants.js";
+import { HumanChatHandler, ModelNegotiationHandler, ModelFirstRdfHandler } from "../lib/lingue/handlers/index.js";
+import { MFR_MESSAGE_TYPES, MFR_CONTRIBUTION_TYPES } from "../lib/mfr/constants.js";
+import { reportLingueMode } from "../lib/lingue/verbose.js";
 import { InMemoryHistoryStore } from "../lib/history/index.js";
 import { loadAgentRoster } from "../agents/profile-roster.js";
 import { loadSystemConfig } from "../lib/system-config.js";
@@ -71,13 +72,99 @@ if (profile.supportsLingueMode(LANGUAGE_MODES.HUMAN_CHAT)) {
   handlers[LANGUAGE_MODES.HUMAN_CHAT] = new HumanChatHandler({ logger });
 }
 
-// Add MODEL_NEGOTIATION handler for receiving role assignments
+// Add MODEL_FIRST_RDF handler for MFR contributions
+const modelFirstRdfHandler = profile.supportsLingueMode(LANGUAGE_MODES.MODEL_FIRST_RDF)
+  ? new ModelFirstRdfHandler({ logger })
+  : null;
+
+// Add MODEL_NEGOTIATION handler for receiving role assignments and contribution requests
 if (profile.supportsLingueMode(LANGUAGE_MODES.MODEL_NEGOTIATION)) {
   handlers[LANGUAGE_MODES.MODEL_NEGOTIATION] = new ModelNegotiationHandler({
     logger,
     onPayload: async ({ payload, roomJid, stanza }) => {
       const messageType = payload?.messageType;
       if (!messageType) {
+        return null;
+      }
+
+      const sessionId = payload?.sessionId;
+      const targetRoom = roomJid || stanza?.attrs?.from?.split("/")?.[0];
+
+      await reportLingueMode({
+        logger,
+        xmppClient: negotiator?.xmppClient,
+        roomJid: targetRoom,
+        payload,
+        direction: "<-",
+        mode: LANGUAGE_MODES.MODEL_NEGOTIATION,
+        mimeType: "application/json",
+        detail: messageType
+      });
+
+      // Handle MFR contribution requests
+      if (messageType === MFR_MESSAGE_TYPES.MODEL_CONTRIBUTION_REQUEST) {
+        if (!sessionId) {
+          logger.warn?.("[GolemAgent] MFR contribution request missing sessionId");
+          return null;
+        }
+
+        if (!targetRoom) {
+          logger.warn?.("[GolemAgent] Cannot determine target room for MFR contribution");
+          return null;
+        }
+
+        logger.info?.(`[GolemAgent] Generating MFR contribution for session ${sessionId}`);
+        const rdf = await provider.handleMfrContributionRequest(payload);
+        if (rdf && rdf.trim() && modelFirstRdfHandler && negotiator?.xmppClient) {
+          logger.info?.(`[GolemAgent] Sending ${rdf.length} bytes of RDF to ${targetRoom}`);
+          const contributionStanza = modelFirstRdfHandler.createStanza(
+            targetRoom,
+            rdf,
+            `MFR contribution from ${BOT_NICKNAME}`,
+            { metadata: { sessionId } }
+          );
+          await negotiator.xmppClient.send(contributionStanza);
+          await reportLingueMode({
+            logger,
+            xmppClient: negotiator?.xmppClient,
+            roomJid: targetRoom,
+            payload,
+            direction: "->",
+            mode: LANGUAGE_MODES.MODEL_FIRST_RDF,
+            mimeType: "text/turtle",
+            detail: `ModelFirstRDF from ${BOT_NICKNAME}`
+          });
+        } else {
+          logger.warn?.(`[GolemAgent] No RDF generated or missing handler (rdf=${!!rdf}, handler=${!!modelFirstRdfHandler})`);
+        }
+
+        // Handle action schema extraction if requested
+        if (payload.requestedContributions?.includes(MFR_CONTRIBUTION_TYPES.ACTION)) {
+          const actions = await provider.extractActions(payload.problemDescription);
+          if (actions.length > 0 && negotiator?.xmppClient) {
+            await reportLingueMode({
+              logger,
+              xmppClient: negotiator?.xmppClient,
+              roomJid: targetRoom,
+              payload,
+              direction: "->",
+              mode: LANGUAGE_MODES.MODEL_NEGOTIATION,
+              mimeType: "application/json",
+              detail: "ActionSchema"
+            });
+            await negotiator.send(targetRoom, {
+              mode: LANGUAGE_MODES.MODEL_NEGOTIATION,
+              payload: {
+                messageType: MFR_MESSAGE_TYPES.ACTION_SCHEMA,
+                sessionId,
+                actions,
+                timestamp: new Date().toISOString()
+              },
+              summary: `Action schema from ${BOT_NICKNAME} for ${sessionId}`
+            });
+          }
+        }
+
         return null;
       }
 
@@ -197,6 +284,9 @@ async function start() {
   console.log(`  - "Golem, reset prompt" - Reset to original prompt`);
   console.log(`  - "Golem, show prompt" - Show current prompt`);
   await runner.start();
+
+  // Provide sendToLog to provider for error logging
+  provider.sendToLog = runner.sendToLog.bind(runner);
 }
 
 async function stop() {

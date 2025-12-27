@@ -8,7 +8,6 @@ import { MfrModelStore } from "../lib/mfr/model-store.js";
 import { MfrShaclValidator } from "../lib/mfr/shacl-validator.js";
 import { MfrModelMerger } from "../lib/mfr/model-merger.js";
 import { ShapesLoader } from "../lib/mfr/shapes-loader.js";
-import { MultiRoomManager } from "../lib/mfr/multi-room-manager.js";
 import { GolemManager } from "../lib/mfr/golem-manager.js";
 import logger from "../lib/logger-lite.js";
 import { loadAgentProfile } from "../agents/profile-loader.js";
@@ -73,16 +72,9 @@ const mfrConfig = fileConfig.mfrConfig;
 if (!mfrConfig) {
   throw new Error("Coordinator mfrConfig missing; check profile file.");
 }
-const mfrRooms = fileConfig.mfrRooms;
-if (!mfrRooms?.construct || !mfrRooms?.validate || !mfrRooms?.reason) {
-  throw new Error("Coordinator mfrRooms missing or incomplete; check profile file.");
-}
 
 if (!mfrConfig.shapesPath) {
   throw new Error("Coordinator shapesPath missing; check profile mfrConfig.");
-}
-if (typeof mfrConfig.enableMultiRoom !== "boolean") {
-  throw new Error("Coordinator enableMultiRoom missing; check profile mfrConfig.");
 }
 if (!Number.isFinite(mfrConfig.contributionTimeout)) {
   throw new Error("Coordinator contributionTimeout missing; check profile mfrConfig.");
@@ -96,13 +88,9 @@ if (typeof mfrConfig.enableDebate !== "boolean") {
 
 logger.info(`Coordinator MFR Configuration:`);
 logger.info(`  Shapes Path: ${mfrConfig.shapesPath}`);
-logger.info(`  Multi-Room: ${mfrConfig.enableMultiRoom}`);
 logger.info(`  Debate Enabled: ${mfrConfig.enableDebate}`);
 logger.info(`  Debate Timeout: ${mfrConfig.debateTimeout}ms`);
 logger.info(`  Contribution Timeout: ${mfrConfig.contributionTimeout}ms`);
-logger.info(`  Construct Room: ${mfrRooms.construct}`);
-logger.info(`  Validate Room: ${mfrRooms.validate}`);
-logger.info(`  Reason Room: ${mfrRooms.reason}`);
 
 // Create MFR components
 const modelStore = new MfrModelStore({ logger });
@@ -203,6 +191,7 @@ provider.negotiator = negotiator;
 
 // Create Golem manager for role assignments
 const golemManager = new GolemManager({ logger, negotiator });
+await golemManager.initialize();
 provider.golemManager = golemManager;
 
 logger.info?.('[CoordinatorAgent] GolemManager initialized');
@@ -230,40 +219,13 @@ const runner = new AgentRunner({
   logger
 });
 
-// Create multi-room manager after runner starts
-let multiRoomManager = null;
-
 async function start() {
   console.log(`Starting Coordinator agent "${BOT_NICKNAME}"`);
   console.log(`XMPP: ${XMPP_CONFIG.service} (domain ${XMPP_CONFIG.domain})`);
   console.log(`Resource: ${XMPP_CONFIG.resource}`);
   console.log(`Primary Room: ${MUC_ROOM}`);
-  console.log(
-    `MFR Rooms: construct=${mfrRooms.construct}, validate=${mfrRooms.validate}, reason=${mfrRooms.reason}`
-  );
 
   await runner.start();
-
-  // Initialize multi-room manager if enabled
-  if (mfrConfig.enableMultiRoom && runner.agent?.xmpp) {
-    multiRoomManager = new MultiRoomManager({
-      xmppClient: runner.agent.xmpp,
-      rooms: mfrRooms,
-      nickname: BOT_NICKNAME,
-      logger
-    });
-
-    // Join all MFR rooms
-    try {
-      await multiRoomManager.joinAllRooms();
-      logger.info(`Joined all MFR rooms`);
-
-      // Inject multi-room manager into provider
-      provider.multiRoomManager = multiRoomManager;
-    } catch (error) {
-      logger.error(`Failed to join MFR rooms: ${error.message}`);
-    }
-  }
 
   console.log(`Coordinator agent ready`);
 }

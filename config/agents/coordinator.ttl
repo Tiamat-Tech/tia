@@ -101,19 +101,11 @@
   agent:mfrConfig [
     a mfr:CoordinatorConfig ;
     mfr:shapesPath "vocabs/mfr-shapes.ttl" ;
-    mfr:enableMultiRoom "true"^^xsd:boolean ;
     mfr:enableDebate "true"^^xsd:boolean ;
     mfr:contributionTimeout "30000"^^xsd:integer ;
     mfr:validationTimeout "10000"^^xsd:integer ;
     mfr:reasoningTimeout "60000"^^xsd:integer ;
     mfr:debateTimeout "60000"^^xsd:integer
-  ] ;
-
-  # MFR rooms configuration
-  agent:mfrRooms [
-    mfr:constructRoom "mfr-construct@conference.tensegrity.it" ;
-    mfr:validateRoom "mfr-validate@conference.tensegrity.it" ;
-    mfr:reasonRoom "mfr-reason@conference.tensegrity.it"
   ] ;
 
   # Orchestrated phases

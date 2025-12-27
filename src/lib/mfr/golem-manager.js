@@ -1,17 +1,62 @@
 import { MFR_MESSAGE_TYPES, MFR_PHASES } from "./constants.js";
-import { GOLEM_ROLE_LIBRARY, getRole, searchRoles, getRolesForPhase } from "./golem-role-library.js";
+import {
+  loadGolemRoles,
+  getRole,
+  searchRoles,
+  getRolesForPhase
+} from "./golem-role-loader.js";
 
 /**
  * Manages Golem agent role assignments within MFR sessions
  */
 export class GolemManager {
-  constructor({ logger = console, negotiator = null }) {
+  constructor({ logger = console, negotiator = null, roleLibrary = null }) {
     this.logger = logger;
     this.negotiator = negotiator;
+    this.roleLibrary = roleLibrary; // Will be loaded if null
     this.currentRole = null;
     this.roleHistory = [];
     this.pendingRequests = new Map();
     this.sessionRoles = new Map(); // sessionId -> role assignments
+    this._initPromise = null;
+  }
+
+  /**
+   * Initialize the GolemManager by loading roles if needed
+   * @returns {Promise<GolemManager>}
+   */
+  async initialize() {
+    if (!this._initPromise) {
+      this._initPromise = this._loadRoles();
+    }
+    await this._initPromise;
+    return this;
+  }
+
+  /**
+   * Load role library from Turtle file
+   * @private
+   */
+  async _loadRoles() {
+    if (!this.roleLibrary) {
+      try {
+        this.roleLibrary = await loadGolemRoles();
+        this.logger.info?.("[GolemManager] Loaded role library from RDF");
+      } catch (error) {
+        this.logger.error?.(`[GolemManager] Failed to load roles: ${error.message}`);
+        this.roleLibrary = {}; // Fallback to empty library
+      }
+    }
+  }
+
+  /**
+   * Ensure roles are loaded before operations
+   * @private
+   */
+  async _ensureRoles() {
+    if (!this.roleLibrary) {
+      await this.initialize();
+    }
   }
 
   /**
@@ -41,10 +86,12 @@ export class GolemManager {
     rationale = null,
     roomJid = null
   }) {
+    await this._ensureRoles();
+
     // Get role from library if not providing custom prompt
     let roleData = null;
     if (!systemPrompt && domain && roleName) {
-      roleData = getRole(domain, roleName);
+      roleData = getRole(this.roleLibrary, domain, roleName);
       if (!roleData) {
         this.logger.error?.(`[GolemManager] Unknown role: ${domain}/${roleName}`);
         return null;
@@ -134,12 +181,14 @@ export class GolemManager {
     duration = "session-scoped",
     roomJid = null
   }) {
+    await this._ensureRoles();
+
     this.logger.info?.(
       `[GolemManager] Assistance request from ${requestingAgent}: ${desiredRole}`
     );
 
     // Search for matching role
-    const matches = searchRoles(desiredRole);
+    const matches = searchRoles(this.roleLibrary, desiredRole);
     if (matches.length === 0) {
       this.logger.warn?.(`[GolemManager] No matching role found for: ${desiredRole}`);
       return null;
@@ -157,7 +206,7 @@ export class GolemManager {
     const assignment = await this.assignRole({
       sessionId,
       domain: role.domain,
-      roleName: role.roleName,
+      roleName: role.id,
       systemPrompt,
       requestingAgent,
       phase: role.phase,
@@ -178,6 +227,8 @@ export class GolemManager {
     sessionId = null,
     roomJid = null
   }) {
+    await this._ensureRoles();
+
     this.logger.info?.(`[GolemManager] Selecting optimal role for phase ${currentPhase}`);
 
     // Analyze problem domain
@@ -185,7 +236,7 @@ export class GolemManager {
     this.logger.info?.(`[GolemManager] Detected domain: ${domain}`);
 
     // Get roles suitable for current phase and domain
-    const phaseRoles = getRolesForPhase(currentPhase);
+    const phaseRoles = getRolesForPhase(this.roleLibrary, currentPhase);
     const domainRoles = phaseRoles.filter(r => r.domain === domain);
 
     if (domainRoles.length === 0) {
@@ -197,7 +248,7 @@ export class GolemManager {
         return await this.assignRole({
           sessionId,
           domain: role.domain,
-          roleName: role.roleName,
+          roleName: role.id,
           requestingAgent: "coordinator",
           phase: currentPhase,
           rationale: `Auto-selected for ${currentPhase} phase`,
@@ -216,7 +267,7 @@ export class GolemManager {
     return await this.assignRole({
       sessionId,
       domain: role.domain,
-      roleName: role.roleName,
+      roleName: role.id,
       requestingAgent: "coordinator",
       phase: currentPhase,
       rationale: `Auto-selected for ${currentPhase} in ${domain} domain`,

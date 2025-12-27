@@ -225,6 +225,9 @@ async function start() {
   console.log(`Room: ${MUC_ROOM}`);
   console.log(`Groq Model: ${process.env.GROQ_MODEL || "llama-3.3-70b-versatile"}`);
   await runner.start();
+
+  // Provide sendToLog to provider for error logging
+  provider.sendToLog = runner.sendToLog.bind(runner);
 }
 
 async function stop() {

@@ -20,10 +20,11 @@ Golem is a "malleable agent" whose system prompt can be changed at runtime to fi
    - Analyzes problem domains
    - Selects optimal roles based on phase and capabilities
 
-3. **Role Library** (`src/lib/mfr/golem-role-library.js`)
-   - Domain-specific role templates
+3. **Role Library** (`config/golem-roles.ttl`)
+   - RDF/Turtle format role definitions
    - 30+ predefined roles across 7 domains
    - Phase-appropriate role selection
+   - Loaded via `src/lib/mfr/golem-role-loader.js`
 
 4. **MFR Message Types** (`src/lib/mfr/constants.js`)
    - GOLEM_ROLE_ASSIGNMENT
@@ -152,14 +153,23 @@ Falls back to "general" domain if no match found.
    [GolemProvider] Role set to "Software Architect" (software/architect)
    ```
 
-5. **Contribution Phase**
+5. **Contribution Request**
    ```
-   Golem contributes with software architecture expertise
+   [Coordinator] Broadcasting MODEL_CONTRIBUTION_REQUEST
+   [GolemAgent] Received contribution request for session <id>
    ```
 
-6. **Phase Transitions**
+6. **Golem Contributes**
+   ```
+   [GolemAgent] Generating MFR contribution (with Software Architect expertise)
+   [GolemAgent] Sending RDF to room
+   ```
+   Golem contributes entities, constraints, actions, and goals based on its assigned role
+
+7. **Phase Transitions**
    - Golem may be reassigned different roles for different phases
    - e.g., "Security Expert" for constraint identification
+   - Each role change updates Golem's contribution focus
 
 ## Testing
 
@@ -179,13 +189,28 @@ Tests cover:
 
 ## Configuration
 
-Golem must support MODEL_NEGOTIATION in its profile:
+Golem must support both MODEL_NEGOTIATION and MODEL_FIRST_RDF in its profile:
 
 ```turtle
-<#golem> a agent:ConversationalAgent, agent:AIAgent, lng:Agent ;
-  lng:supports lng:HumanChat, lng:ModelNegotiation ;
+<#golem> a agent:ConversationalAgent, agent:AIAgent, lng:Agent, mfr:NaturalLanguageAgent ;
+  lng:supports lng:HumanChat, lng:ModelFirstRDF, lng:ModelNegotiation ;
+
+  mfr:capabilities [
+    mfr:extractsEntities true ;
+    mfr:identifiesGoals true ;
+    mfr:identifiesConstraints true ;
+    mfr:definesActions true ;
+    mfr:contributionTypes mfr:EntityDiscovery, mfr:GoalIdentification,
+                          mfr:ConstraintIdentification, mfr:ActionDefinition
+  ] ;
   # ...
 ```
+
+This enables Golem to:
+- Receive role assignments (MODEL_NEGOTIATION)
+- Respond to contribution requests (MODEL_NEGOTIATION)
+- Send RDF contributions (MODEL_FIRST_RDF)
+- Advertise its MFR capabilities to the coordinator
 
 ## Benefits
 
@@ -253,11 +278,13 @@ Golem: Core narrative structure: Act 1 - Awakening (inciting incident),
 
 ### Role Library Functions
 
-- `getRole(domain, roleName)` - Get specific role
-- `getDomainRoles(domain)` - Get all roles for domain
-- `getRolesForPhase(phase)` - Get phase-appropriate roles
-- `getRolesByCapability(capability)` - Find roles by capability
-- `searchRoles(keywords)` - Search role library
+- `loadGolemRoles([rolesPath])` - Load all roles from RDF/Turtle file
+- `getRole(roleLibrary, domain, roleId)` - Get specific role
+- `getDomainRoles(roleLibrary, domain)` - Get all roles for domain
+- `getRolesForPhase(roleLibrary, phase)` - Get phase-appropriate roles
+- `searchRoles(roleLibrary, keywords)` - Search role library
+- `getDomains(roleLibrary)` - Get all available domains
+- `getRoleCounts(roleLibrary)` - Get role counts by domain
 
 ## Troubleshooting
 
@@ -304,8 +331,16 @@ Golem will automatically adapt its expertise to each problem domain!
 
 To add new roles:
 
-1. Edit `src/lib/mfr/golem-role-library.js`
-2. Add role to appropriate domain
-3. Include: name, systemPrompt, capabilities, phase
-4. Update this documentation
-5. Run `node test-golem-integration.js` to verify
+1. Edit `config/golem-roles.ttl`
+2. Add role definition in RDF/Turtle format:
+   ```turtle
+   <#domain-roleid> a mfr:GolemRole ;
+     mfr:domain "domain" ;
+     mfr:roleName "Role Display Name" ;
+     mfr:roleId "roleid" ;
+     mfr:systemPrompt "Your expert system prompt here..." ;
+     mfr:hasCapability mfr:EntityDiscovery, mfr:ConstraintIdentification ;
+     mfr:optimalPhase mfr:EntityDiscoveryPhase .
+   ```
+3. Update this documentation
+4. Run `node test-golem-integration.js` to verify

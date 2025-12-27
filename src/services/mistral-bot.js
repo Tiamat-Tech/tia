@@ -225,6 +225,9 @@ async function start() {
   console.log(`Room: ${MUC_ROOM}`);
   console.log(`Mistral Model: ${process.env.MISTRAL_MODEL || "mistral-small-latest"}`);
   await runner.start();
+
+  // Provide sendToLog to provider for error logging
+  provider.sendToLog = runner.sendToLog.bind(runner);
 }
 
 async function stop() {

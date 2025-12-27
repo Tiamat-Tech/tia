@@ -25,7 +25,6 @@ export class CoordinatorProvider extends BaseProvider {
     merger,
     shapesLoader,
     agentRegistry = new Map(),
-    multiRoomManager = null,
     negotiator = null,
     primaryRoomJid = null,
     enableDebate = false,
@@ -40,7 +39,6 @@ export class CoordinatorProvider extends BaseProvider {
     this.merger = merger || new MfrModelMerger({ logger });
     this.shapesLoader = shapesLoader || new ShapesLoader({ logger });
     this.agentRegistry = agentRegistry;
-    this.multiRoomManager = multiRoomManager;
     this.negotiator = negotiator;
     this.primaryRoomJid = primaryRoomJid;
     this.enableDebate = enableDebate;
@@ -377,16 +375,6 @@ export class CoordinatorProvider extends BaseProvider {
       targetRooms.add(this.primaryRoomJid);
     }
 
-    if (this.multiRoomManager) {
-      const roomType = this.multiRoomManager.getRoomTypeForPhase(
-        phase || MFR_PHASES.ENTITY_DISCOVERY
-      );
-      const roomJid = this.multiRoomManager.getRoomJid(roomType);
-      if (roomJid) {
-        targetRooms.add(roomJid);
-      }
-    }
-
     if (this.negotiator && targetRooms.size > 0) {
       const summary = `MFR contribution request for ${sessionId}`;
       for (const roomJid of targetRooms) {
@@ -396,11 +384,6 @@ export class CoordinatorProvider extends BaseProvider {
           summary
         });
       }
-    } else if (this.multiRoomManager) {
-      await this.multiRoomManager.broadcastForPhase(
-        phase || MFR_PHASES.ENTITY_DISCOVERY,
-        JSON.stringify(message)
-      );
     }
 
     // Set timeout for contribution phase
@@ -711,16 +694,6 @@ export class CoordinatorProvider extends BaseProvider {
       targetRooms.add(this.primaryRoomJid);
     }
 
-    if (this.multiRoomManager) {
-      const roomType = this.multiRoomManager.getRoomTypeForPhase(
-        MFR_PHASES.CONSTRAINED_REASONING
-      );
-      const roomJid = this.multiRoomManager.getRoomJid(roomType);
-      if (roomJid) {
-        targetRooms.add(roomJid);
-      }
-    }
-
     if (this.negotiator && targetRooms.size > 0) {
       const summary = `MFR solution request for ${sessionId}`;
       this.logger.info?.(
@@ -736,11 +709,6 @@ export class CoordinatorProvider extends BaseProvider {
           summary
         });
       }
-    } else if (this.multiRoomManager) {
-      await this.multiRoomManager.broadcastForPhase(
-        MFR_PHASES.CONSTRAINED_REASONING,
-        JSON.stringify(message)
-      );
     }
 
     return `Solution request broadcast for ${sessionId}\nWaiting for agent solutions...`;
@@ -992,14 +960,6 @@ export class CoordinatorProvider extends BaseProvider {
         payload,
         summary
       });
-      return;
-    }
-
-    if (this.multiRoomManager) {
-      await this.multiRoomManager.broadcastForPhase(
-        MFR_PHASES.SOLUTION_EXPLANATION,
-        JSON.stringify(payload)
-      );
     }
   }
 

@@ -49,6 +49,7 @@ export class BaseLLMProvider {
     this.lingueConfidenceMin = lingueConfidenceMin;
     this.xmppClient = xmppClient;
     this.logger = logger;
+    this.sendToLog = null;  // Will be set by agent runner
 
     // Initialize provider-specific client (implemented by subclasses)
     this.client = this.initializeClient(apiKey);
@@ -275,6 +276,12 @@ Respond with ONLY the JSON array, no other text.`;
       return actions;
     } catch (error) {
       this.logger.error?.(`[${this.constructor.name}] Action extraction error: ${error.message}`);
+
+      // Log malformed JSON to log room for debugging
+      if (this.sendToLog && typeof this.sendToLog === 'function') {
+        await this.sendToLog(`[Action Extraction Error - ${this.constructor.name}]\n\nError: ${error.message}\n\nMalformed JSON:\n${jsonText || 'N/A'}`);
+      }
+
       return [];
     }
   }

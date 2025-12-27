@@ -37,6 +37,7 @@ The design goal is a clean, library-ready architecture that supports both deploy
 
 - [Agent Startup Guide](AGENT_STARTUP_GUIDE.md) - **Start here!** Unified script for starting agents
 - [Agent capabilities & commands](docs/agents.md)
+- [Golem Integration](docs/golem-integration.md) - Adaptive role-playing agent for MFR sessions
 - [Data Agent guide](docs/data-agent.md) - SPARQL knowledge queries (Wikidata, DBpedia, custom endpoints)
 - [Auto-connect & credentials](docs/auto-registration.md) - Automatic credential loading and connection
 - [Lingue integration](docs/lingue-integration.md)
@@ -64,6 +65,7 @@ The design goal is a clean, library-ready architecture that supports both deploy
 - **Coordinator** — MFR (Model-First Reasoning) orchestrator for multi-agent problem solving.
 - **Mistral** — AI chat agent backed by Mistral API with Lingue/IBIS summaries.
 - **GroqBot** — AI chat agent backed by Groq API (llama-3.3-70b-versatile) with same capabilities as Mistral.
+- **Golem** — Malleable AI agent with runtime system prompt changes. Automatically adapts to problem domains during MFR sessions. [Guide](docs/golem-integration.md)
 - **Semem** — MCP-backed knowledge agent for `tell/ask/augment` flows.
 - **MFR Semantic** — Constraint-focused agent for MFR model construction.
 - **Data** — SPARQL knowledge query agent for Wikidata, DBpedia, and custom endpoints. [Guide](docs/data-agent.md)
@@ -71,6 +73,7 @@ The design goal is a clean, library-ready architecture that supports both deploy
 - **Chair** — Debate facilitator/Moderator agent.
 - **Recorder** — Meeting logger/recorder agent that listens broadly.
 - **Prolog** — Logic agent using tau-prolog for queries.
+- **Executor** — Plan execution agent that converts high-level plans into Prolog programs.
 - **MCP Loopback** — MCP client/server echo agent for integration tests.
 
 ## Quick Start: Running Agents

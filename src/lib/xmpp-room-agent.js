@@ -174,6 +174,26 @@ export class XmppRoomAgent {
     this.logger.info(`Joining room ${this.roomJid} as ${this.currentNickname}`);
   }
 
+  /**
+   * Join an additional room (not the primary room)
+   * @param {string} roomJid - The JID of the room to join
+   * @param {string} nickname - Optional nickname (defaults to current nickname)
+   */
+  async joinAdditionalRoom(roomJid, nickname = null) {
+    if (!this.xmpp || !this.isReady) {
+      this.logger.warn(`Cannot join room ${roomJid} - XMPP not ready`);
+      return;
+    }
+    const nick = nickname || this.currentNickname;
+    const presence = xml(
+      "presence",
+      { to: `${roomJid}/${nick}` },
+      xml("x", { xmlns: "http://jabber.org/protocol/muc" })
+    );
+    await this.xmpp.send(presence);
+    this.logger.info(`Joined additional room ${roomJid} as ${nick}`);
+  }
+
   async sendGroupMessage(message) {
     if (!this.isInRoom) {
       this.logger.warn("Cannot send group message before joining the room");
@@ -184,6 +204,25 @@ export class XmppRoomAgent {
     const mucMessage = xml(
       "message",
       { type: "groupchat", to: this.roomJid },
+      xml("body", {}, message)
+    );
+    await this.xmpp.send(mucMessage);
+  }
+
+  /**
+   * Send a message to a specific room (not necessarily the primary room)
+   * @param {string} roomJid - The JID of the room to send to
+   * @param {string} message - The message content
+   */
+  async sendToRoom(roomJid, message) {
+    if (!this.xmpp || !this.isReady) {
+      this.logger.warn(`Cannot send to room ${roomJid} - XMPP not ready`);
+      return;
+    }
+    this.logger.debug?.(`Sending message to ${roomJid}`);
+    const mucMessage = xml(
+      "message",
+      { type: "groupchat", to: roomJid },
       xml("body", {}, message)
     );
     await this.xmpp.send(mucMessage);

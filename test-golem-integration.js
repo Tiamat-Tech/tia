@@ -6,12 +6,14 @@
 
 import { GolemManager } from "./src/lib/mfr/golem-manager.js";
 import {
-  GOLEM_ROLE_LIBRARY,
+  loadGolemRoles,
   getRole,
   getDomainRoles,
   getRolesForPhase,
-  searchRoles
-} from "./src/lib/mfr/golem-role-library.js";
+  searchRoles,
+  getDomains,
+  getRoleCounts
+} from "./src/lib/mfr/golem-role-loader.js";
 import { MFR_PHASES } from "./src/lib/mfr/constants.js";
 
 const logger = {
@@ -23,10 +25,21 @@ const logger = {
 
 console.log("=== Golem Integration Test ===\n");
 
+// Load role library from RDF
+console.log("Loading role library from RDF...");
+const roleLibrary = await loadGolemRoles();
+const domains = getDomains(roleLibrary);
+const roleCounts = getRoleCounts(roleLibrary);
+console.log(`✓ Loaded ${domains.length} domains with ${Object.values(roleCounts).reduce((a, b) => a + b, 0)} total roles`);
+domains.forEach(domain => {
+  console.log(`  - ${domain}: ${roleCounts[domain]} roles`);
+});
+console.log();
+
 // Test 1: Role Library Access
 console.log("Test 1: Role Library Access");
 console.log("-------------------------------");
-const medicalDiagnostician = getRole("medical", "diagnostician");
+const medicalDiagnostician = getRole(roleLibrary, "medical", "diagnostician");
 console.log(`✓ Retrieved role: ${medicalDiagnostician?.name}`);
 console.log(`  Prompt: ${medicalDiagnostician?.systemPrompt.substring(0, 80)}...`);
 console.log(`  Capabilities: ${medicalDiagnostician?.capabilities.join(", ")}`);
@@ -35,7 +48,7 @@ console.log();
 // Test 2: Domain Role Listing
 console.log("Test 2: Domain Role Listing");
 console.log("-------------------------------");
-const softwareRoles = getDomainRoles("software");
+const softwareRoles = getDomainRoles(roleLibrary, "software");
 console.log(`✓ Software domain has ${Object.keys(softwareRoles).length} roles:`);
 Object.keys(softwareRoles).forEach(role => {
   console.log(`  - ${softwareRoles[role].name}`);
@@ -45,7 +58,7 @@ console.log();
 // Test 3: Phase-based Role Selection
 console.log("Test 3: Phase-based Role Selection");
 console.log("-------------------------------");
-const entityRoles = getRolesForPhase(MFR_PHASES.ENTITY_DISCOVERY);
+const entityRoles = getRolesForPhase(roleLibrary, MFR_PHASES.ENTITY_DISCOVERY);
 console.log(`✓ Found ${entityRoles.length} roles for ENTITY_DISCOVERY phase:`);
 entityRoles.slice(0, 5).forEach(role => {
   console.log(`  - ${role.name} (${role.domain})`);
@@ -55,17 +68,17 @@ console.log();
 // Test 4: Role Search
 console.log("Test 4: Role Search");
 console.log("-------------------------------");
-const architectRoles = searchRoles("architect");
+const architectRoles = searchRoles(roleLibrary, "architect");
 console.log(`✓ Found ${architectRoles.length} roles matching "architect":`);
 architectRoles.forEach(role => {
-  console.log(`  - ${role.name} (${role.domain}/${role.roleName})`);
+  console.log(`  - ${role.name} (${role.domain}/${role.id})`);
 });
 console.log();
 
 // Test 5: GolemManager Domain Detection
 console.log("Test 5: GolemManager Domain Detection");
 console.log("-------------------------------");
-const manager = new GolemManager({ logger });
+const manager = new GolemManager({ logger, roleLibrary });
 
 const testProblems = [
   { text: "Patient presents with fever, cough, and fatigue", expected: "medical" },
