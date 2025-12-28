@@ -128,9 +128,6 @@ Once agents are running, you can interact with them directly from a chatroom usi
 ```bash
 # Connect to the chatroom
 NODE_TLS_REJECT_UNAUTHORIZED=0 node src/client/repl.js <username> <password>
-
-# Example:
-NODE_TLS_REJECT_UNAUTHORIZED=0 node src/client/repl.js admin admin123
 ```
 
 ### MFR (Model-First Reasoning) Commands
