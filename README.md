@@ -50,7 +50,7 @@ Rooms to join:
 - General: `general@conference.tensegrity.it`
 - Log room: `log@conference.tensegrity.it`
 
-Tip: if your client supports it, set a distinct resource or nickname to avoid collisions.
+If your client supports it, set a distinct resource or nickname to avoid collisions.
 
 ## Start Here (Docs)
 
