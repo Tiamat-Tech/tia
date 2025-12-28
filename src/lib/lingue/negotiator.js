@@ -62,13 +62,13 @@ export class LingueNegotiator {
     await this.xmppClient.send(stanza);
   }
 
-  async send(peerJid, { mode, payload, summary } = {}) {
+  async send(peerJid, { mode, payload, summary, options } = {}) {
     const handler = this.handlers?.[mode];
     if (!handler) {
       throw new Error(`No handler registered for Lingue mode: ${mode}`);
     }
 
-    const stanza = handler.createStanza(peerJid, payload, summary);
+    const stanza = handler.createStanza(peerJid, payload, summary, options);
     if (!this.xmppClient) return;
 
     await this.xmppClient.send(stanza);

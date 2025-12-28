@@ -51,6 +51,7 @@ const BOT_NICKNAME = fileConfig.nickname;
 
 const provider = new PrologProvider({ nickname: BOT_NICKNAME, logger });
 
+let runner = null;
 let negotiator = null;
 let sendToLogFn = null;  // Will be set after runner starts
 const handlers = {};
@@ -259,14 +260,16 @@ if (profile.supportsLingueMode(LANGUAGE_MODES.MODEL_NEGOTIATION)) {
         return null;
       }
 
+      const contributionSummary = `MFR contribution from ${BOT_NICKNAME}`;
       const contributionStanza = modelFirstRdfHandler.createStanza(
         targetRoom,
         rdf,
-        `MFR contribution from ${BOT_NICKNAME}`,
-        { metadata: { sessionId } }
+        contributionSummary,
+        { metadata: { sessionId }, suppressBody: true }
       );
 
       await negotiator.xmppClient.send(contributionStanza);
+      await runner?.sendToLog?.(contributionSummary);
       await reportLingueMode({
         logger,
         xmppClient: negotiator?.xmppClient,
@@ -301,7 +304,7 @@ function createStrictPrefixedParser(prefixes = []) {
   };
 }
 
-const runner = new AgentRunner({
+runner = new AgentRunner({
   xmppConfig: XMPP_CONFIG,
   roomJid: MUC_ROOM,
   nickname: BOT_NICKNAME,

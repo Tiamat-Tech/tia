@@ -13,7 +13,10 @@ const baseXmppConfig = {
 
 const baseSememConfig = {
   baseUrl: process.env.SEMEM_BASE_URL || "https://mcp.tensegrity.it",
-  authToken: process.env.SEMEM_AUTH_TOKEN
+  authToken: process.env.SEMEM_AUTH_TOKEN,
+  timeoutMs: process.env.SEMEM_HTTP_TIMEOUT_MS
+    ? parseInt(process.env.SEMEM_HTTP_TIMEOUT_MS, 10)
+    : undefined
 };
 
 const SEMEM_NICKNAME = process.env.SEMEM_NICKNAME?.trim();
@@ -28,7 +31,7 @@ function mergeConfig(fileConfig = {}) {
   const semem = {
     baseUrl: fileConfig.semem?.baseUrl || baseSememConfig.baseUrl,
     authToken: process.env[fileConfig.semem?.authTokenEnv || "SEMEM_AUTH_TOKEN"] || baseSememConfig.authToken,
-    timeoutMs: fileConfig.semem?.timeoutMs
+    timeoutMs: baseSememConfig.timeoutMs ?? fileConfig.semem?.timeoutMs
   };
   const features = fileConfig.semem?.features || {};
   return { xmpp, semem, features };

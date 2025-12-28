@@ -8,6 +8,12 @@ if [ -f ".env" ]; then
   source .env
 fi
 
+if [ -z "${LOG_FILE}" ]; then
+  mkdir -p logs
+  LOG_FILE="logs/semem.log"
+  export LOG_FILE
+fi
+
 echo "Starting Semem agent..."
 echo "  Agent Profile: ${AGENT_PROFILE:-default}"
 echo "  XMPP Server: ${XMPP_SERVICE:-xmpp://localhost:5222}"

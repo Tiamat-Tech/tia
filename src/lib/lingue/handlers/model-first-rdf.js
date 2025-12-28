@@ -28,10 +28,11 @@ export class ModelFirstRdfHandler extends LanguageModeHandler {
     const body = summary || "RDF model contribution";
     const rdfPayload = payload || "";
 
-    const stanza = xml(
-      "message",
-      { to, type: options.type || "groupchat" },
-      xml("body", {}, body),
+    const messageChildren = [];
+    if (!options.suppressBody) {
+      messageChildren.push(xml("body", {}, body));
+    }
+    messageChildren.push(
       xml(
         "payload",
         {
@@ -41,6 +42,12 @@ export class ModelFirstRdfHandler extends LanguageModeHandler {
         },
         rdfPayload
       )
+    );
+
+    const stanza = xml(
+      "message",
+      { to, type: options.type || "groupchat" },
+      ...messageChildren
     );
 
     // Add metadata if provided

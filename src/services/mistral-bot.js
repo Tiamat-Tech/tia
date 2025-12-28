@@ -53,6 +53,8 @@ XMPP_CONFIG.resource = XMPP_CONFIG.resource || fileConfig.xmpp?.resource || BOT_
 
 const LINGUE_ENABLED = process.env.LINGUE_ENABLED !== "false";
 const LINGUE_CONFIDENCE_MIN = parseFloat(process.env.LINGUE_CONFIDENCE_MIN || "0.5");
+const ibisSummarizers = (systemConfig.ibisSummarizerAgents || []).map((name) => name.toLowerCase());
+const ibisSummaryEnabled = ibisSummarizers.includes(BOT_NICKNAME.toLowerCase());
 
 const provider = new MistralProvider({
   apiKey: process.env.MISTRAL_API_KEY,
@@ -63,10 +65,12 @@ const provider = new MistralProvider({
   historyStore: new InMemoryHistoryStore({ maxEntries: 40 }),
   lingueEnabled: LINGUE_ENABLED,
   lingueConfidenceMin: LINGUE_CONFIDENCE_MIN,
+  ibisSummaryEnabled,
   discoFeatures: featuresForModes(profile.lingue.supports),
   logger
 });
 
+let runner = null;
 let negotiator = null;
 const handlers = {};
 if (profile.supportsLingueMode(LANGUAGE_MODES.HUMAN_CHAT)) {
@@ -117,13 +121,15 @@ if (profile.supportsLingueMode(LANGUAGE_MODES.MODEL_NEGOTIATION)) {
         const rdf = await provider.handleMfrContributionRequest(payload);
         if (rdf && rdf.trim() && modelFirstRdfHandler && negotiator?.xmppClient) {
           logger.info?.(`[MistralBot] Sending ${rdf.length} bytes of RDF to ${targetRoom}`);
+          const contributionSummary = `MFR contribution from ${BOT_NICKNAME}`;
           const contributionStanza = modelFirstRdfHandler.createStanza(
             targetRoom,
             rdf,
-            `MFR contribution from ${BOT_NICKNAME}`,
-            { metadata: { sessionId } }
+            contributionSummary,
+            { metadata: { sessionId }, suppressBody: true }
           );
           await negotiator.xmppClient.send(contributionStanza);
+          await runner?.sendToLog?.(contributionSummary);
           await reportLingueMode({
             logger,
             xmppClient: negotiator?.xmppClient,
@@ -151,6 +157,8 @@ if (profile.supportsLingueMode(LANGUAGE_MODES.MODEL_NEGOTIATION)) {
               mimeType: "application/json",
               detail: "ActionSchema"
             });
+            const actionSummary = `Action schema from ${BOT_NICKNAME} for ${sessionId}`;
+            await runner?.sendToLog?.(actionSummary);
             await negotiator.send(targetRoom, {
               mode: LANGUAGE_MODES.MODEL_NEGOTIATION,
               payload: {
@@ -159,7 +167,8 @@ if (profile.supportsLingueMode(LANGUAGE_MODES.MODEL_NEGOTIATION)) {
                 actions,
                 timestamp: new Date().toISOString()
               },
-              summary: `Action schema from ${BOT_NICKNAME} for ${sessionId}`
+              summary: actionSummary,
+              options: { suppressBody: true }
             });
           }
         }
@@ -204,7 +213,7 @@ negotiator = new LingueNegotiator({
   logger
 });
 
-const runner = new AgentRunner({
+runner = new AgentRunner({
   xmppConfig: XMPP_CONFIG,
   roomJid: MUC_ROOM,
   nickname: BOT_NICKNAME,

@@ -166,6 +166,11 @@ const provider = new CoordinatorProvider({
   planningDefaultRoute: mfrConfig.planningDefaultRoute,
   debateTimeoutMs: mfrConfig.debateTimeout,
   contributionTimeoutMs: mfrConfig.contributionTimeout,
+  allowAgentSenders: (process.env.COORDINATOR_ALLOW_AGENT_SENDERS || "")
+    .split(",")
+    .map((entry) => entry.trim())
+    .filter(Boolean)
+    .concat(systemConfig.coordinatorAllowAgentSenders || []),
   logger
 });
 

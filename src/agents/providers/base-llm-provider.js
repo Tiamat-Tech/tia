@@ -31,6 +31,7 @@ export class BaseLLMProvider {
     historyStore = null,
     lingueEnabled = true,
     lingueConfidenceMin = 0.5,
+    ibisSummaryEnabled = false,
     discoFeatures = DEFAULT_LINGUE_FEATURES,
     xmppClient = null,
     logger = console
@@ -47,6 +48,7 @@ export class BaseLLMProvider {
     this.historyStore = historyStore;
     this.lingueEnabled = lingueEnabled;
     this.lingueConfidenceMin = lingueConfidenceMin;
+    this.ibisSummaryEnabled = ibisSummaryEnabled;
     this.xmppClient = xmppClient;
     this.logger = logger;
     this.sendToLog = null;  // Will be set by agent runner
@@ -100,6 +102,7 @@ export class BaseLLMProvider {
    */
   async maybePostLingueSummary(text, reply, metadata) {
     if (!this.lingueEnabled) return;
+    if (!this.ibisSummaryEnabled) return;
     if (metadata?.consensusPrompt) return;
     const structure = detectIBISStructure(text);
     if (structure.confidence < this.lingueConfidenceMin) return;

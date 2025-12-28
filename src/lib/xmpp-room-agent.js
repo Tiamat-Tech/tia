@@ -16,11 +16,15 @@ export class XmppRoomAgent {
     maxReconnectDelayMs = 30000,
     autoRegister = false,
     secretsPath,
+    logRoomJid = null,
+    logToRoom = false,
     logger = console
   }) {
     this.xmppConfig = xmppConfig;
     this.autoRegister = autoRegister;
     this.secretsPath = secretsPath;
+    this.logRoomJid = logRoomJid;
+    this.logToRoom = logToRoom;
     this.xmpp = null;  // Will be set in start()
     this.roomJid = roomJid;
     this.nickname = nickname;
@@ -201,6 +205,12 @@ export class XmppRoomAgent {
       await this.waitForJoin();
     }
     this.logger.info(`Sending group message to ${this.roomJid} as ${this.currentNickname}`);
+    if (this.logToRoom && this.logRoomJid && this.roomJid !== this.logRoomJid) {
+      await this.sendToRoom(
+        this.logRoomJid,
+        `[XMPP] Sending group message to ${this.roomJid} as ${this.currentNickname}`
+      );
+    }
     const mucMessage = xml(
       "message",
       { type: "groupchat", to: this.roomJid },

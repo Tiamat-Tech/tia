@@ -6,7 +6,9 @@ import { turtleToDataset } from "./ibis-rdf.js";
 const SYSTEM_NS = "https://tensegrity.it/vocab/system#";
 const DEFAULT_CONFIG_PATH = path.join(process.cwd(), "config", "system.ttl");
 const DEFAULTS = {
-  maxAgentRounds: 5
+  maxAgentRounds: 5,
+  coordinatorAllowAgentSenders: [],
+  ibisSummarizerAgents: []
 };
 
 let cachedConfig = null;
@@ -17,8 +19,16 @@ export async function loadSystemConfig({ configPath = DEFAULT_CONFIG_PATH } = {}
     const turtle = await fs.readFile(configPath, "utf8");
     const dataset = await turtleToDataset(turtle);
     const maxAgentRounds = extractInteger(dataset, `${SYSTEM_NS}maxAgentRounds`);
+    const coordinatorAllowAgentSenders = extractLiterals(dataset, `${SYSTEM_NS}coordinatorAllowAgentSenders`);
+    const ibisSummarizerAgents = extractLiterals(dataset, `${SYSTEM_NS}ibisSummarizerAgents`);
     cachedConfig = {
-      maxAgentRounds: Number.isFinite(maxAgentRounds) ? maxAgentRounds : DEFAULTS.maxAgentRounds
+      maxAgentRounds: Number.isFinite(maxAgentRounds) ? maxAgentRounds : DEFAULTS.maxAgentRounds,
+      coordinatorAllowAgentSenders: coordinatorAllowAgentSenders.length > 0
+        ? coordinatorAllowAgentSenders
+        : DEFAULTS.coordinatorAllowAgentSenders,
+      ibisSummarizerAgents: ibisSummarizerAgents.length > 0
+        ? ibisSummarizerAgents
+        : DEFAULTS.ibisSummarizerAgents
     };
   } catch {
     cachedConfig = { ...DEFAULTS };
@@ -33,4 +43,11 @@ function extractInteger(dataset, predicateUri) {
   if (!value) return null;
   const parsed = Number.parseInt(value, 10);
   return Number.isNaN(parsed) ? null : parsed;
+}
+
+function extractLiterals(dataset, predicateUri) {
+  const predicate = rdf.namedNode(predicateUri);
+  return Array.from(dataset.match(null, predicate, null))
+    .map((quad) => quad?.object?.value)
+    .filter(Boolean);
 }

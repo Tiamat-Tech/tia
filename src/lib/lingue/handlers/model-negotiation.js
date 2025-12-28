@@ -32,10 +32,11 @@ export class ModelNegotiationHandler extends LanguageModeHandler {
       ? payload
       : JSON.stringify(payload, null, 2);
 
-    const stanza = xml(
-      "message",
-      { to, type: options.type || "groupchat" },
-      xml("body", {}, body),
+    const messageChildren = [];
+    if (!options.suppressBody) {
+      messageChildren.push(xml("body", {}, body));
+    }
+    messageChildren.push(
       xml(
         "payload",
         {
@@ -45,6 +46,12 @@ export class ModelNegotiationHandler extends LanguageModeHandler {
         },
         payloadJson
       )
+    );
+
+    const stanza = xml(
+      "message",
+      { to, type: options.type || "groupchat" },
+      ...messageChildren
     );
 
     // Add message type as attribute if provided

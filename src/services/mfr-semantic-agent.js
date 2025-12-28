@@ -64,6 +64,7 @@ const provider = new MfrSemanticProvider({
   logger
 });
 
+let runner = null;
 let negotiator = null;
 const handlers = {};
 
@@ -117,14 +118,16 @@ if (profile.supportsLingueMode(LANGUAGE_MODES.MODEL_NEGOTIATION)) {
         return null;
       }
 
+      const contributionSummary = `MFR contribution from ${BOT_NICKNAME}`;
       const contributionStanza = modelFirstRdfHandler.createStanza(
         targetRoom,
         rdf,
-        `MFR contribution from ${BOT_NICKNAME}`,
-        { metadata: { sessionId } }
+        contributionSummary,
+        { metadata: { sessionId }, suppressBody: true }
       );
 
       await negotiator.xmppClient.send(contributionStanza);
+      await runner?.sendToLog?.(contributionSummary);
       await reportLingueMode({
         logger,
         xmppClient: negotiator?.xmppClient,
@@ -146,7 +149,7 @@ negotiator = new LingueNegotiator({
   logger
 });
 
-const runner = new AgentRunner({
+runner = new AgentRunner({
   xmppConfig: XMPP_CONFIG,
   roomJid: MUC_ROOM,
   nickname: BOT_NICKNAME,

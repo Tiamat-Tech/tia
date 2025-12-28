@@ -42,9 +42,7 @@ if [ -f ".env" ]; then
 fi
 
 # Enable logging defaults if not already set
-: "${LOG_FILE:=logs/agents.log}"
 : "${LOG_LEVEL:=info}"
-export LOG_FILE
 export LOG_LEVEL
 
 # Determine which agents to start

@@ -2,4 +2,7 @@
 @prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
 
 <#system> a sys:SystemConfig ;
-  sys:maxAgentRounds "5"^^xsd:integer .
+  sys:maxAgentRounds "5"^^xsd:integer ;
+  sys:coordinatorAllowAgentSenders "Mistral" ;
+  sys:coordinatorAllowAgentSenders "MCP" ;
+  sys:ibisSummarizerAgents "Chair" .

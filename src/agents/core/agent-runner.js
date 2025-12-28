@@ -40,6 +40,7 @@ export class AgentRunner {
     this.provider = provider;
     this.negotiator = negotiator;
     this.logRoomJid = resolvedLogRoomJid;
+    this.primaryRoomJid = resolvedRoomJid;
     this.mentionDetector =
       mentionDetector || createMentionDetector(resolvedNickname, [resolvedNickname?.toLowerCase()]);
     this.commandParser = commandParser || defaultCommandParser;
@@ -62,6 +63,8 @@ export class AgentRunner {
       allowSelfMessages,
       autoRegister,
       secretsPath,
+      logRoomJid: resolvedLogRoomJid,
+      logToRoom: true,
       logger
     });
   }
@@ -140,7 +143,7 @@ export class AgentRunner {
     if (isConsensusPrompt || isPlanningPrompt) {
       explicitHumanAddress = true;
     }
-    if (!isConsensusDm && !isConsensusPrompt && !isPlanningPrompt && this.shouldRequireHumanAddress() && (senderIsAgent || !explicitHumanAddress)) {
+    if (!isConsensusDm && !isConsensusPrompt && !isPlanningPrompt && this.shouldRequireHumanAddress() && !explicitHumanAddress) {
       this.logger.debug?.(
         `[AgentRunner] Suppressing message after agent rounds (${this.agentRoundCount})`
       );
@@ -156,6 +159,7 @@ export class AgentRunner {
     const { command, content } = this.commandParser(body);
     const metadata = {
       sender,
+      senderIsAgent,
       type,
       roomJid,
       consensusPrompt: isConsensusPrompt,
@@ -217,6 +221,10 @@ export class AgentRunner {
   async sendToLog(message) {
     if (!this.logRoomJid) {
       this.logger.debug?.("[AgentRunner] No log room configured, message not sent");
+      return;
+    }
+    if (this.primaryRoomJid && this.logRoomJid === this.primaryRoomJid) {
+      this.logger.warn?.("[AgentRunner] Log room matches primary room, skipping log message");
       return;
     }
     if (!message || !message.trim()) {

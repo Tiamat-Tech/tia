@@ -32,6 +32,7 @@ export class CoordinatorProvider extends BaseProvider {
     planningDefaultRoute = null,
     debateTimeoutMs = null,
     contributionTimeoutMs = null,
+    allowAgentSenders = [],
     logger = console
   } = {}) {
     super();
@@ -48,6 +49,9 @@ export class CoordinatorProvider extends BaseProvider {
     this.planningDefaultRoute = planningDefaultRoute;
     this.debateTimeoutMs = debateTimeoutMs;
     this.contributionTimeoutMs = contributionTimeoutMs;
+    this.allowAgentSenders = new Set(
+      (allowAgentSenders || []).map((sender) => String(sender).toLowerCase()).filter(Boolean)
+    );
     this.logger = logger;
 
     // Active MFR sessions: Map<sessionId, MfrProtocolState>
@@ -79,6 +83,22 @@ export class CoordinatorProvider extends BaseProvider {
     this.logger.debug?.(`[CoordinatorProvider] Command: ${command}`);
 
     try {
+      if (metadata?.senderIsAgent && ["mfr-start", "start", "mfr-discover", "mfr-consensus", "mfr-debate", "debate"].includes(command)) {
+        const senderLower = String(metadata?.sender || "").toLowerCase();
+        if (this.allowAgentSenders.has(senderLower)) {
+          this.logger.debug?.(
+            `[CoordinatorProvider] Allowing ${command} from agent ${metadata.sender}`
+          );
+        } else {
+        this.logger.debug?.(
+          `[CoordinatorProvider] Ignoring ${command} from agent ${metadata.sender}`
+        );
+        await this.sendLogMessage(
+          `[Coordinator] Ignored ${command} from agent ${metadata.sender || "unknown"}`
+        );
+        return null;
+        }
+      }
       switch (command) {
         case "mfr-start":
         case "start":
@@ -535,10 +555,12 @@ export class CoordinatorProvider extends BaseProvider {
     if (this.negotiator && targetRooms.size > 0) {
       const summary = `MFR contribution request for ${sessionId}`;
       for (const roomJid of targetRooms) {
+        await this.sendLogMessage(summary);
         await this.negotiator.send(roomJid, {
           mode: LANGUAGE_MODES.MODEL_NEGOTIATION,
           payload: message,
-          summary
+          summary,
+          options: { suppressBody: true }
         });
       }
     }
@@ -1191,9 +1213,15 @@ export class CoordinatorProvider extends BaseProvider {
 
     const verbose = sessionId ? this.getSessionVerbose(sessionId) : true;
     const prefix = system ? "SYS: " : "";
+    const isProcess = isProcessStatusMessage(message);
 
     if (system) {
       await this.sendLingueStatusPayload({ message, sessionId });
+    }
+
+    if (isProcess && !forceChat) {
+      await this.sendLogMessage(`${prefix}${message}`);
+      return;
     }
 
     if (forceChat || !system || verbose) {
@@ -1218,7 +1246,6 @@ export class CoordinatorProvider extends BaseProvider {
       )
     );
   }
-
   getSessionVerbose(sessionId) {
     const debateData = this.activeDebates.get(sessionId);
     if (debateData?.verbose) return true;
@@ -1787,6 +1814,21 @@ export class CoordinatorProvider extends BaseProvider {
   }
 }
 
+function isProcessStatusMessage(message) {
+  const text = String(message || "").toLowerCase();
+  if (!text) return false;
+  return text.includes("planning poll started") ||
+    text.includes("planning poll complete") ||
+    text.includes("consensus session started") ||
+    text.includes("consensus session complete") ||
+    text.includes("debate session started") ||
+    text.includes("debate started") ||
+    text.includes("mfr session started") ||
+    text.includes("mfr session complete") ||
+    text.includes("session complete") ||
+    text.includes("solutions received");
+}
+
 export default CoordinatorProvider;
 
 function isVerboseRequest(text) {
@@ -1889,7 +1931,7 @@ function shouldIgnoreConsensusEntry(entry) {
   const sender = String(entry?.sender || "").toLowerCase();
   const text = String(entry?.text || "").trim();
   if (!text) return true;
-  if (["chair", "coordinator", "demo", "semem"].includes(sender)) return true;
+  if (["chair", "coordinator", "demo"].includes(sender)) return true;
   if (sender === "data" && /^\\d+\\.\\s+\\w+:/i.test(text)) return true;
   const lower = text.toLowerCase();
   if (lower.includes("unavailable right now")) return true;

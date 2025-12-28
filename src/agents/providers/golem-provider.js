@@ -14,6 +14,7 @@ export class GolemProvider extends MistralProvider {
     historyStore = null,
     lingueEnabled = true,
     lingueConfidenceMin = 0.5,
+    ibisSummaryEnabled = false,
     discoFeatures = undefined,
     xmppClient = null,
     logger = console
@@ -27,6 +28,7 @@ export class GolemProvider extends MistralProvider {
       historyStore,
       lingueEnabled,
       lingueConfidenceMin,
+      ibisSummaryEnabled,
       discoFeatures,
       xmppClient,
       logger

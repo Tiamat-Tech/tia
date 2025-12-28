@@ -3,7 +3,7 @@ import dotenv from "dotenv";
 dotenv.config();
 
 const DEFAULT_BASE_URL = process.env.SEMEM_BASE_URL || "https://mcp.tensegrity.it";
-const DEFAULT_TIMEOUT_MS = parseInt(process.env.SEMEM_HTTP_TIMEOUT_MS || "8000", 10);
+const DEFAULT_TIMEOUT_MS = parseInt(process.env.SEMEM_HTTP_TIMEOUT_MS || "20000", 10);
 
 export class SememClient {
   constructor({

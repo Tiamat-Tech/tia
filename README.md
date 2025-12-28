@@ -3,7 +3,7 @@ TIA Intelligence Agency
 
 An experimental XMPP (Jabber) agent framework that combines chat, Lingue/IBIS structured dialogue, and MCP tool integrations into a modular Node.js codebase.
 
-**Status 2025-12-28:** a community of agents can debate how to solve a problem, run a planning poll to pick an approach, and then invoke MFR or consensus workflows. The system is quite chaotic, but the end-to-end process is working.
+**Status 2025-12-28:** we have a community of autonomous agents that can debate how to solve a problem, run a planning poll to pick an approach, and then invoke MFR or consensus workflows. The system is quite chaotic, but the end-to-end process is working.
 
 * [Live Chat](https://tensegrity.it/chat/) - *or use a standard XMPP client*
 * [Documentation](https://danja.github.io/tia/)
@@ -52,34 +52,6 @@ Rooms to join:
 
 If your client supports it, set a distinct resource or nickname to avoid collisions.
 
-## Start Here (Docs)
-
-- [Agent Startup Guide](AGENT_STARTUP_GUIDE.md) - **Start here!** Unified script for starting agents
-- [Agent roster](docs/agent-roster.md)
-- [Agent capabilities & commands](docs/agents.md)
-- [Golem Integration](docs/golem-integration.md) - Adaptive role-playing agent for MFR sessions
-- [Data Agent guide](docs/data-agent.md) - SPARQL knowledge queries (Wikidata, DBpedia, custom endpoints)
-- [Auto-connect & credentials](docs/auto-registration.md) - Automatic credential loading and connection
-- [Lingue integration](docs/lingue-integration.md)
-- [MCP client guide](docs/mcp-client.md)
-- [MCP server guide](docs/mcp-server.md)
-- [MFR Room Setup](MFR_ROOM_SETUP.md) - Model-First Reasoning multi-room configuration (**requires Prosody setup**)
-- [MFR agent contracts](docs/mfr-agent-contracts.md) - Expected MFR behaviors per agent
-- [API reference](docs/api-reference.md)
-- [Testing & env](docs/testing.md)
-- [Server deployment](docs/server.md)
-- [Debate/Chair/Recorder notes](docs/debating-society.md)
-- [Lingue ontology & protocol specs](https://danja.github.io/lingue/)
-
-## Architecture At A Glance
-
-- `src/agents` — AgentRunner, providers, and profile system.
-- `src/lib` — XMPP helpers, Lingue utilities, logging, RDF tools.
-- `src/mcp` — MCP client/server bridges and test servers.
-- `config/agents/*.ttl` — RDF profiles describing each agent.
-- `config/agents/secrets.json` — local XMPP passwords keyed by profile (ignored in git).
-- `docs/` — integration guides and operational docs.
-
 ## Implemented Agents
 
 - **Coordinator** — MFR (Model-First Reasoning) orchestrator for multi-agent problem solving.
@@ -95,6 +67,15 @@ If your client supports it, set a distinct resource or nickname to avoid collisi
 - **Prolog** — Logic agent using tau-prolog for queries.
 - **Executor** — Plan execution agent that converts high-level plans into Prolog programs.
 - **MCP Loopback** — MCP client/server echo agent for integration tests.
+
+## Architecture At A Glance
+
+- `src/agents` — AgentRunner, providers, and profile system.
+- `src/lib` — XMPP helpers, Lingue utilities, logging, RDF tools.
+- `src/mcp` — MCP client/server bridges and test servers.
+- `config/agents/*.ttl` — RDF profiles describing each agent.
+- `config/agents/secrets.json` — local XMPP passwords keyed by profile (ignored in git).
+- `docs/` — integration guides and operational docs.
 
 ## Quick Start: Running Agents
 

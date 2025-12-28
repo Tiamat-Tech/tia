@@ -11,7 +11,7 @@ if (LOG_FILE) {
   if (!fs.existsSync(dir)) {
     fs.mkdirSync(dir, { recursive: true });
   }
-  fileStream = fs.createWriteStream(LOG_FILE, { flags: "a" });
+  fileStream = fs.createWriteStream(LOG_FILE, { flags: "w" });
 }
 
 const originalFactory = log.methodFactory;

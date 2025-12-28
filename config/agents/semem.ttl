@@ -44,7 +44,7 @@
     a ai:SememProvider ;
     ai:baseUrl "https://mcp.tensegrity.it" ;
     ai:authTokenEnv "SEMEM_AUTH_TOKEN" ;
-    ai:timeoutMs "8000" ;
+    ai:timeoutMs "20000" ;
     ai:features [
       ai:useWikipedia true ;
       ai:useWikidata true ;

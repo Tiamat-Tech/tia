@@ -9,6 +9,8 @@ export class ChairProvider {
     this.positions = [];
     this.arguments = [];
     this.consensusSent = false;
+    this.promptSent = false;
+    this.summarySent = false;
     this.verbose = false;
     this.quiet = false;
     // Legacy IBIS constructs
@@ -25,6 +27,8 @@ export class ChairProvider {
       this.positions = [];
       this.arguments = [];
       this.consensusSent = false;
+      this.promptSent = false;
+      this.summarySent = false;
       this.verbose = hasVerboseFlag(content);
       this.quiet = hasQuietFlag(content);
       // Clear legacy constructs when new issue starts
@@ -91,10 +95,13 @@ export class ChairProvider {
     return parts.join("\n");
   }
 
-  async handle({ content, rawMessage, metadata }) {
+  async handle({ content, rawMessage, metadata, sendToLog }) {
     const text = content || rawMessage || "";
     const trimmedText = text.trim();
     const lower = trimmedText.toLowerCase();
+    const sender = String(metadata?.sender || "");
+    const senderLower = sender.toLowerCase();
+    const senderIsAgent = metadata?.senderIsAgent;
 
     // Debug logging for MFR debate detection
     this.logger.debug?.(`[Chair] Received message: "${trimmedText.substring(0, 100)}..."`);
@@ -132,10 +139,19 @@ export class ChairProvider {
     if (lower.includes("which tools and agents should we use") ||
         lower.includes("available agents:") ||
         (lower.startsWith("issue:") && lower.includes("tool"))) {
+      if (senderIsAgent && senderLower !== "coordinator") {
+        this.logger.debug?.(`[Chair] Ignoring tool debate prompt from ${sender}`);
+        if (sendToLog) {
+          await sendToLog(`[Chair] Ignored tool debate prompt from ${sender}`);
+        }
+        return null;
+      }
       this.currentIssue = trimmedText.replace(/^issue:\s*/i, "").trim() || trimmedText;
       this.positions = [];
       this.arguments = [];
       this.consensusSent = false;
+      this.promptSent = false;
+      this.summarySent = false;
       this.verbose = hasVerboseFlag(trimmedText);
       this.quiet = hasQuietFlag(trimmedText);
       // Clear legacy constructs
@@ -155,10 +171,19 @@ export class ChairProvider {
 
     // Check for explicit debate start commands
     if (lower.includes("start debate") || lower.startsWith("issue:") || lower.startsWith("i:")) {
+      if (senderIsAgent && senderLower !== "coordinator") {
+        this.logger.debug?.(`[Chair] Ignoring debate start from ${sender}`);
+        if (sendToLog) {
+          await sendToLog(`[Chair] Ignored debate start from ${sender}`);
+        }
+        return null;
+      }
       this.currentIssue = text.replace(/^(issue|i):\s*/i, "").trim() || text;
       this.positions = [];
       this.arguments = [];
       this.consensusSent = false;
+      this.promptSent = false;
+      this.summarySent = false;
       this.verbose = hasVerboseFlag(text);
       this.quiet = hasQuietFlag(text);
       // Clear legacy constructs
@@ -167,6 +192,9 @@ export class ChairProvider {
       this.decisions = [];
       this.references = [];
       this.notes = [];
+      if (sendToLog) {
+        await sendToLog(`[Chair] Debate started for issue: ${this.currentIssue}`);
+      }
       if (this.quiet) {
         return "Debate started.";
       }
@@ -203,6 +231,10 @@ export class ChairProvider {
           this.consensusSent = true;
           return consensus.summary;
         }
+        if (sendToLog) {
+          await sendToLog("Noted.");
+          return null;
+        }
         return "Noted.";
       }
       if (!this.verbose) {
@@ -210,6 +242,10 @@ export class ChairProvider {
         if (consensus.reached && !this.consensusSent) {
           this.consensusSent = true;
           return `Noted. ${consensus.summary}`;
+        }
+        if (sendToLog) {
+          await sendToLog("Noted.");
+          return null;
         }
         return "Noted.";
       }
@@ -219,8 +255,17 @@ export class ChairProvider {
       const consensus = this.detectToolConsensus();
       if (isToolIssue && consensus.reached && !this.consensusSent) {
         this.consensusSent = true;
+        this.summarySent = true;
         return `Noted. ${summary}\n${consensus.summary}`;
       }
+      if (this.summarySent) {
+        if (sendToLog) {
+          await sendToLog("Noted.");
+          return null;
+        }
+        return "Noted.";
+      }
+      this.summarySent = true;
       return `Noted. ${summary}`;
     }
 
@@ -249,6 +294,11 @@ export class ChairProvider {
       return null;
     }
 
+    if (this.promptSent) {
+      return null;
+    }
+
+    this.promptSent = true;
     if (this.quiet) {
       return "Provide Position/Support/Objection.";
     }

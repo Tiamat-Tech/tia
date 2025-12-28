@@ -15,6 +15,7 @@ export class GroqProvider extends BaseLLMProvider {
     historyStore = null,
     lingueEnabled = true,
     lingueConfidenceMin = 0.5,
+    ibisSummaryEnabled = false,
     discoFeatures = undefined,
     xmppClient = null,
     logger = console
@@ -28,6 +29,7 @@ export class GroqProvider extends BaseLLMProvider {
       historyStore,
       lingueEnabled,
       lingueConfidenceMin,
+      ibisSummaryEnabled,
       discoFeatures,
       xmppClient,
       logger

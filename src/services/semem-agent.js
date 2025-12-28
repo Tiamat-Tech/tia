@@ -3,9 +3,10 @@ import { loadAgentProfile } from "./agent-registry.js";
 import { loadAgentProfile as loadLingueProfile } from "../agents/profile-loader.js";
 import { AgentRunner } from "../agents/core/agent-runner.js";
 import { createMentionDetector } from "../agents/core/mention-detector.js";
-import { defaultCommandParser } from "../agents/core/command-parser.js";
+import { createPrefixedCommandParser } from "../agents/core/command-parser.js";
 import { SememProvider } from "../agents/providers/semem-provider.js";
 import logger from "../lib/logger-lite.js";
+import { SememClient } from "../lib/semem-client.js";
 import { LingueNegotiator, LANGUAGE_MODES } from "../lib/lingue/index.js";
 import { HumanChatHandler, IBISTextHandler, ProfileExchangeHandler } from "../lib/lingue/handlers/index.js";
 import { loadAgentRoster } from "../agents/profile-roster.js";
@@ -73,7 +74,14 @@ const runner = new AgentRunner({
   provider: sememProvider,
   negotiator,
   mentionDetector: createMentionDetector(BOT_NICKNAME, [BOT_NICKNAME]),
-  commandParser: defaultCommandParser,
+  commandParser: createPrefixedCommandParser([
+    `${BOT_NICKNAME}`.toLowerCase(),
+    `${BOT_NICKNAME}`.toLowerCase() + ":",
+    `${BOT_NICKNAME}`.toLowerCase() + ",",
+    `@${BOT_NICKNAME}`.toLowerCase(),
+    `@${BOT_NICKNAME}`.toLowerCase() + ":",
+    `@${BOT_NICKNAME}`.toLowerCase() + ","
+  ]),
   allowSelfMessages: false,
   maxAgentRounds: systemConfig.maxAgentRounds,
   agentRoster,
@@ -91,9 +99,27 @@ async function start() {
   console.log(`Resource: ${XMPP_CONFIG.resource}`);
   console.log(`Room: ${MUC_ROOM}`);
   console.log(`Semem API: ${profile.sememConfig.baseUrl}`);
+  console.log(`Semem timeout: ${profile.sememConfig.timeoutMs || "default"}ms`);
+  console.log(`Semem auth token: ${profile.sememConfig.authToken ? "set" : "missing"}`);
   console.log(
     `Features: Wikipedia=${!!CHAT_FEATURES.useWikipedia}, Wikidata=${!!CHAT_FEATURES.useWikidata}, WebSearch=${!!CHAT_FEATURES.useWebSearch}`
   );
+
+  try {
+    const timeoutMs = profile.sememConfig.timeoutMs
+      ? Math.min(profile.sememConfig.timeoutMs, 4000)
+      : 4000;
+    const startupClient = new SememClient({
+      baseUrl: profile.sememConfig.baseUrl,
+      authToken: profile.sememConfig.authToken,
+      timeoutMs
+    });
+    const inspect = await startupClient.inspect({ what: "session", details: false });
+    logger.info?.(`[SememAgent] Semem inspect OK: ${JSON.stringify(inspect)}`);
+  } catch (error) {
+    logger.warn?.(`[SememAgent] Semem inspect failed: ${error.message}`);
+  }
+
   await runner.start();
 }
 
