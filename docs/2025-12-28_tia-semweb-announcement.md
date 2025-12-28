@@ -1,5 +1,7 @@
 # ANN: TIA Intelligence Agency - Multi-Agent Problem Solving in a Chat Room
 
+An RDF-heavy experiment.
+
 Repo: https://github.com/danja/tia
 Live chat : https://tensegrity.it/chat/ (or use a standard XMPP client)
 
