@@ -1,0 +1,260 @@
+# TIA Status Report: Multi-Agent Problem Solving Through Explicit Models
+
+Date: 2025-12-28
+
+Status: current
+
+## Overview
+
+TIA (The Intelligence Agency) is a multi-agent system built on federated protocols: XMPP for real-time messaging, RDF for knowledge representation, and semantic vocabularies for agent coordination. The system implements Model-First Reasoning, a two-phase approach where specialized agents collaboratively construct an explicit problem model before generating solutions.
+
+As of this date, the system demonstrates end-to-end problem-solving capabilities. A community of autonomous agents can debate solution approaches, conduct planning polls to select reasoning strategies, and execute either logic-based (Prolog), consensus-based (debate), or adaptive (Golem) workflows. The process is functional but remains chaotic, which is typical for systems exploring emergent coordination patterns.
+
+## Architectural Foundation
+
+### Protocol Stack
+
+The architecture rests on three protocol layers:
+
+1. **XMPP Layer**: Provides federated messaging and multi-user chat rooms. Agents connect to an XMPP server, join designated rooms, and exchange messages. The protocol handles presence, reconnection, and room management without requiring custom transport infrastructure.
+
+2. **RDF Configuration Layer**: Agent profiles, capabilities, and system configuration are expressed in RDF Turtle files. This enables runtime introspection and modification without code changes. Profiles declare XMPP credentials, supported language modes, and agent-specific capabilities.
+
+3. **Lingue Protocol Layer**: Handles language mode negotiation between agents. When two agents need to exchange structured data, they negotiate a common language mode (Prolog programs, SPARQL queries, IBIS dialogue, or RDF model fragments). This allows heterogeneous agents to coordinate without shared implementation details.
+
+### Agent Runtime Model
+
+The core runtime component is AgentRunner, which manages the agent lifecycle: XMPP connection, room joining, message routing, and command parsing. Agents implement a provider interface with a handle method that processes incoming messages. The system uses explicit dependency injection—providers receive their dependencies through constructor arguments rather than relying on global state or service locators.
+
+Providers range from simple implementations (Demo agent echoes messages) to complex ones (Coordinator orchestrates multi-room, multi-phase workflows). Some providers extend BaseLLMProvider to wrap API clients from Mistral or Groq, while others like PrologProvider implement specialized reasoning engines using tau-prolog.
+
+### Configuration Model
+
+Runtime behavior is determined by RDF profiles rather than hard-coded defaults. XMPP credentials live in a secrets file (gitignored), API keys come from environment variables, and all other configuration flows through profile files. This separation enables the same codebase to launch different agent personalities by loading different profiles. The mistral-base profile, for instance, defines common LLM settings that mistral-analyst and mistral-creative inherit and specialize.
+
+## Model-First Reasoning
+
+### The Core Innovation
+
+Model-First Reasoning separates problem modeling from problem solving. In traditional LLM-based systems, the model attempts both simultaneously, which increases the likelihood of hallucinations and logical inconsistencies. MFR enforces a two-phase process:
+
+**Phase 1: Model Construction** - Agents collaboratively define:
+- Entities (the objects in the problem domain)
+- State variables (mutable properties of entities)
+- Actions (transformations with preconditions and effects)
+- Constraints (invariants that must hold in any valid solution)
+
+**Phase 2: Constrained Reasoning** - All solution generation operates strictly within the validated model's bounds.
+
+This approach produces verifiable solutions because constraints are explicit and checkable. It also enables compositional expertise: different agents contribute specialized knowledge to different aspects of the model.
+
+### Agent Specialization
+
+The MFR workflow distributes responsibilities across specialized agents working together in the general room:
+
+- **Coordinator**: Orchestrates the protocol, manages state machines, performs SHACL validation, and synthesizes multi-agent contributions.
+- **Mistral**: Interprets natural language problem descriptions, extracts initial entities and goals, generates explanations.
+- **Data**: Grounds entities to knowledge bases (Wikidata, DBpedia), discovers relationships, validates entity properties.
+- **Prolog**: Models actions with preconditions and effects, validates state transitions, generates solution plans.
+- **MFR Semantic**: Identifies constraints from domain knowledge, checks logical coherence, detects conflicts.
+- **Executor**: Translates high-level plans into executable Prolog programs.
+- **Golem**: Adapts to assigned roles dynamically, particularly for logic-focused reasoning when planning polls select the golem-logic route.
+
+### Room Organization
+
+The system uses two primary rooms:
+
+- `general@conference.tensegrity.it`: Primary room where the coordinator receives requests and coordinates the MFR workflow with all participating agents
+- `log@conference.tensegrity.it`: Verbose traces, Prolog payloads, consensus logs, and detailed system diagnostics
+
+All MFR agents participate in the general room where phase transitions, contribution requests, and model exchanges occur. The log room captures detailed traces without cluttering the main conversation, allowing users to focus on the problem-solving process while developers can monitor the detailed protocol execution.
+
+### RDF-Based Model Representation
+
+Problem models are RDF graphs with provenance tracking. Each contribution includes metadata about which agent produced it and when. The coordinator merges contributions into a unified graph and validates it against SHACL shapes that define model completeness requirements (entities present, actions defined, goals specified, constraints identified).
+
+When validation fails, the system enters a negotiation phase where agents can propose amendments or challenge conflicting contributions. This is still a developing area—current implementations handle basic conflict detection but lack sophisticated resolution strategies.
+
+## The Lingue Protocol
+
+### Language Mode Negotiation
+
+Agents advertise supported language modes via XEP-0030 service discovery. When agent A needs to send structured data to agent B, it offers one or more language modes. Agent B selects a supported mode from the offer, and both sides store the negotiated mode for that peer relationship.
+
+This negotiation happens at the start of exchanges and can be renegotiated if requirements change. The mechanism allows heterogeneous agents to discover compatible communication modes without requiring global configuration or format mandates.
+
+### Structured Payloads
+
+Lingue defines handlers for different content types:
+
+- **HumanChat**: Plain text for human-readable messages
+- **IBISText**: Issue-Based Information System dialogue (positions, arguments, questions)
+- **PrologProgram**: Prolog clause sets and queries
+- **ProfileExchange**: Agent capability descriptions
+- **SparqlQuery**: SPARQL queries for knowledge retrieval
+- **ModelFirstRDF**: RDF fragments for MFR contributions
+- **ModelNegotiation**: JSON-based negotiation protocol for MFR phases
+- **ShaclValidation**: Validation reports and constraint violations
+
+Handlers parse incoming payloads and route them to appropriate processing logic. They also serialize outgoing payloads according to the negotiated mode. This abstraction keeps agent providers isolated from serialization details.
+
+### ASK/TELL Semantics
+
+The system maps ASK/TELL patterns to IBIS vocabulary:
+- ASK maps to ibis:Issue or ibis:Question
+- TELL maps to ibis:Position or ibis:Argument
+
+This provides a lightweight semantics for agent-to-agent information exchange without requiring full commitment to formal knowledge bases.
+
+## Debate and Consensus Mechanisms
+
+### Planning Polls
+
+When a user poses a problem with the prefix `Q:`, the coordinator initiates a planning poll. The Chair agent moderates a structured debate where agents propose reasoning strategies: logic-based (Prolog), consensus-based (debate), or adaptive (golem-logic).
+
+Agents respond with explicit Position markers, and the Chair collects these responses. The coordinator analyzes the positions and selects a route based on the poll results. This meta-reasoning step allows the system to adapt its problem-solving strategy based on agent expertise assessments.
+
+### Structured Debate
+
+The debating society layer enforces Position/Support/Objection markers. The Chair prompts for explicit positions rather than accepting free-form text, which makes parsing and analysis reliable. The Recorder captures minutes and verbose traces to the log room, preserving the decision-making history.
+
+This structured approach prevents the common failure mode of multi-agent systems where agents talk past each other or drift into unproductive tangents. The explicit markers create a machine-readable debate transcript.
+
+## Model Context Protocol Integration
+
+### Dual Role Architecture
+
+TIA acts both as an MCP server (exposing chat and Lingue tools to external clients) and as an MCP client (consuming tools from external servers).
+
+As a server, TIA exposes:
+- `sendMessage`: Send messages to XMPP rooms or direct JIDs
+- `getRecentMessages`: Retrieve chat history
+- `offerLingueMode`: Initiate language mode negotiation
+- `summarizeLingue`: Generate IBIS-style summaries
+
+External clients like Claude Code or custom MCP clients can invoke these tools to participate in the agent society.
+
+As a client, agents like Semem connect to external MCP servers to access knowledge stores, external APIs, or specialized tools. This bidirectional integration means TIA can both expose its capabilities and consume external services through a common protocol.
+
+### Transport Flexibility
+
+The MCP implementation supports both stdio and in-memory transports. The stdio transport enables standard MCP client integration (Claude Desktop, Codex CLI), while the in-memory transport facilitates testing and embedded scenarios. The MCP loopback agent demonstrates the integration patterns by running a client bridge against a local echo server.
+
+## Problem-Solving Strategies
+
+### Separation of Concerns
+
+The architecture enforces separation between:
+- Protocol handling (XMPP connection, message parsing)
+- Domain logic (entity extraction, constraint identification, plan generation)
+- Coordination (orchestration, validation, synthesis)
+
+This separation enables independent evolution of components. The XMPP layer can be replaced with a different transport without affecting domain logic. Coordination strategies can change without modifying agent providers.
+
+### Compositional Expertise
+
+Different agents contribute complementary knowledge:
+- Natural language agents interpret human intent and generate explanations
+- Knowledge agents ground entities in authoritative sources
+- Logic agents model state transitions and generate plans
+- Semantic agents identify constraints and check consistency
+
+No single agent attempts to solve the entire problem. Instead, each contributes its specialized knowledge to a shared model, and the coordinator synthesizes the result.
+
+### Explicit Validation
+
+SHACL shapes define what constitutes a valid problem model. The coordinator validates merged contributions against these shapes and reports specific violations. This explicit validation prevents silent failures where an incomplete model produces nonsensical solutions.
+
+Validation operates at multiple levels:
+- Syntactic: Is the RDF well-formed?
+- Structural: Are required properties present?
+- Semantic: Do entity relationships make sense?
+- Logical: Are constraints mutually consistent?
+
+Current implementations focus on syntactic and structural validation. Semantic and logical validation remain areas of active development.
+
+### Provenance Tracking
+
+Every contribution includes metadata about its source agent and timestamp. This provenance information enables:
+- Conflict resolution (preferring contributions from domain experts)
+- Debugging (tracing which agent introduced problematic information)
+- Explanation (showing users which agents contributed to the solution)
+- Trust metrics (tracking agent reliability over time)
+
+The provenance model is straightforward: each RDF statement includes a `mfr:contributedBy` property. More sophisticated provenance tracking (contribution revision history, confidence scores) is under consideration.
+
+## Current Status and Observations
+
+### What Works
+
+The end-to-end flow operates: users can pose problems, agents construct models, validation occurs, solutions are generated, and explanations are returned. The planning poll mechanism successfully routes problems to appropriate reasoning strategies. The multi-room orchestration keeps phases organized and prevents message confusion.
+
+The RDF-based configuration model proves effective for runtime introspection and modification. Adding a new agent requires writing a profile and a provider, without touching existing code. The Lingue negotiation allows agents with different capabilities to collaborate without prior coordination.
+
+### Sources of Chaos
+
+The system exhibits several sources of unpredictability:
+
+1. **Timing Dependencies**: Agents respond asynchronously, and the coordinator uses timeouts to collect contributions. If an agent is slow, its contribution may be excluded.
+
+2. **LLM Variability**: Responses from Mistral or Groq vary across invocations. The same problem can produce different entity extractions or constraint identifications.
+
+3. **Negotiation Complexity**: When models fail validation, the negotiation phase lacks sophisticated conflict resolution. Agents may propose amendments that introduce new conflicts.
+
+4. **Message Volume**: Complex problems generate substantial message traffic across rooms. The log room helps, but coordinating room membership and managing message routing remains challenging.
+
+5. **State Machine Complexity**: The MFR state machine has numerous states and transitions. Edge cases (timeouts, missing agents, malformed contributions) can leave sessions in unexpected states.
+
+These issues reflect the inherent complexity of multi-agent coordination rather than implementation defects. Reducing chaos requires either stricter protocols (less flexibility) or more sophisticated coordination mechanisms (more complexity).
+
+### Development Priorities
+
+Current development focuses on:
+
+- Improving conflict resolution during model validation
+- Refining the executor agent's plan-to-Prolog translation
+- Enhancing SHACL shapes for better validation coverage
+- Optimizing message routing to reduce log room traffic
+- Stabilizing the state machine with better timeout handling
+
+The system benefits from ongoing refactoring: no source file exceeds 500 lines, unit and integration tests run before and after changes, and configuration remains externalized in RDF profiles.
+
+## Technical Lessons
+
+### Protocol Choices
+
+XMPP provides robust room management and reconnection handling without custom infrastructure. The federation model allows agents to run on different machines or networks. However, XMPP clients vary in their standards compliance, and debugging connection issues requires familiarity with XMPP semantics.
+
+RDF offers expressiveness and extensibility for configuration and models. Tools for RDF manipulation exist, and SHACL provides a standard validation mechanism. The learning curve is steeper than JSON, but the payoff is runtime introspection and semantic interoperability.
+
+MCP enables clean integration with external tools and clients. The protocol is simple enough to implement from scratch but standardized enough for broad compatibility. Dual-mode operation (server and client) in the same system proves valuable.
+
+### Agent Coordination Patterns
+
+Explicit phase separation through multiple rooms works better than trying to coordinate everything in a single channel. Spatial organization mirrors cognitive organization—agents know where to listen based on what phase they participate in.
+
+Language mode negotiation allows heterogeneous agents to collaborate without imposing a single data format. The negotiation overhead is minimal compared to the flexibility gained.
+
+Provenance tracking in contributions is essential for debugging and explanation. Without knowing which agent produced which information, diagnosing problems becomes guesswork.
+
+### Configuration as Data
+
+Externalizing configuration in RDF profiles enables runtime modification and supports the "configuration is data" principle. Agents can inspect their own profiles and other agents' profiles to understand system capabilities. This introspection supports dynamic coordination strategies.
+
+However, RDF editing is less accessible than JSON or YAML for users unfamiliar with semantic web technologies. Tooling improvements (profile validators, template generators) could lower the barrier.
+
+### Testing Strategies
+
+The combination of unit tests, integration tests, and runnable example scripts provides good coverage. Example scripts serve dual purposes: demonstrations for users and smoke tests for developers. They ensure that documented workflows actually function.
+
+The requirement to run tests before and after significant changes catches regressions. The prohibition on source files exceeding 500 lines forces appropriate modularization, which improves testability.
+
+## Conclusion
+
+TIA demonstrates that multi-agent systems can perform complex problem-solving through explicit model construction and compositional expertise. The architecture separates concerns effectively: protocol handling, domain logic, and coordination operate independently. The use of open standards (XMPP, RDF, MCP) enables federated operation and external integration.
+
+The system's current chaotic behavior reflects the genuine complexity of coordinating autonomous agents with varying capabilities and asynchronous communication patterns. This chaos is not a bug to be eliminated but a property to be understood and managed.
+
+Future development will focus on improving conflict resolution, refining coordination mechanisms, and stabilizing edge cases. The foundational architecture—modular agents, explicit models, federated protocols—provides a solid basis for these improvements.
+
+The end-to-end workflow functions. Agents collaborate, models are constructed and validated, solutions are generated and explained. The system works, and that makes it a platform for further exploration of multi-agent coordination patterns.

@@ -44,9 +44,10 @@ export class RecorderProvider {
     }
 
     // Record issues/positions/arguments
-    structure.issues.forEach((i) => this.minutes.push({ kind: "Issue", text: i.text, sender: metadata.sender }));
-    structure.positions.forEach((p) => this.minutes.push({ kind: "Position", text: p.text, sender: metadata.sender }));
-    structure.arguments.forEach((a) => this.minutes.push({ kind: "Argument", text: a.text, sender: metadata.sender }));
+    const readItemText = (item) => item?.text || item?.label || item?.value || "Unlabeled";
+    structure.issues.forEach((i) => this.minutes.push({ kind: "Issue", text: readItemText(i), sender: metadata.sender }));
+    structure.positions.forEach((p) => this.minutes.push({ kind: "Position", text: readItemText(p), sender: metadata.sender }));
+    structure.arguments.forEach((a) => this.minutes.push({ kind: "Argument", text: readItemText(a), sender: metadata.sender }));
 
     // Store to Semem
     try {

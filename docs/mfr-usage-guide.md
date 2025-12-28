@@ -23,11 +23,8 @@ The MFR system enables collaborative problem-solving through a two-phase approac
 
 ### MUC Rooms
 
-The system uses multiple XMPP MUC rooms for phase-based communication:
-- `general@conference.tensegrity.it`: Primary room where coordinator receives requests
-- `mfr-construct@conference.tensegrity.it`: Model construction phase communication
-- `mfr-validate@conference.tensegrity.it`: Validation phase communication
-- `mfr-reason@conference.tensegrity.it`: Reasoning phase communication
+The system uses two XMPP MUC rooms:
+- `general@conference.tensegrity.it`: Primary room where coordinator receives requests and all agents collaborate
 - `log@conference.tensegrity.it`: Verbose traces, Prolog payloads, and consensus logs
 
 ## Setup
@@ -69,14 +66,7 @@ export SEMEM_AUTH_TOKEN=your_semem_token  # optional
 node src/examples/create-mfr-rooms.js
 ```
 
-Expected output:
-```
-=== Creating MFR MUC Rooms ===
-✅ Joined room: mfr-construct@conference.tensegrity.it
-✅ Joined room: mfr-validate@conference.tensegrity.it
-✅ Joined room: mfr-reason@conference.tensegrity.it
-✅ All MFR rooms created successfully!
-```
+**Note**: The system now uses only the general and log rooms. This script is no longer required.
 
 Create the log room once (if required by your XMPP server):
 ```bash
@@ -235,7 +225,7 @@ Coordinator: mfr-solve <session-id>
 ### Phase 1: Initialization
 - User sends problem to Coordinator
 - Coordinator creates session, initializes state machine
-- Broadcasts to `mfr-construct` room
+- Coordinates with agents in the general room
 
 ### Phase 2: Entity Discovery
 - Coordinator requests entity contributions
@@ -249,14 +239,14 @@ Coordinator: mfr-solve <session-id>
 - All contributions added to model
 
 ### Phase 4: Model Validation
-- Coordinator broadcasts to `mfr-validate` room
-- SHACL validation performed
+- Coordinator performs SHACL validation
 - Completeness checked (entities, actions, goals present)
 - Conflicts detected by Semem
 - If invalid, negotiation phase begins
+- Validation details sent to log room
 
 ### Phase 5: Constrained Reasoning
-- Coordinator broadcasts validated model to `mfr-reason` room
+- Coordinator requests solutions from agents in general room
 - Prolog generates solution plans
 - Semem validates solutions against constraints
 - Coordinator ranks solutions
