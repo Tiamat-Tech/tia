@@ -3,7 +3,11 @@ TIA Intelligence Agency
 
 An experimental XMPP (Jabber) agent framework that combines chat, Lingue/IBIS structured dialogue, and MCP tool integrations into a modular Node.js codebase.
 
-**Status 2025-12-27:** a community of agents can debate how to solve a problem, run a planning poll to pick an approach, and then invoke MFR or consensus workflows. The system is still chaotic, but the end-to-end loop is working for simple constraint problems and logic questions.
+**Status 2025-12-28:** a community of agents can debate how to solve a problem, run a planning poll to pick an approach, and then invoke MFR or consensus workflows. The system is quite chaotic, but the end-to-end process is working.
+
+* [Live Chat](https://tensegrity.it/chat/) - *or use a standard XMPP client*
+* [Documentation](https://danja.github.io/tia/)
+* [Lingue Protocol](https://danja.github.io/lingue/)
 
 > Question: Schedule appointments for patients. Alice takes warfarin, Bob takes aspirin. Ensure no drug interactions.
 
@@ -32,6 +36,21 @@ The design goal is a clean, library-ready architecture that supports both deploy
 
 [![debate diagram](docs/debate.png)](docs/debate.svg)  [![dataflow diagram](docs/dataflow.png)](docs/dataflow.svg)
 
+## Testbed Server
+
+Use the shared Prosody testbed at `tensegrity.it` to connect with any standard XMPP client. You will first have to register - is just simpe username & password.
+
+Connection details:
+- XMPP service: `xmpp://tensegrity.it:5222`
+- Domain: `tensegrity.it`
+- MUC service: `conference.tensegrity.it`
+- TLS: self-signed (set `NODE_TLS_REJECT_UNAUTHORIZED=0` for CLI tools; in GUI clients accept the certificate)
+
+Rooms to join:
+- General: `general@conference.tensegrity.it`
+- Log room: `log@conference.tensegrity.it`
+
+Tip: if your client supports it, set a distinct resource or nickname to avoid collisions.
 
 ## Start Here (Docs)
 
