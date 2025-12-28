@@ -1,5 +1,7 @@
 # MFR Debate Integration: Agent Requirements & Backward Compatibility
 
+Status: maintained; review after major changes.
+
 ## Executive Summary
 
 This document analyzes the capabilities needed to add debate-driven tool selection to MFR, ensuring **zero breaking changes** to the existing system. The debate phase is **configurable** and enabled by default in `config/agents/coordinator.ttl`.

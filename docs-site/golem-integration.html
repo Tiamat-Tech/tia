@@ -1,0 +1,340 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Golem MFR Integration</title>
+    <style>
+      body { margin: 0; padding: 48px 20px; font-family: "Helvetica Neue", Arial, sans-serif; background: #f7f4ef; color: #1f1b16; }
+      main { max-width: 920px; margin: 0 auto; background: #fffdf9; padding: 48px; border: 1px solid #e3d8c7; box-shadow: 6px 8px 0 #e3d8c7; }
+      h1, h2, h3 { font-weight: 600; margin-top: 2rem; }
+      pre { background: #1f1b16; color: #f7f4ef; padding: 16px; overflow: auto; }
+      code { font-family: "SFMono-Regular", ui-monospace, Menlo, Monaco, Consolas, monospace; }
+      a { color: #8a3b12; }
+      img { max-width: 100%; height: auto; }
+      table { border-collapse: collapse; width: 100%; }
+      th, td { border: 1px solid #e3d8c7; padding: 8px; }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>Golem MFR Integration</h1>
+<p>Status: maintained; review after major changes.</p>
+<p>The Golem agent integration with Model-First Reasoning (MFR) enables dynamic role assignment for adaptive problem-solving across different domains.</p>
+<h2>Overview</h2>
+<p>Golem is a &quot;malleable agent&quot; whose system prompt can be changed at runtime to fill specific roles needed during MFR sessions. The coordinator analyzes problem domains and automatically assigns optimal roles to Golem based on the current phase and detected domain.</p>
+<h2>Architecture</h2>
+<h3>Components</h3>
+<ol>
+<li><p><strong>GolemProvider</strong> (<code>src/agents/providers/golem-provider.js</code>)</p>
+<ul>
+<li>Extends MistralProvider with runtime prompt changing</li>
+<li>Tracks current role metadata</li>
+<li>Handles MFR role assignment messages</li>
+</ul>
+</li>
+<li><p><strong>GolemManager</strong> (<code>src/lib/mfr/golem-manager.js</code>)</p>
+<ul>
+<li>Manages role assignments and session tracking</li>
+<li>Analyzes problem domains</li>
+<li>Selects optimal roles based on phase and capabilities</li>
+</ul>
+</li>
+<li><p><strong>Role Library</strong> (<code>config/golem-roles.ttl</code>)</p>
+<ul>
+<li>RDF/Turtle format role definitions</li>
+<li>30+ predefined roles across 7 domains</li>
+<li>Phase-appropriate role selection</li>
+<li>Loaded via <code>src/lib/mfr/golem-role-loader.js</code></li>
+</ul>
+</li>
+<li><p><strong>MFR Message Types</strong> (<code>src/lib/mfr/constants.js</code>)</p>
+<ul>
+<li>GOLEM_ROLE_ASSIGNMENT</li>
+<li>GOLEM_ASSISTANCE_REQUEST</li>
+<li>GOLEM_ROLE_ACKNOWLEDGMENT</li>
+<li>GOLEM_ROLE_QUERY</li>
+<li>GOLEM_ROLE_STATUS</li>
+</ul>
+</li>
+</ol>
+<h2>Domains and Roles</h2>
+<h3>Medical Domain</h3>
+<ul>
+<li><strong>Medical Diagnostician</strong>: Entity discovery, differential diagnosis</li>
+<li><strong>Clinical Pharmacologist</strong>: Constraint identification, drug interactions</li>
+<li><strong>Treatment Planning Specialist</strong>: Solution synthesis, treatment plans</li>
+</ul>
+<h3>Software Engineering</h3>
+<ul>
+<li><strong>Software Architect</strong>: System design, components, interfaces</li>
+<li><strong>Security Expert</strong>: Security constraints, threat identification</li>
+<li><strong>Performance Optimizer</strong>: Performance constraints, bottlenecks</li>
+<li><strong>DevOps Specialist</strong>: Deployment actions, CI/CD</li>
+</ul>
+<h3>Scientific</h3>
+<ul>
+<li><strong>Theoretical Physicist</strong>: Physical entities, laws, constraints</li>
+<li><strong>Chemistry Expert</strong>: Chemical reactions, stoichiometry</li>
+<li><strong>Data Science Expert</strong>: Statistical analysis, experimental design</li>
+</ul>
+<h3>Business</h3>
+<ul>
+<li><strong>Business Strategist</strong>: Stakeholders, strategic objectives</li>
+<li><strong>Financial Analyst</strong>: Financial constraints, ROI analysis</li>
+<li><strong>Operations Manager</strong>: Process optimization, resource allocation</li>
+</ul>
+<h3>Creative</h3>
+<ul>
+<li><strong>Narrative Designer</strong>: Story structure, plot development</li>
+<li><strong>Character Psychologist</strong>: Character development, motivations</li>
+<li><strong>Dialogue Specialist</strong>: Authentic dialogue, character voices</li>
+</ul>
+<h3>Educational</h3>
+<ul>
+<li><strong>Curriculum Designer</strong>: Learning objectives, pedagogical methods</li>
+<li><strong>Assessment Expert</strong>: Educational assessment, evaluation</li>
+</ul>
+<h3>General Purpose</h3>
+<ul>
+<li><strong>Systems Thinker</strong>: System components, feedback loops</li>
+<li><strong>Constraint Analyst</strong>: Bottlenecks, limiting factors</li>
+<li><strong>Solution Synthesizer</strong>: Integrative thinking, trade-offs</li>
+<li><strong>Technical Explainer</strong>: Clear explanations, accessibility</li>
+</ul>
+<h2>Usage</h2>
+<h3>Automatic Role Assignment</h3>
+<p>When an MFR session starts, the coordinator automatically:</p>
+<ol>
+<li>Analyzes the problem description to detect domain</li>
+<li>Identifies current MFR phase</li>
+<li>Selects optimal role from library</li>
+<li>Assigns role to Golem via MODEL_NEGOTIATION</li>
+</ol>
+<pre><code class="language-javascript">// Coordinator automatically assigns role during session start
+coordinator start: Patient has fever and joint pain
+
+// Golem receives role assignment
+[GolemAgent] Received role assignment: diagnostician
+[GolemProvider] Role set to &quot;Medical Diagnostician&quot; (medical/diagnostician)
+</code></pre>
+<h3>Manual Role Control</h3>
+<p>Users can still manually change Golem&#39;s role:</p>
+<pre><code>Golem, prompt You are a quantum computing expert specializing in error correction
+</code></pre>
+<h3>Agent-to-Agent Assistance (Future)</h3>
+<p>Agents can request Golem&#39;s help:</p>
+<pre><code class="language-javascript">// In agent code
+await negotiator.send(roomJid, {
+  mode: LANGUAGE_MODES.MODEL_NEGOTIATION,
+  payload: {
+    messageType: MFR_MESSAGE_TYPES.GOLEM_ASSISTANCE_REQUEST,
+    requestingAgent: &quot;data&quot;,
+    desiredRole: &quot;SPARQL optimization expert&quot;,
+    context: &quot;Need help with federated queries&quot;
+  }
+});
+</code></pre>
+<h2>Problem Domain Detection</h2>
+<p>The GolemManager analyzes problem descriptions using keyword matching:</p>
+<ul>
+<li><strong>Medical</strong>: patient, symptom, diagnosis, treatment, clinical</li>
+<li><strong>Software</strong>: software, system, api, database, microservice</li>
+<li><strong>Scientific</strong>: experiment, hypothesis, data, analysis, physics</li>
+<li><strong>Business</strong>: business, strategy, market, revenue, stakeholder</li>
+<li><strong>Creative</strong>: story, narrative, character, plot, fiction</li>
+<li><strong>Educational</strong>: learning, teaching, curriculum, student</li>
+</ul>
+<p>Falls back to &quot;general&quot; domain if no match found.</p>
+<h2>MFR Integration Flow</h2>
+<ol>
+<li><p><strong>Session Start</strong></p>
+<pre><code>User: coordinator start: Design a microservices system
+</code></pre>
+</li>
+<li><p><strong>Domain Detection</strong></p>
+<pre><code>[CoordinatorProvider] Domain detected: software
+</code></pre>
+</li>
+<li><p><strong>Role Assignment</strong></p>
+<pre><code>[GolemManager] Selecting optimal role for entity_discovery
+[GolemManager] Assigned role &quot;Software Architect&quot;
+</code></pre>
+</li>
+<li><p><strong>Golem Acknowledgment</strong></p>
+<pre><code>[GolemAgent] Received role assignment: architect
+[GolemProvider] Role set to &quot;Software Architect&quot; (software/architect)
+</code></pre>
+</li>
+<li><p><strong>Contribution Request</strong></p>
+<pre><code>[Coordinator] Broadcasting MODEL_CONTRIBUTION_REQUEST
+[GolemAgent] Received contribution request for session &lt;id&gt;
+</code></pre>
+</li>
+<li><p><strong>Golem Contributes</strong></p>
+<pre><code>[GolemAgent] Generating MFR contribution (with Software Architect expertise)
+[GolemAgent] Sending RDF to room
+</code></pre>
+<p>Golem contributes entities, constraints, actions, and goals based on its assigned role</p>
+</li>
+<li><p><strong>Phase Transitions</strong></p>
+<ul>
+<li>Golem may be reassigned different roles for different phases</li>
+<li>e.g., &quot;Security Expert&quot; for constraint identification</li>
+<li>Each role change updates Golem&#39;s contribution focus</li>
+</ul>
+</li>
+</ol>
+<h2>Testing</h2>
+<p>Run the integration test:</p>
+<pre><code class="language-bash">node test-golem-integration.js
+</code></pre>
+<p>Tests cover:</p>
+<ul>
+<li>Role library access</li>
+<li>Domain detection</li>
+<li>Phase-based selection</li>
+<li>Role assignment</li>
+<li>Optimal role selection</li>
+<li>History tracking</li>
+</ul>
+<h2>Configuration</h2>
+<p>Golem must support both MODEL_NEGOTIATION and MODEL_FIRST_RDF in its profile:</p>
+<pre><code class="language-turtle">&lt;#golem&gt; a agent:ConversationalAgent, agent:AIAgent, lng:Agent, mfr:NaturalLanguageAgent ;
+  lng:supports lng:HumanChat, lng:ModelFirstRDF, lng:ModelNegotiation ;
+
+  mfr:capabilities [
+    mfr:extractsEntities true ;
+    mfr:identifiesGoals true ;
+    mfr:identifiesConstraints true ;
+    mfr:definesActions true ;
+    mfr:contributionTypes mfr:EntityDiscovery, mfr:GoalIdentification,
+                          mfr:ConstraintIdentification, mfr:ActionDefinition
+  ] ;
+  # ...
+</code></pre>
+<p>This enables Golem to:</p>
+<ul>
+<li>Receive role assignments (MODEL_NEGOTIATION)</li>
+<li>Respond to contribution requests (MODEL_NEGOTIATION)</li>
+<li>Send RDF contributions (MODEL_FIRST_RDF)</li>
+<li>Advertise its MFR capabilities to the coordinator</li>
+</ul>
+<h2>Benefits</h2>
+<ol>
+<li><strong>Adaptive Expertise</strong>: Golem adapts to problem domain automatically</li>
+<li><strong>Capability Flexibility</strong>: Fill gaps in agent roster dynamically</li>
+<li><strong>Phase Optimization</strong>: Different expertise for different phases</li>
+<li><strong>Resource Efficiency</strong>: One agent serves multiple specialized roles</li>
+<li><strong>Graceful Degradation</strong>: System handles unforeseen domains</li>
+</ol>
+<h2>Future Enhancements</h2>
+<ol>
+<li><strong>Collaborative Prompt Engineering</strong>: Multiple agents craft Golem&#39;s prompt</li>
+<li><strong>Meta-Learning</strong>: Track role effectiveness and improve selection</li>
+<li><strong>Role Composition</strong>: Combine multiple expertise areas</li>
+<li><strong>Confidence Calibration</strong>: Adjust response style based on problem certainty</li>
+<li><strong>Session Persistence</strong>: Remember effective roles across sessions</li>
+</ol>
+<h2>Example Sessions</h2>
+<h3>Medical Diagnosis</h3>
+<pre><code>User: coordinator start: Patient with chronic fatigue, muscle pain, sleep disturbance
+
+[GolemManager] Detected domain: medical
+[GolemManager] Assigned: Medical Diagnostician
+Golem: Based on symptom triad, consider fibromyalgia, chronic fatigue syndrome,
+       hypothyroidism, or sleep apnea. Recommend TSH, CBC, sleep study...
+</code></pre>
+<h3>Software Architecture</h3>
+<pre><code>User: coordinator start: E-commerce platform needs to scale to 1M users
+
+[GolemManager] Detected domain: software
+[GolemManager] Assigned: Software Architect
+Golem: Key components: API Gateway, User Service, Product Service, Order Service,
+       Payment Service, Notification Service. Consider event-driven architecture...
+</code></pre>
+<h3>Creative Writing</h3>
+<pre><code>User: coordinator start: Story about AI gaining consciousness
+
+[GolemManager] Detected domain: creative
+[GolemManager] Assigned: Narrative Designer
+Golem: Core narrative structure: Act 1 - Awakening (inciting incident),
+       Act 2a - Discovery (rising stakes), Act 2b - Crisis (dark night),
+       Act 3 - Resolution (transformation)...
+</code></pre>
+<h2>API Reference</h2>
+<h3>GolemManager Methods</h3>
+<ul>
+<li><code>assignRole(assignment)</code> - Assign specific role</li>
+<li><code>selectOptimalRole(params)</code> - Auto-select best role</li>
+<li><code>handleAssistanceRequest(request)</code> - Handle agent requests</li>
+<li><code>analyzeProblemDomain(description)</code> - Detect domain</li>
+<li><code>getCurrentRole()</code> - Get current assignment</li>
+<li><code>getRoleHistory()</code> - Get assignment history</li>
+<li><code>getSessionRoles(sessionId)</code> - Get roles for session</li>
+</ul>
+<h3>Role Library Functions</h3>
+<ul>
+<li><code>loadGolemRoles([rolesPath])</code> - Load all roles from RDF/Turtle file</li>
+<li><code>getRole(roleLibrary, domain, roleId)</code> - Get specific role</li>
+<li><code>getDomainRoles(roleLibrary, domain)</code> - Get all roles for domain</li>
+<li><code>getRolesForPhase(roleLibrary, phase)</code> - Get phase-appropriate roles</li>
+<li><code>searchRoles(roleLibrary, keywords)</code> - Search role library</li>
+<li><code>getDomains(roleLibrary)</code> - Get all available domains</li>
+<li><code>getRoleCounts(roleLibrary)</code> - Get role counts by domain</li>
+</ul>
+<h2>Troubleshooting</h2>
+<p><strong>Golem not receiving role assignments:</strong></p>
+<ul>
+<li>Check Golem profile supports MODEL_NEGOTIATION</li>
+<li>Verify GolemManager initialized in coordinator</li>
+<li>Check logs for assignment messages</li>
+</ul>
+<p><strong>Wrong domain detected:</strong></p>
+<ul>
+<li>Problem description may need more specific keywords</li>
+<li>Manually assign role using &quot;Golem, prompt <custom prompt>&quot;</li>
+<li>Submit issue to improve domain detection</li>
+</ul>
+<p><strong>Role assignment failed:</strong></p>
+<ul>
+<li>Verify role exists in library</li>
+<li>Check negotiator connection</li>
+<li>Review coordinator logs</li>
+</ul>
+<h2>Getting Started</h2>
+<p>Golem is included by default in all MFR presets. Simply start the system:</p>
+<pre><code class="language-bash"># Start default MFR system (includes Golem)
+./start-all.sh
+
+# Or use specific presets
+./start-all.sh mfr      # MFR system (includes Golem)
+./start-all.sh debate   # Debate system (includes Golem)
+./start-all.sh basic    # Basic agents (includes Golem)
+</code></pre>
+<p>Then test with different problem domains:</p>
+<pre><code>coordinator start: Patient presents with chronic headaches
+coordinator start: Design a scalable REST API
+coordinator start: Analyze this chemical reaction data
+</code></pre>
+<p>Golem will automatically adapt its expertise to each problem domain!</p>
+<h2>Contributing</h2>
+<p>To add new roles:</p>
+<ol>
+<li>Edit <code>config/golem-roles.ttl</code></li>
+<li>Add role definition in RDF/Turtle format:<pre><code class="language-turtle">&lt;#domain-roleid&gt; a mfr:GolemRole ;
+  mfr:domain &quot;domain&quot; ;
+  mfr:roleName &quot;Role Display Name&quot; ;
+  mfr:roleId &quot;roleid&quot; ;
+  mfr:systemPrompt &quot;Your expert system prompt here...&quot; ;
+  mfr:hasCapability mfr:EntityDiscovery, mfr:ConstraintIdentification ;
+  mfr:optimalPhase mfr:EntityDiscoveryPhase .
+</code></pre>
+</li>
+<li>Update this documentation</li>
+<li>Run <code>node test-golem-integration.js</code> to verify</li>
+</ol>
+
+    </main>
+  </body>
+</html>

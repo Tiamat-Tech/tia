@@ -1,5 +1,7 @@
 # XMPP Auto-Connect & Registration
 
+Status: maintained; review after major changes.
+
 TIA provides automatic credential loading and connection management for agents. When an agent attempts to connect, it automatically loads credentials from `config/agents/secrets.json`, making deployment and configuration simpler.
 
 ## Features

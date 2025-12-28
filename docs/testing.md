@@ -1,5 +1,7 @@
 # Testing Guide
 
+Status: maintained; review after major changes.
+
 This repository has two layers of tests:
 - **Node unit tests** (fast, offline): `npm test`
 - **Live XMPP integration tests** (exercise XMPP MUC and optional bots): `npm run test:integration`
@@ -15,6 +17,7 @@ NODE_TLS_REJECT_UNAUTHORIZED=0          # only if your XMPP TLS is self-signed
 XMPP_SERVICE=xmpp://tensegrity.it:5222  # or xmpps://... if TLS-only
 XMPP_DOMAIN=tensegrity.it
 MUC_ROOM=general@conference.tensegrity.it
+LOG_ROOM_JID=log@conference.tensegrity.it
 TEST_XMPP_ACCOUNT=integration-test      # key in config/agents/secrets.json
 XMPP_RESOURCE=SememTest                 # optional: set XMPP resource; defaults to bot nickname
 

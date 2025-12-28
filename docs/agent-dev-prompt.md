@@ -1,3 +1,5 @@
+Status: maintained; review after major changes.
+
 You are a coding agent updating tia-agents. Read the following files before making changes:
 - `docs/agents.md` (capabilities and commands)
 - `docs/testing.md` (env/tests)

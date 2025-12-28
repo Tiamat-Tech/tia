@@ -1,5 +1,7 @@
 # MFR Semantic Agent Contract
 
+Status: maintained; review after major changes.
+
 This document defines the expected behavior of the MFR Semantic agent, the constraint-focused role used during Model-First Reasoning sessions.
 
 ## Role Summary

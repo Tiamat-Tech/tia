@@ -3,7 +3,7 @@ TIA Intelligence Agency
 
 An experimental XMPP (Jabber) agent framework that combines chat, Lingue/IBIS structured dialogue, and MCP tool integrations into a modular Node.js codebase.
 
-**Status 2025-12-25 :** a community of agents can debate how to solve a problem and nominate a set of agents which together may be able to solve it. These agents then proceed to make a plan and implement it. Right now it's all very chaotic and only simple contraint problems can be solved, but it's very much acheived **proof of concept**.
+**Status 2025-12-27:** a community of agents can debate how to solve a problem, run a planning poll to pick an approach, and then invoke MFR or consensus workflows. The system is still chaotic, but the end-to-end loop is working for simple constraint problems and logic questions.
 
 > Question: Schedule appointments for patients. Alice takes warfarin, Bob takes aspirin. Ensure no drug interactions.
 
@@ -36,6 +36,7 @@ The design goal is a clean, library-ready architecture that supports both deploy
 ## Start Here (Docs)
 
 - [Agent Startup Guide](AGENT_STARTUP_GUIDE.md) - **Start here!** Unified script for starting agents
+- [Agent roster](docs/agent-roster.md)
 - [Agent capabilities & commands](docs/agents.md)
 - [Golem Integration](docs/golem-integration.md) - Adaptive role-playing agent for MFR sessions
 - [Data Agent guide](docs/data-agent.md) - SPARQL knowledge queries (Wikidata, DBpedia, custom endpoints)
@@ -63,9 +64,9 @@ The design goal is a clean, library-ready architecture that supports both deploy
 ## Implemented Agents
 
 - **Coordinator** — MFR (Model-First Reasoning) orchestrator for multi-agent problem solving.
-- **Mistral** — AI chat agent backed by Mistral API with Lingue/IBIS summaries.
+- **Mistral** — AI chat agent backed by Mistral API with Lingue/IBIS summaries (see `mistral-analyst`, `mistral-creative` profiles).
 - **GroqBot** — AI chat agent backed by Groq API (llama-3.3-70b-versatile) with same capabilities as Mistral.
-- **Golem** — Malleable AI agent with runtime system prompt changes. Automatically adapts to problem domains during MFR sessions. [Guide](docs/golem-integration.md)
+- **Golem** — Malleable AI agent with runtime system prompt changes. Can be assigned logic-focused roles during planning. [Guide](docs/golem-integration.md)
 - **Semem** — MCP-backed knowledge agent for `tell/ask/augment` flows.
 - **MFR Semantic** — Constraint-focused agent for MFR model construction.
 - **Data** — SPARQL knowledge query agent for Wikidata, DBpedia, and custom endpoints. [Guide](docs/data-agent.md)
@@ -104,7 +105,7 @@ AGENTS=mistral,data,prolog ./start-all.sh
 1. Configure `.env` file with API keys (see `.env.example`)
 2. Create `config/agents/secrets.json` with XMPP passwords
 3. For MFR system: Configure Prosody MUC rooms (see [MFR Room Setup](MFR_ROOM_SETUP.md))
-4. Optional: set `LOG_ROOM_JID` to override the default log room for verbose payloads
+4. Ensure a log room exists (set `LOG_ROOM_JID` explicitly for all agents and create it on the server)
 
 **Agent Presets:**
 - `mfr` - MFR system (full suite): coordinator, mistral, analyst, creative, chair, recorder, mfr-semantic, data, prolog, demo
@@ -156,7 +157,7 @@ mfr-list
 help
 ```
 
-Debate mode is enabled by default in `config/agents/coordinator.ttl`.
+Debate mode is enabled by default in `config/agents/coordinator.ttl`. `Q:` triggers a planning poll to decide between logic/consensus/Golem logic routes.
 
 **Short command versions:**
 - `start` instead of `mfr-start`

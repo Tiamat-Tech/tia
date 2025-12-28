@@ -19,6 +19,7 @@
   <body>
     <main>
       <h1>TIA Documentation</h1>
+<p>Status: maintained; review after major changes.</p>
 <p><strong>TIA (The Intelligence Agency)</strong> is an experimental multi-agent system built on open standards: XMPP for messaging, RDF for knowledge representation, and semantic protocols for inter-agent coordination. The system implements Model-First Reasoning (MFR), where specialized agents collaboratively construct explicit problem models before generating solutions.</p>
 <p><strong>Key features:</strong></p>
 <ul>
@@ -28,6 +29,8 @@
 <li>🌐 XMPP/Jabber for federated, real-time communication</li>
 <li>🔧 Model Context Protocol (MCP) integration</li>
 <li>✅ Constraint-based reasoning with verifiable solutions</li>
+<li>🧭 Planning polls that route questions to logic, consensus, or adaptive roles</li>
+<li>🧾 Verbose traces sent to a dedicated log room</li>
 </ul>
 <p><strong>Quick links:</strong></p>
 <ul>
@@ -38,84 +41,78 @@
 <hr>
 <h2>🚀 Getting Started</h2>
 <ul>
-<li><strong><a href="2025-12-24_tia-progress.html">Progress Report (Dec 24, 2025)</a></strong> - Latest status and complete system walkthrough</li>
-<li><strong><a href="quick-start.html">Quick Start Guide</a></strong> - Get up and running with TIA agents</li>
-<li><strong><a href="mfr-quick-start.html">MFR Quick Start</a></strong> - Model-First Reasoning system setup</li>
-<li><strong><a href="agents.html">Agent Overview</a></strong> - Capabilities and commands for each agent</li>
-<li><strong><a href="architecture.html">System Architecture</a></strong> - Agent runtime, profiles, and DI overview</li>
+<li><strong><a href="quick-start.md">Quick Start Guide</a></strong> - Get up and running with TIA agents</li>
+<li><strong><a href="mfr-quick-start.md">MFR Quick Start</a></strong> - Model-First Reasoning system setup</li>
+<li><strong><a href="agent-roster.md">Agent Roster</a></strong> - All agent profiles at a glance</li>
+<li><strong><a href="agents.md">Agent Overview</a></strong> - Capabilities and commands for each agent</li>
+<li><strong><a href="architecture.md">System Architecture</a></strong> - Agent runtime, profiles, and DI overview</li>
+<li><strong><a href="log-room-migration.md">Log Room Notes</a></strong> - How verbose traces are handled</li>
 </ul>
 <h2>🏗️ Model-First Reasoning (MFR)</h2>
 <p>The core innovation of TIA: explicit model construction before reasoning.</p>
 <h3>Core Documentation</h3>
 <ul>
-<li><strong><a href="mfr-architecture-overview.html">MFR Architecture Overview</a></strong> - Four-phase problem solving workflow</li>
-<li><strong><a href="mfr-usage-guide.html">MFR Usage Guide</a></strong> - Practical guide to using MFR</li>
-<li><strong><a href="mfr-api-reference.html">MFR API Reference</a></strong> - Complete API documentation</li>
-<li><strong><a href="mfr-agent-contracts.html">MFR Agent Contracts</a></strong> - Expected agent behaviors</li>
+<li><strong><a href="mfr-architecture-overview.md">MFR Architecture Overview</a></strong> - Four-phase problem solving workflow</li>
+<li><strong><a href="mfr-usage-guide.md">MFR Usage Guide</a></strong> - Practical guide to using MFR</li>
+<li><strong><a href="mfr-api-reference.md">MFR API Reference</a></strong> - Complete API documentation</li>
+<li><strong><a href="mfr-agent-contracts.md">MFR Agent Contracts</a></strong> - Expected agent behaviors</li>
 </ul>
 <h3>Agent Contracts</h3>
 <p>Individual specifications for each MFR agent:</p>
 <ul>
-<li><strong><a href="coordinator-agent-contract.html">Coordinator Agent</a></strong> - Orchestrates the MFR protocol</li>
-<li><strong><a href="data-agent-contract.html">Data Agent</a></strong> - Wikidata/DBpedia knowledge grounding</li>
-<li><strong><a href="mistral-agent-contract.html">Mistral Agent</a></strong> - NLP entity extraction and explanation</li>
-<li><strong><a href="prolog-agent-contract.html">Prolog Agent</a></strong> - Logical reasoning and plan generation</li>
-<li><strong><a href="mfr-semantic-agent-contract.html">MFR Semantic Agent</a></strong> - Constraint identification</li>
-<li><strong><a href="semem-agent-contract.html">Semem Agent</a></strong> - Knowledge base integration</li>
+<li><strong><a href="coordinator-agent-contract.md">Coordinator Agent</a></strong> - Orchestrates the MFR protocol</li>
+<li><strong><a href="data-agent-contract.md">Data Agent</a></strong> - Wikidata/DBpedia knowledge grounding</li>
+<li><strong><a href="mistral-agent-contract.md">Mistral Agent</a></strong> - NLP entity extraction and explanation</li>
+<li><strong><a href="prolog-agent-contract.md">Prolog Agent</a></strong> - Logical reasoning and plan generation</li>
+<li><strong><a href="mfr-semantic-agent-contract.md">MFR Semantic Agent</a></strong> - Constraint identification</li>
+<li><strong><a href="semem-agent-contract.md">Semem Agent</a></strong> - Knowledge base integration</li>
 </ul>
 <h3>Testing &amp; Room Setup</h3>
 <ul>
-<li><strong><a href="mfr-room-creation-testing.html">MFR Room Creation &amp; Testing</a></strong> - Prosody MUC configuration</li>
+<li><strong><a href="mfr-room-creation-testing.md">MFR Room Creation &amp; Testing</a></strong> - Prosody MUC configuration</li>
 </ul>
 <h3>Experimental Features</h3>
 <ul>
-<li><strong><a href="mfr-debate-integration.html">MFR Debate Integration</a></strong> ✅ - Tool selection through structured dialogue (Phase 1 complete, enabled by default in <code>config/agents/coordinator.ttl</code>)</li>
-<li><strong><a href="mfr-debate-agent-requirements.html">MFR Debate Requirements</a></strong> - Implementation requirements ensuring zero breaking changes</li>
+<li><strong><a href="mfr-debate-integration.md">MFR Debate Integration</a></strong> ✅ - Tool selection through structured dialogue (Phase 1 complete, enabled by default in <code>config/agents/coordinator.ttl</code>)</li>
+<li><strong><a href="mfr-debate-agent-requirements.md">MFR Debate Requirements</a></strong> - Implementation requirements ensuring zero breaking changes</li>
 </ul>
 <h2>🔌 Integration Protocols</h2>
 <h3>Lingue Protocol</h3>
 <p>Language mode negotiation for multi-agent communication:</p>
 <ul>
-<li><strong><a href="lingue-integration.html">Lingue Integration</a></strong> - How agents negotiate communication modes</li>
-<li><strong><a href="ibis.html">IBIS Structured Dialogue</a></strong> - Issue-Based Information System vocabulary</li>
-<li><strong><a href="LINGUE-PLAN.html">Lingue Development Plan</a></strong> - Protocol development roadmap</li>
+<li><strong><a href="lingue-integration.md">Lingue Integration</a></strong> - How agents negotiate communication modes</li>
+<li><strong><a href="ibis.md">IBIS Structured Dialogue</a></strong> - Issue-Based Information System vocabulary</li>
+<li><strong><a href="LINGUE-PLAN.md">Lingue Development Plan</a></strong> - Protocol development roadmap</li>
 </ul>
 <h3>Model Context Protocol (MCP)</h3>
 <p>Integration with external tools and services:</p>
 <ul>
-<li><strong><a href="mcp.html">MCP Overview</a></strong> - Model Context Protocol introduction</li>
-<li><strong><a href="mcp-server.html">MCP Server Guide</a></strong> - Exposing TIA as an MCP server</li>
-<li><strong><a href="mcp-client.html">MCP Client Guide</a></strong> - Consuming external MCP services</li>
-<li><strong><a href="MCP-PLAN.html">MCP Development Plan</a></strong> - MCP integration roadmap</li>
+<li><strong><a href="mcp.md">MCP Overview</a></strong> - Model Context Protocol introduction</li>
+<li><strong><a href="mcp-server.md">MCP Server Guide</a></strong> - Exposing TIA as an MCP server</li>
+<li><strong><a href="mcp-client.md">MCP Client Guide</a></strong> - Consuming external MCP services</li>
+<li><strong><a href="MCP-PLAN.md">MCP Development Plan</a></strong> - MCP integration roadmap</li>
 </ul>
 <h2>🛠️ Development &amp; Customization</h2>
 <ul>
-<li><strong><a href="agent-dev-prompt.html">Agent Development Guide</a></strong> - Creating new agents</li>
-<li><strong><a href="provider-guide.html">Provider Guide</a></strong> - Building custom agent providers</li>
-<li><strong><a href="api-reference.html">API Reference</a></strong> - Core API documentation</li>
-<li><strong><a href="auto-registration.html">Auto-Registration</a></strong> - Automatic credential management</li>
-<li><strong><a href="testing.html">Testing Guide</a></strong> - Running tests and validation</li>
+<li><strong><a href="agent-dev-prompt.md">Agent Development Guide</a></strong> - Creating new agents</li>
+<li><strong><a href="provider-guide.md">Provider Guide</a></strong> - Building custom agent providers</li>
+<li><strong><a href="api-reference.md">API Reference</a></strong> - Core API documentation</li>
+<li><strong><a href="auto-registration.md">Auto-Registration</a></strong> - Automatic credential management</li>
+<li><strong><a href="testing.md">Testing Guide</a></strong> - Running tests and validation</li>
 </ul>
 <h2>📚 Specialized Topics</h2>
 <ul>
-<li><strong><a href="data-agent.html">Data Agent Deep Dive</a></strong> - SPARQL queries, Wikidata integration</li>
-<li><strong><a href="debating-society.html">Debating Society</a></strong> - Chair, Recorder, and structured debates</li>
-<li><strong><a href="server.html">Server Deployment</a></strong> - Production deployment considerations</li>
-<li><strong><a href="tbox-note.html">TBox Note</a></strong> - Ontology design notes</li>
+<li><strong><a href="data-agent.md">Data Agent Deep Dive</a></strong> - SPARQL queries, Wikidata integration</li>
+<li><strong><a href="debating-society.md">Debating Society</a></strong> - Chair, Recorder, and structured debates</li>
+<li><strong><a href="server.md">Server Deployment</a></strong> - Production deployment considerations</li>
+<li><strong><a href="tbox-note.md">TBox Note</a></strong> - Ontology design notes</li>
 </ul>
 <h2>📝 Blog Posts &amp; Updates</h2>
-<ul>
-<li><strong><a href="2025-12-24_tia-progress.html">December 24, 2025 - TIA Progress</a></strong> - Complete system overview</li>
-<li><strong><a href="2025-12-21_tia-blog.html">December 21, 2025 - TIA Blog</a></strong> - MFR implementation update</li>
-<li><strong><a href="2025-12-21.html">December 21, 2025 - Notes</a></strong> - Development notes</li>
-<li><strong><a href="2024-09.html">September 2024 - Early Notes</a></strong> - Initial project notes</li>
-</ul>
+<p>Archived updates live in <code>docs/archive/</code> (see Archive section).</p>
 <h2>🔧 Internal Documentation</h2>
 <p>Planning documents and development notes:</p>
 <ul>
-<li><strong><a href="TEMPLATE-PLAN.html">Template Plan</a></strong> - Planning template for new features</li>
-<li><strong><a href="notes.html">Development Notes</a></strong> - Ongoing development notes</li>
-<li><strong><a href="temp.html">Temporary Notes</a></strong> - Scratch notes and ideas</li>
+<li>Internal planning notes were moved to the archive.</li>
 </ul>
 <hr>
 <h2>Documentation Organization</h2>
@@ -132,6 +129,18 @@
 <p>TIA is open source and welcomes contributions. See the <a href="https://github.com/danja/tia">GitHub repository</a> for issues, pull requests, and development discussion.</p>
 <h2>License</h2>
 <p>See repository for license information.</p>
+<h2>Archive</h2>
+<p>Historical notes and scratch docs live here:</p>
+<ul>
+<li><code>docs/archive/2024-09.md</code></li>
+<li><code>docs/archive/2025-12-21.md</code></li>
+<li><code>docs/archive/2025-12-21_tia-blog.md</code></li>
+<li><code>docs/archive/2025-12-24_tia-progress.md</code></li>
+<li><code>docs/archive/notes.md</code></li>
+<li><code>docs/archive/temp.md</code></li>
+<li><code>docs/archive/TEMPLATE-PLAN.md</code></li>
+<li><code>docs/archive/TODO.md</code></li>
+</ul>
 
     </main>
   </body>

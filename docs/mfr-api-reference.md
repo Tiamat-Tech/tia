@@ -1,5 +1,7 @@
 # MFR API Reference
 
+Status: maintained; review after major changes.
+
 Complete API documentation for the TIA Model-First Reasoning system.
 
 ## Table of Contents

@@ -1,5 +1,7 @@
 # API Reference (Draft)
 
+Status: maintained; review after major changes.
+
 ## Core
 
 ### `AgentRunner`

@@ -1,0 +1,136 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Log Room Migration Plan</title>
+    <style>
+      body { margin: 0; padding: 48px 20px; font-family: "Helvetica Neue", Arial, sans-serif; background: #f7f4ef; color: #1f1b16; }
+      main { max-width: 920px; margin: 0 auto; background: #fffdf9; padding: 48px; border: 1px solid #e3d8c7; box-shadow: 6px 8px 0 #e3d8c7; }
+      h1, h2, h3 { font-weight: 600; margin-top: 2rem; }
+      pre { background: #1f1b16; color: #f7f4ef; padding: 16px; overflow: auto; }
+      code { font-family: "SFMono-Regular", ui-monospace, Menlo, Monaco, Consolas, monospace; }
+      a { color: #8a3b12; }
+      img { max-width: 100%; height: auto; }
+      table { border-collapse: collapse; width: 100%; }
+      th, td { border: 1px solid #e3d8c7; padding: 8px; }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>Log Room Migration Plan</h1>
+<p>Status: implemented. The log room is now used for verbose traces and consensus logs.</p>
+<h2>Overview</h2>
+<p>The system uses a separate log room (set <code>LOG_ROOM_JID</code>) where verbose/technical messages are sent instead of cluttering the main chat room.</p>
+<h2>Infrastructure Completed</h2>
+<ul>
+<li>✅ <code>XmppRoomAgent.sendToRoom(roomJid, message)</code> - Send to any room</li>
+<li>✅ <code>XmppRoomAgent.joinAdditionalRoom(roomJid)</code> - Join secondary rooms</li>
+<li>✅ <code>AgentRunner.sendToLog(message)</code> - Helper to send to log room</li>
+<li>✅ <code>AgentRunner</code> auto-joins log room on startup</li>
+<li>✅ <code>sendToLog</code> passed to providers via <code>handle()</code> method</li>
+<li>✅ MCP server joins the log room and can read/write it via MCP tools</li>
+</ul>
+<h2>Messages That Should Move to Log Room</h2>
+<h3>High Priority (Technical/Verbose):</h3>
+<ol>
+<li><p><strong>RDF Payloads</strong> - Full Turtle/RDF content from MFR contributions</p>
+<ul>
+<li>Currently: Sent via MODEL_FIRST_RDF to main room</li>
+<li>Should: Also log to log room with session ID and contributor name</li>
+</ul>
+</li>
+<li><p><strong>Action Schemas</strong> - JSON action definitions</p>
+<ul>
+<li>Currently: &quot;Action schema from Golem for {sessionId}&quot; in main room</li>
+<li>Should: Full schema JSON in log room, brief confirmation in main</li>
+</ul>
+</li>
+<li><p><strong>Prolog Code</strong> - Generated Prolog programs</p>
+<ul>
+<li>Currently: May be sent to main room during execution</li>
+<li>Should: Full Prolog code in log room</li>
+</ul>
+</li>
+<li><p><strong>Role Assignment Details</strong> - Full role info including system prompts</p>
+<ul>
+<li>Currently: &quot;Role assignment: Medical Diagnostician for Golem&quot; in main room</li>
+<li>Should: Full assignment details (systemPrompt, capabilities, rationale) in log room</li>
+</ul>
+</li>
+<li><p><strong>Validation Reports</strong> - SHACL validation detailed results</p>
+<ul>
+<li>Currently: May be verbose in main room</li>
+<li>Should: Full reports in log room, summary in main</li>
+</ul>
+</li>
+</ol>
+<h3>Medium Priority (Status Messages):</h3>
+<ol start="6">
+<li><p><strong>MFR Contribution Notifications</strong></p>
+<ul>
+<li>Currently: &quot;MFR contribution from Golem&quot;</li>
+<li>Keep in main room but Chair now ignores them</li>
+</ul>
+</li>
+<li><p><strong>Solution Proposals</strong></p>
+<ul>
+<li>Currently: Full solution details in main room</li>
+<li>Consider: Summary in main, full details in log</li>
+</ul>
+</li>
+<li><p><strong>Session State Transitions</strong></p>
+<ul>
+<li>Currently: &quot;MFR session started&quot;, &quot;Phase transition to constraint_identification&quot;</li>
+<li>Consider: Log room only, except session complete</li>
+</ul>
+</li>
+</ol>
+<h3>Low Priority (Keep in Main Room):</h3>
+<ol start="9">
+<li><strong>Consensus Reached</strong> - Should stay visible</li>
+<li><strong>Human-facing Explanations</strong> - Generated for user understanding</li>
+<li><strong>Error Messages</strong> - Users need to see these</li>
+</ol>
+<h2>Implementation Strategy</h2>
+<h3>For Lingue-based Messages:</h3>
+<p>Modify <code>LingueNegotiator.send()</code> to:</p>
+<ol>
+<li>Send technical payload to log room</li>
+<li>Send simplified summary to main room</li>
+<li>Add flag to control verbose logging</li>
+</ol>
+<h3>For Direct Messages:</h3>
+<p>Use <code>sendToLog()</code> in providers:</p>
+<pre><code class="language-javascript">// Example in Golem agent
+const roleDetails = `
+Role: ${assignment.name}
+Domain: ${assignment.domain}
+System Prompt: ${assignment.systemPrompt}
+Capabilities: ${assignment.capabilities.join(&#39;, &#39;)}
+`;
+await sendToLog(`[Role Assignment]\n${roleDetails}`);
+</code></pre>
+<h3>For Coordinator:</h3>
+<p>Modify coordinator to log:</p>
+<ul>
+<li>Full RDF models before/after merging</li>
+<li>SHACL validation details</li>
+<li>Prolog programs generated for reasoning</li>
+</ul>
+<h2>Configuration</h2>
+<ul>
+<li>Set <code>LOG_ROOM_JID</code> explicitly in <code>.env</code> (or via agent profiles).</li>
+<li>Ensure the log room exists on the XMPP server.</li>
+</ul>
+<h2>Testing</h2>
+<ol>
+<li>Start agents with <code>LOG_ROOM_JID</code> configured</li>
+<li>Run an MFR session or a <code>Q:</code> planning poll</li>
+<li>Monitor the main room (should be less cluttered)</li>
+<li>Monitor the log room (should contain verbose traces and consensus logs)</li>
+</ol>
+
+    </main>
+  </body>
+</html>

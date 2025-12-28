@@ -19,12 +19,14 @@
   <body>
     <main>
       <h1>MFR Quick Start Tutorial</h1>
+<p>Status: maintained; review after major changes.</p>
 <p>Get started with the TIA Model-First Reasoning system in 10 minutes.</p>
 <h2>Prerequisites</h2>
 <ul>
 <li>Node.js v18+</li>
 <li>XMPP server (Prosody) running</li>
 <li>Mistral API key</li>
+<li>Log room created on the XMPP server</li>
 </ul>
 <h2>Step 1: Install Dependencies</h2>
 <pre><code class="language-bash">cd /path/to/tia
@@ -44,6 +46,8 @@ npm install
 <pre><code class="language-bash">MISTRAL_API_KEY=your_mistral_api_key_here
 XMPP_SERVICE=xmpp://tensegrity.it:5222
 XMPP_DOMAIN=tensegrity.it
+MUC_ROOM=general@conference.tensegrity.it
+LOG_ROOM_JID=log@conference.tensegrity.it
 </code></pre>
 <h2>Step 3: Create MUC Rooms</h2>
 <pre><code class="language-bash">node src/examples/create-mfr-rooms.js
@@ -54,6 +58,9 @@ XMPP_DOMAIN=tensegrity.it
 ✅ Joined room: mfr-validate@conference.tensegrity.it
 ✅ Joined room: mfr-reason@conference.tensegrity.it
 ✅ All MFR rooms created successfully!
+</code></pre>
+<p>Create the log room once (if your server does not auto-create rooms):</p>
+<pre><code class="language-bash">NODE_TLS_REJECT_UNAUTHORIZED=0 node src/examples/create-log-room.js
 </code></pre>
 <h2>Step 4: Start the MFR System</h2>
 <pre><code class="language-bash">./start-mfr-system.sh
@@ -69,11 +76,14 @@ XMPP_DOMAIN=tensegrity.it
 <p>Check logs:</p>
 <pre><code class="language-bash">tail -f logs/coordinator.log
 </code></pre>
-<p>Debate mode is enabled by default (see <code>config/agents/coordinator.ttl</code>). You can use <code>debate &lt;problem&gt;</code> or the shorthand <code>Q: &lt;problem&gt;</code> from the chatroom to trigger a tool-selection debate before the MFR run.</p>
+<p>Debate mode is enabled by default (see <code>config/agents/coordinator.ttl</code>). You can use <code>debate &lt;problem&gt;</code> or the shorthand <code>Q: &lt;problem&gt;</code> from the chatroom to trigger a planning poll before the MFR run.</p>
 <h2>Step 5: Run Your First MFR Session</h2>
 <h3>Example 1: Simple Scheduling</h3>
 <pre><code class="language-bash">node src/examples/run-mfr-session.js \
   &quot;Schedule meetings for Alice, Bob, and Carol. Alice is only available in the morning.&quot;
+</code></pre>
+<p>Quiet mode :</p>
+<pre><code>Q: -q Schedule meetings for Alice, Bob, and Carol. Alice is only available in the morning.
 </code></pre>
 <p><strong>What Happens</strong>:</p>
 <ol>
@@ -100,6 +110,8 @@ XMPP_DOMAIN=tensegrity.it
 <h3>Example 3: Resource Allocation</h3>
 <pre><code class="language-bash">node src/examples/run-mfr-session.js \
   &quot;Allocate 3 servers to 5 tasks: database, web, cache, worker, backup. Database needs high memory.&quot;
+</code></pre>
+<pre><code>Q: Allocate 3 servers to 5 tasks: database, web, cache, worker, backup. Database needs high memory. -v
 </code></pre>
 <h2>Step 6: Monitor the Session</h2>
 <p>Watch the MFR protocol phases:</p>

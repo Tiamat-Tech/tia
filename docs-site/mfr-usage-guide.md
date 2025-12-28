@@ -1,5 +1,7 @@
 # MFR (Model-First Reasoning) Usage Guide
 
+Status: maintained; review after major changes.
+
 This guide explains how to use the TIA Multi-Agent Model-First Reasoning system.
 
 ## Overview
@@ -17,6 +19,7 @@ The MFR system enables collaborative problem-solving through a two-phase approac
 - **Data** (Knowledge Query Agent): Grounds entities to Wikidata URIs, discovers relationships
 - **Prolog** (Logical Reasoning Agent): Models actions, state variables, validates action sequences, generates plans
 - **Semem** (Semantic Reasoning Agent): Identifies constraints, detects conflicts, validates model consistency
+- **Golem** (Adaptive Role Agent): Can be assigned logic-focused roles when planning polls request it
 
 ### MUC Rooms
 
@@ -25,6 +28,7 @@ The system uses multiple XMPP MUC rooms for phase-based communication:
 - `mfr-construct@conference.tensegrity.it`: Model construction phase communication
 - `mfr-validate@conference.tensegrity.it`: Validation phase communication
 - `mfr-reason@conference.tensegrity.it`: Reasoning phase communication
+- `log@conference.tensegrity.it`: Verbose traces, Prolog payloads, and consensus logs
 
 ## Setup
 
@@ -74,6 +78,11 @@ Expected output:
 ✅ All MFR rooms created successfully!
 ```
 
+Create the log room once (if required by your XMPP server):
+```bash
+NODE_TLS_REJECT_UNAUTHORIZED=0 node src/examples/create-log-room.js
+```
+
 ## Running the System
 
 ### Start All Agents
@@ -91,6 +100,7 @@ This starts:
 - Semem agent (if configured)
 
 Logs are written to `logs/` directory.
+Verbose traces are sent to the log room configured by `LOG_ROOM_JID`.
 
 ### Monitor Agent Logs
 
@@ -124,6 +134,12 @@ With `-v`, you will see messages such as:
 - `Lingue -> ModelNegotiation (application/json) — PlanExecutionRequest (Prolog program + query)`
 
 Use `-q` to reduce chat output during a run (quiet mode).
+
+## Planning Polls
+
+When a request starts with `Q:`, the Coordinator initiates a planning poll to select a route
+(`logic`, `consensus`, or `golem-logic`). The Chair asks for explicit positions and the selected
+route is reported back to the room before the run continues.
 
 ### Example 1: Simple Scheduling
 

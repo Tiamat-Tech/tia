@@ -19,6 +19,7 @@
   <body>
     <main>
       <h1>MFR (Model-First Reasoning) Usage Guide</h1>
+<p>Status: maintained; review after major changes.</p>
 <p>This guide explains how to use the TIA Multi-Agent Model-First Reasoning system.</p>
 <h2>Overview</h2>
 <p>The MFR system enables collaborative problem-solving through a two-phase approach:</p>
@@ -34,6 +35,7 @@
 <li><strong>Data</strong> (Knowledge Query Agent): Grounds entities to Wikidata URIs, discovers relationships</li>
 <li><strong>Prolog</strong> (Logical Reasoning Agent): Models actions, state variables, validates action sequences, generates plans</li>
 <li><strong>Semem</strong> (Semantic Reasoning Agent): Identifies constraints, detects conflicts, validates model consistency</li>
+<li><strong>Golem</strong> (Adaptive Role Agent): Can be assigned logic-focused roles when planning polls request it</li>
 </ul>
 <h3>MUC Rooms</h3>
 <p>The system uses multiple XMPP MUC rooms for phase-based communication:</p>
@@ -42,6 +44,7 @@
 <li><code>mfr-construct@conference.tensegrity.it</code>: Model construction phase communication</li>
 <li><code>mfr-validate@conference.tensegrity.it</code>: Validation phase communication</li>
 <li><code>mfr-reason@conference.tensegrity.it</code>: Reasoning phase communication</li>
+<li><code>log@conference.tensegrity.it</code>: Verbose traces, Prolog payloads, and consensus logs</li>
 </ul>
 <h2>Setup</h2>
 <h3>Prerequisites</h3>
@@ -84,6 +87,9 @@ node src/examples/create-mfr-rooms.js
 ✅ Joined room: mfr-reason@conference.tensegrity.it
 ✅ All MFR rooms created successfully!
 </code></pre>
+<p>Create the log room once (if required by your XMPP server):</p>
+<pre><code class="language-bash">NODE_TLS_REJECT_UNAUTHORIZED=0 node src/examples/create-log-room.js
+</code></pre>
 <h2>Running the System</h2>
 <h3>Start All Agents</h3>
 <pre><code class="language-bash"># Start the complete MFR system
@@ -97,7 +103,8 @@ node src/examples/create-mfr-rooms.js
 <li>Mistral agent</li>
 <li>Semem agent (if configured)</li>
 </ul>
-<p>Logs are written to <code>logs/</code> directory.</p>
+<p>Logs are written to <code>logs/</code> directory.
+Verbose traces are sent to the log room configured by <code>LOG_ROOM_JID</code>.</p>
 <h3>Monitor Agent Logs</h3>
 <pre><code class="language-bash"># Watch all agent activity
 tail -f logs/coordinator.log logs/mistral.log logs/data.log logs/prolog.log
@@ -120,6 +127,10 @@ Q: Allocate trucks with capacity constraints. -v
 <li><code>Lingue -&gt; ModelNegotiation (application/json) — PlanExecutionRequest (Prolog program + query)</code></li>
 </ul>
 <p>Use <code>-q</code> to reduce chat output during a run (quiet mode).</p>
+<h2>Planning Polls</h2>
+<p>When a request starts with <code>Q:</code>, the Coordinator initiates a planning poll to select a route
+(<code>logic</code>, <code>consensus</code>, or <code>golem-logic</code>). The Chair asks for explicit positions and the selected
+route is reported back to the room before the run continues.</p>
 <h3>Example 1: Simple Scheduling</h3>
 <pre><code class="language-bash">node src/examples/run-mfr-session.js \
   &quot;Schedule meetings for Alice, Bob, and Carol. Alice is only available in the morning, Bob needs 2 hours, Carol can&#39;t meet before Bob.&quot;

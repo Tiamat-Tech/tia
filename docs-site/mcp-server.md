@@ -1,5 +1,7 @@
 # MCP Server Guide
 
+Status: maintained; review after major changes.
+
 ## What is MCP?
 
 The **Model Context Protocol (MCP)** is an open standard that enables AI assistants like Claude to securely connect to external data sources and tools. MCP servers expose capabilities (tools, resources, prompts) that AI clients can discover and use dynamically.
@@ -28,8 +30,8 @@ node src/mcp/servers/tia-mcp-server.js
 **Tools exposed:**
 
 - **`sendMessage`**: Send a message to the MUC room or direct message a specific JID
-  - Parameters: `text` (string), `directJid` (string, optional)
-  - Use case: Post messages to chat rooms, send DMs
+  - Parameters: `text` (string), `directJid` (string, optional), `roomJid` (string, optional)
+  - Use case: Post messages to a specific room or send DMs
 
 - **`offerLingueMode`**: Negotiate a structured dialogue mode with a peer
   - Parameters: `peerJid` (string), `modes` (array of strings)
@@ -42,7 +44,7 @@ node src/mcp/servers/tia-mcp-server.js
   - Use case: Discover agent capabilities, share semantic metadata
 
 - **`getRecentMessages`**: Return recent chat messages seen by the MCP agent
-  - Parameters: `limit` (number, optional, max 200)
+  - Parameters: `limit` (number, optional, max 200), `roomJid` (string, optional)
   - Returns: JSON array of `{ body, sender, from, roomJid, type, timestamp }`
   - Use case: Poll for replies without a streaming connection
 
@@ -51,14 +53,19 @@ node src/mcp/servers/tia-mcp-server.js
   - Returns: Detected IBIS elements (Issues, Positions, Arguments)
   - Use case: Extract structured debate elements from conversation
 
-**Configuration:**
-If `AGENT_PROFILE` is set, the server loads that profile from `config/agents/*.ttl`.
-If `AGENT_PROFILE` is not set, the server auto-creates a transient profile and auto-registers a new XMPP account:
-- Username/nick: `mcp-###` (random 3-digit suffix)
-- Room: `MUC_ROOM` (default `general@conference.tensegrity.it`)
-- Service/domain: `XMPP_SERVICE`/`XMPP_DOMAIN`
+**Configuration (preferred):**
+Set `AGENT_PROFILE` and provide credentials in `config/agents/secrets.json` (or `AGENT_SECRETS_PATH`).
+Set all room JIDs explicitly in `.env` or the profile:
+```
+MUC_ROOM=general@conference.your-domain
+LOG_ROOM_JID=log@conference.your-domain
+```
+
+If `AGENT_PROFILE` is omitted, the server can auto-register a transient profile for local dev,
+but production runs should always use explicit profiles and room IDs.
 
 Outgoing group messages are queued until the agent confirms it has joined the MUC.
+The MCP server joins the log room and uses it for verbose traces (consensus and planning logs).
 
 ### 2. SPARQL Server
 

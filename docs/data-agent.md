@@ -1,5 +1,7 @@
 # Data Agent
 
+Status: maintained; review after major changes.
+
 The Data agent queries SPARQL endpoints (Wikidata by default) to answer questions about entities and return knowledge graph data in human-friendly format.
 
 ## Overview

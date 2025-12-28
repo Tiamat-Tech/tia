@@ -1,5 +1,7 @@
 # Architecture Overview
 
+Status: maintained; review after major changes.
+
 This document summarizes the system architecture, agent lifecycle, and configuration model.
 
 ## Core Components

@@ -22,8 +22,7 @@
 - Node ESM (`type: "module"`); prefer `import`/`export` and avoid new CommonJS (refactor existing CJS when touched).
 - Use async/await for I/O; keep logging terse via `src/lib/logger.js`.
 - Two-space indentation, single-responsibility modules, and descriptive function names (`joinMUC`, `handleStanza`).
-- Environment-driven config defaults live near the top of each file; keep new defaults together.
-- There should be no defaults or fallbacks in the code, the parameters should be loaded from RDF profiles or secrets.json file (local to this app) or .env in the case of remote services
+- Configuration must be loaded from RDF profiles, `config/agents/secrets.json`, or `.env` for remote services. Avoid hardcoded defaults/fallbacks.
 ## Testing Guidelines
 - `npm test` runs the current unit and integration test set.
 - Favor runnable example scripts per feature alongside Vitest coverage.
@@ -37,5 +36,5 @@
 
 ## Security & Configuration Tips
 - Local Prosody uses self-signed TLS; prepend commands with `NODE_TLS_REJECT_UNAUTHORIZED=0` when connecting locally only.
-- Keep API keys/tokens in `.env` (e.g., `MISTRAL_API_KEY`, `MUC_ROOM`, `BOT_NICKNAME`); keep XMPP passwords in `config/agents/secrets.json` (gitignored).
-- When adding new services, thread configuration through env vars and document defaults in `README.md` and the relevant module header.
+- Keep API keys/tokens in `.env` (e.g., `MISTRAL_API_KEY`, `MUC_ROOM`, `LOG_ROOM_JID`); keep XMPP passwords in `config/agents/secrets.json` (gitignored).
+- When adding new services, thread configuration through RDF profiles or env vars and document required values in `README.md` and the relevant module header.

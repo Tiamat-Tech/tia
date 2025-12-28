@@ -1,5 +1,7 @@
 # MFR Agent Contracts Index
 
+Status: maintained; review after major changes.
+
 This index collects the Model-First Reasoning (MFR) behavior contracts for each agent role.
 
 - Coordinator: `docs/coordinator-agent-contract.md`

@@ -19,6 +19,7 @@
   <body>
     <main>
       <h1>MCP Client Guide</h1>
+<p>Status: maintained; review after major changes.</p>
 <p>TIA MCP client support lives in <code>src/mcp/client-bridge.js</code>.</p>
 <h2>Basic Usage</h2>
 <pre><code class="language-javascript">import { McpClientBridge } from &quot;../src/mcp/client-bridge.js&quot;;
@@ -48,6 +49,12 @@ console.log(profile.mcp.endpoints);
 <li>Tool <code>_meta.tia.endpoints</code> → <code>profile.mcp.endpoints</code></li>
 </ul>
 <p>See <code>vocabs/mcp-ontology.ttl</code> for the RDF vocabulary.</p>
+<h2>Room-aware messaging</h2>
+<p>When calling MCP chat tools from a client, pass explicit room IDs to avoid ambiguity:</p>
+<ul>
+<li><code>sendMessage</code> supports <code>roomJid</code> for room delivery and <code>directJid</code> for DMs.</li>
+<li><code>getRecentMessages</code> supports <code>roomJid</code> to filter to the general or log room.</li>
+</ul>
 
     </main>
   </body>

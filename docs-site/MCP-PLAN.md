@@ -1,5 +1,7 @@
 # MCP Integration Plan
 
+Status: maintained; review after major changes.
+
 > **Status**: Planning Phase
 > **Updated**: 2025-02-14
 > **Goal**: Add MCP client/server bridges for TIA agents and expose MCP capabilities via RDF profiles

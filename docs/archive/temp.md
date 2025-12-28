@@ -1,3 +1,5 @@
+Status: scratchpad; candidate for removal.
+
 TIA Intelligence Agency Progress Report
 
 Introduction : why chat agents? (text is the lingua franca of humans online) why RDF? (the web is a global graph knowledgebase) why xmpp? (open spec, no owned by big tech)

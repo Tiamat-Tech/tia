@@ -1,8 +1,21 @@
 # Agents Overview
 
-This page is for users first, then operators. It covers what each bot can do in chat, how to address it, and how to run it.
+Status: updated for planning polls, log-room traces, and the current roster.
+
+This page is for users first, then operators. It covers what each bot can do in chat, how to address it, and how to run it. For the full list of profiles, see `docs/agent-roster.md`.
 
 ## What each bot can do (in the MUC or DMs)
+
+### Coordinator
+- Orchestrates planning polls and routes `Q:` questions to logic, consensus, or Golem-role workflows.
+- Starts MFR sessions and assembles final solutions (plus route metadata).
+
+### Chair
+- Moderates debate sessions and requests Position/Support/Objection.
+- Keeps consensus workflows structured and prompts for explicit positions.
+
+### Recorder
+- Logs verbose traces and minutes to the log room.
 
 ## Custom agent API
 - For building your own agent with the library API, see `docs/agent-dev-prompt.md` and `examples/minimal-agent.js`.
@@ -31,6 +44,10 @@ This page is for users first, then operators. It covers what each bot can do in 
 - Not a chatty bot; used for diagnostics.
 - MCP verbs exposed: `initialize`, `echo`, `xmppStatus` (reports connection + last message), `xmppSend` (posts a test message to the MUC).
 
+### MCP Loopback Agent
+- Echoes MCP calls back into the system for integration testing.
+- Useful for validating MCP tool wiring and request/response flow.
+
 ### Demo Bot
 - Simple canned/demo responses; no external API.
 
@@ -45,15 +62,31 @@ This page is for users first, then operators. It covers what each bot can do in 
 - Fully configurable via RDF profile - can be adapted to any SPARQL endpoint (DBpedia, local triplestores, etc.).
 - See [Data Agent Guide](data-agent.md) for detailed documentation.
 
+### Prolog Agent
+- Logic solver using tau-prolog; responds to logic-flavored MFR sessions.
+- Emits Prolog programs to the log room for debugging.
+
+### Executor Agent
+- Converts high-level plan statements into executable Prolog action programs.
+
+### Golem Agent
+- Adaptive role player used for domain- or logic-specific reasoning.
+- Can be assigned a logic-focused role during planning polls.
+
+### GroqBot
+- LLM chat agent backed by Groq APIs.
+
 ## Running the bots
 
-Common XMPP env (put in `.env`):
+Common XMPP env (put in `.env` or RDF profiles):
 ```
 XMPP_SERVICE=xmpp://your-host:5222     # or xmpps://... with NODE_TLS_REJECT_UNAUTHORIZED=0
 XMPP_DOMAIN=your-domain
 MUC_ROOM=general@conference.your-domain
+LOG_ROOM_JID=log@conference.your-domain
 XMPP_RESOURCE=...                      # optional; defaults to bot nickname
 ```
+Ensure the log room exists on the XMPP server (create it once and reuse it).
 
 XMPP passwords live in `config/agents/secrets.json` (ignored by git). Override the path
 with `AGENT_SECRETS_PATH` if needed.

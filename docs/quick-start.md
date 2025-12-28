@@ -1,5 +1,7 @@
 # Quick Start Guide
 
+Status: maintained; review after major changes.
+
 Get started with tia-agents in minutes! This guide covers installation and the two main approaches to creating XMPP bots.
 
 ## Installation

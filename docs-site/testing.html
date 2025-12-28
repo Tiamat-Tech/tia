@@ -19,6 +19,7 @@
   <body>
     <main>
       <h1>Testing Guide</h1>
+<p>Status: maintained; review after major changes.</p>
 <p>This repository has two layers of tests:</p>
 <ul>
 <li><strong>Node unit tests</strong> (fast, offline): <code>npm test</code></li>
@@ -35,6 +36,7 @@
 XMPP_SERVICE=xmpp://tensegrity.it:5222  # or xmpps://... if TLS-only
 XMPP_DOMAIN=tensegrity.it
 MUC_ROOM=general@conference.tensegrity.it
+LOG_ROOM_JID=log@conference.tensegrity.it
 TEST_XMPP_ACCOUNT=integration-test      # key in config/agents/secrets.json
 XMPP_RESOURCE=SememTest                 # optional: set XMPP resource; defaults to bot nickname
 

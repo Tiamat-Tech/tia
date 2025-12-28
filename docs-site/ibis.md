@@ -1,5 +1,7 @@
 # IBIS & Lingue Overview
 
+Status: maintained; review after major changes.
+
 This project can detect and surface IBIS (Issue-Based Information System) structures in chat when Lingue is enabled. IBIS identifies Issues, Positions, and Arguments in text and can emit short summaries in the MUC or DMs.
 
 ## What users see

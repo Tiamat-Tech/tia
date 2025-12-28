@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Agent Roster</title>
+    <style>
+      body { margin: 0; padding: 48px 20px; font-family: "Helvetica Neue", Arial, sans-serif; background: #f7f4ef; color: #1f1b16; }
+      main { max-width: 920px; margin: 0 auto; background: #fffdf9; padding: 48px; border: 1px solid #e3d8c7; box-shadow: 6px 8px 0 #e3d8c7; }
+      h1, h2, h3 { font-weight: 600; margin-top: 2rem; }
+      pre { background: #1f1b16; color: #f7f4ef; padding: 16px; overflow: auto; }
+      code { font-family: "SFMono-Regular", ui-monospace, Menlo, Monaco, Consolas, monospace; }
+      a { color: #8a3b12; }
+      img { max-width: 100%; height: auto; }
+      table { border-collapse: collapse; width: 100%; }
+      th, td { border: 1px solid #e3d8c7; padding: 8px; }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>Agent Roster</h1>
+<p>Status: maintained; review after major changes.</p>
+<p>This roster lists the agent profiles shipped in <code>config/agents/*.ttl</code>, with short notes
+on what each agent is responsible for during normal runs.</p>
+<h2>Core Orchestration</h2>
+<ul>
+<li><strong>Coordinator</strong> (<code>coordinator</code>) - Orchestrates planning polls, debate/consensus workflows,
+and MFR sessions; assembles final solutions and emits trace metadata.</li>
+<li><strong>Chair</strong> (<code>chair</code>) - Moderates debates, polls for Positions/Support/Objection, and
+keeps the discussion structured.</li>
+<li><strong>Recorder</strong> (<code>recorder</code>) - Captures meeting minutes and verbose traces (log room focus).</li>
+</ul>
+<h2>Reasoning &amp; Knowledge</h2>
+<ul>
+<li><strong>Mistral</strong> (<code>mistral</code>) - General-purpose LLM agent for extraction, summarization, and IBIS.</li>
+<li><strong>Mistral Analyst</strong> (<code>mistral-analyst</code>) - Analytical variant for deeper breakdowns.</li>
+<li><strong>Mistral Creative</strong> (<code>mistral-creative</code>) - Creative variant for ideation prompts.</li>
+<li><strong>GroqBot</strong> (<code>groqbot</code>) - LLM agent backed by Groq APIs.</li>
+<li><strong>Prolog</strong> (<code>prolog</code>) - Logical reasoning and Prolog program execution.</li>
+<li><strong>Executor</strong> (<code>executor</code>) - Translates plans into executable Prolog programs.</li>
+<li><strong>MFR Semantic</strong> (<code>mfr-semantic</code>) - Extracts constraints and domain rules for MFR.</li>
+<li><strong>Data</strong> (<code>data</code>) - SPARQL grounding and knowledge lookup (Wikidata/DBpedia/custom).</li>
+<li><strong>Semem</strong> (<code>semem</code>) - Knowledge store integration (<code>tell/ask/augment</code>) via MCP endpoints.</li>
+</ul>
+<h2>Adaptive &amp; Experimental</h2>
+<ul>
+<li><strong>Golem</strong> (<code>golem</code>) - Adaptive role agent; can be assigned specialized roles at runtime
+(e.g., logic-focused reasoning during planning).</li>
+</ul>
+<h2>Utilities &amp; Testing</h2>
+<ul>
+<li><strong>Demo</strong> (<code>demo</code>) - Minimal bot for smoke tests and connectivity checks.</li>
+<li><strong>MCP Loopback</strong> (<code>mcp-loopback</code>) - MCP echo agent for integration testing.</li>
+<li><strong>MCP Test</strong> (<code>mcp-test</code>) - MCP profile for diagnostics or local testing.</li>
+<li><strong>Mistral Base</strong> (<code>mistral-base</code>) - Base profile used by other Mistral variants (not a runtime agent).</li>
+</ul>
+
+    </main>
+  </body>
+</html>

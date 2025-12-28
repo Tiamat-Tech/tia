@@ -1,5 +1,7 @@
 # MCP Client Guide
 
+Status: maintained; review after major changes.
+
 TIA MCP client support lives in `src/mcp/client-bridge.js`.
 
 ## Basic Usage
@@ -33,3 +35,9 @@ console.log(profile.mcp.endpoints);
 - Tool `_meta.tia.endpoints` → `profile.mcp.endpoints`
 
 See `vocabs/mcp-ontology.ttl` for the RDF vocabulary.
+
+## Room-aware messaging
+
+When calling MCP chat tools from a client, pass explicit room IDs to avoid ambiguity:
+- `sendMessage` supports `roomJid` for room delivery and `directJid` for DMs.
+- `getRecentMessages` supports `roomJid` to filter to the general or log room.

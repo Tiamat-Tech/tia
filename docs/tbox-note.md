@@ -1,3 +1,5 @@
+Status: maintained; review after major changes.
+
 
   1. Find the Prosody container name:
 

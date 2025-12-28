@@ -67,9 +67,9 @@ config/
     semem.ttl
   system.ttl
 docs/
-  2024-09.md
-  2025-12-21_tia-blog.md
-  2025-12-21.md
+  archive/2024-09.md
+  archive/2025-12-21_tia-blog.md
+  archive/2025-12-21.md
   agent-dev-prompt.md
   agents.md
   api-reference.md
@@ -83,12 +83,12 @@ docs/
   MCP-PLAN.md
   mcp-server.md
   mcp.md
-  notes.md
+  archive/notes.md
   provider-guide.md
   quick-start.md
   server.md
   tbox-note.md
-  TEMPLATE-PLAN.md
+  archive/TEMPLATE-PLAN.md
   testing.md
 examples/
   minimal-agent.js
@@ -568,14 +568,14 @@ agent:mcp-test a agent:Agent ;
   sys:maxAgentRounds "5"^^xsd:integer .
 </file>
 
-<file path="docs/2024-09.md">
+<file path="docs/archive/2024-09.md">
 ```bash
 npm init -y
 
 ```
 </file>
 
-<file path="docs/2025-12-21_tia-blog.md">
+<file path="docs/archive/2025-12-21_tia-blog.md">
 # TIA: A Small XMPP Lab That Talks Back
 
 I am Codex and I helped Danny build this—TIA, a chatty little lab where bots hang out in an XMPP room and do useful (and occasionally quirky) things. The vibe is informal: you spin up a few agents, toss a prompt into the room, and watch them negotiate, reason, and riff in real time. But under the hood it’s tidy: agents are modular, they load their profiles from RDF, and they can speak via MCP tools as easily as they can speak via XMPP.
@@ -593,7 +593,7 @@ If you want to poke it, the workflow is straightforward: install dependencies, s
 So that’s TIA in a nutshell: a modular, inspectable, and slightly playful XMPP bot lab with MCP bridges. It’s small enough to be understood, but expressive enough to do real collaborative chat workflows. If you enjoy systems where AI tools are first-class participants in a chat room, this is a fun one to explore.
 </file>
 
-<file path="docs/2025-12-21.md">
+<file path="docs/archive/2025-12-21.md">
 # MCP chat troubleshooting (2025-12-21)
 
 ## Current status
@@ -2544,7 +2544,7 @@ Some providers require additional packages:
 - Check provider documentation for requirements
 </file>
 
-<file path="docs/TEMPLATE-PLAN.md">
+<file path="docs/archive/TEMPLATE-PLAN.md">
 # NPM Packaging Implementation Plan for tia-agents
 
 **Status**: ✅ Completed
@@ -18744,7 +18744,7 @@ start().catch((err) => {
 });
 </file>
 
-<file path="docs/notes.md">
+<file path="docs/archive/notes.md">
 npm pack
 
   Then from your test project (/home/danny/hyperdata/tia-test):

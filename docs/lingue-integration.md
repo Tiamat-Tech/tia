@@ -1,5 +1,7 @@
 # Lingue Integration Guide
 
+Status: maintained; review after major changes.
+
 Lingue is a lightweight protocol layer for negotiating language modes and
 exchanging structured payloads (RDF, JSON, Prolog) over XMPP. In TIA it powers
 structured agent-to-agent coordination while keeping human-readable summaries

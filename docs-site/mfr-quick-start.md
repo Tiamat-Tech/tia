@@ -1,5 +1,7 @@
 # MFR Quick Start Tutorial
 
+Status: maintained; review after major changes.
+
 Get started with the TIA Model-First Reasoning system in 10 minutes.
 
 ## Prerequisites
@@ -7,6 +9,7 @@ Get started with the TIA Model-First Reasoning system in 10 minutes.
 - Node.js v18+
 - XMPP server (Prosody) running
 - Mistral API key
+- Log room created on the XMPP server
 
 ## Step 1: Install Dependencies
 
@@ -35,6 +38,8 @@ Create `.env`:
 MISTRAL_API_KEY=your_mistral_api_key_here
 XMPP_SERVICE=xmpp://tensegrity.it:5222
 XMPP_DOMAIN=tensegrity.it
+MUC_ROOM=general@conference.tensegrity.it
+LOG_ROOM_JID=log@conference.tensegrity.it
 ```
 
 ## Step 3: Create MUC Rooms
@@ -50,6 +55,11 @@ Expected output:
 ✅ Joined room: mfr-validate@conference.tensegrity.it
 ✅ Joined room: mfr-reason@conference.tensegrity.it
 ✅ All MFR rooms created successfully!
+```
+
+Create the log room once (if your server does not auto-create rooms):
+```bash
+NODE_TLS_REJECT_UNAUTHORIZED=0 node src/examples/create-log-room.js
 ```
 
 ## Step 4: Start the MFR System
@@ -70,7 +80,7 @@ Check logs:
 tail -f logs/coordinator.log
 ```
 
-Debate mode is enabled by default (see `config/agents/coordinator.ttl`). You can use `debate <problem>` or the shorthand `Q: <problem>` from the chatroom to trigger a tool-selection debate before the MFR run.
+Debate mode is enabled by default (see `config/agents/coordinator.ttl`). You can use `debate <problem>` or the shorthand `Q: <problem>` from the chatroom to trigger a planning poll before the MFR run.
 
 ## Step 5: Run Your First MFR Session
 
@@ -79,6 +89,12 @@ Debate mode is enabled by default (see `config/agents/coordinator.ttl`). You can
 ```bash
 node src/examples/run-mfr-session.js \
   "Schedule meetings for Alice, Bob, and Carol. Alice is only available in the morning."
+```
+
+Quiet mode :
+
+```
+Q: -q Schedule meetings for Alice, Bob, and Carol. Alice is only available in the morning.
 ```
 
 **What Happens**:
@@ -109,6 +125,10 @@ node src/examples/run-mfr-session.js \
 ```bash
 node src/examples/run-mfr-session.js \
   "Allocate 3 servers to 5 tasks: database, web, cache, worker, backup. Database needs high memory."
+```
+
+```
+Q: Allocate 3 servers to 5 tasks: database, web, cache, worker, backup. Database needs high memory. -v
 ```
 
 ## Step 6: Monitor the Session

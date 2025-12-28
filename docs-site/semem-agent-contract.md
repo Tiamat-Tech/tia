@@ -1,5 +1,7 @@
 # Semem Agent Contract
 
+Status: maintained; review after major changes.
+
 This document defines the expected behavior of the Semem agent for MCP-backed `tell/ask/augment` workflows.
 
 ## Role Summary

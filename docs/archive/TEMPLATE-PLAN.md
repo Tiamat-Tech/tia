@@ -1,5 +1,7 @@
 # NPM Packaging Implementation Plan for tia-agents
 
+Status: template; candidate for removal if unused.
+
 **Status**: ✅ Completed
 
 ## Goal

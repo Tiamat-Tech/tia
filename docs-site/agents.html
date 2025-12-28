@@ -19,8 +19,23 @@
   <body>
     <main>
       <h1>Agents Overview</h1>
-<p>This page is for users first, then operators. It covers what each bot can do in chat, how to address it, and how to run it.</p>
+<p>Status: updated for planning polls, log-room traces, and the current roster.</p>
+<p>This page is for users first, then operators. It covers what each bot can do in chat, how to address it, and how to run it. For the full list of profiles, see <code>docs/agent-roster.md</code>.</p>
 <h2>What each bot can do (in the MUC or DMs)</h2>
+<h3>Coordinator</h3>
+<ul>
+<li>Orchestrates planning polls and routes <code>Q:</code> questions to logic, consensus, or Golem-role workflows.</li>
+<li>Starts MFR sessions and assembles final solutions (plus route metadata).</li>
+</ul>
+<h3>Chair</h3>
+<ul>
+<li>Moderates debate sessions and requests Position/Support/Objection.</li>
+<li>Keeps consensus workflows structured and prompts for explicit positions.</li>
+</ul>
+<h3>Recorder</h3>
+<ul>
+<li>Logs verbose traces and minutes to the log room.</li>
+</ul>
 <h2>Custom agent API</h2>
 <ul>
 <li>For building your own agent with the library API, see <code>docs/agent-dev-prompt.md</code> and <code>examples/minimal-agent.js</code>.</li>
@@ -57,6 +72,11 @@
 <li>Not a chatty bot; used for diagnostics.</li>
 <li>MCP verbs exposed: <code>initialize</code>, <code>echo</code>, <code>xmppStatus</code> (reports connection + last message), <code>xmppSend</code> (posts a test message to the MUC).</li>
 </ul>
+<h3>MCP Loopback Agent</h3>
+<ul>
+<li>Echoes MCP calls back into the system for integration testing.</li>
+<li>Useful for validating MCP tool wiring and request/response flow.</li>
+</ul>
 <h3>Demo Bot</h3>
 <ul>
 <li>Simple canned/demo responses; no external API.</li>
@@ -75,13 +95,33 @@
 <li>Fully configurable via RDF profile - can be adapted to any SPARQL endpoint (DBpedia, local triplestores, etc.).</li>
 <li>See <a href="data-agent.md">Data Agent Guide</a> for detailed documentation.</li>
 </ul>
+<h3>Prolog Agent</h3>
+<ul>
+<li>Logic solver using tau-prolog; responds to logic-flavored MFR sessions.</li>
+<li>Emits Prolog programs to the log room for debugging.</li>
+</ul>
+<h3>Executor Agent</h3>
+<ul>
+<li>Converts high-level plan statements into executable Prolog action programs.</li>
+</ul>
+<h3>Golem Agent</h3>
+<ul>
+<li>Adaptive role player used for domain- or logic-specific reasoning.</li>
+<li>Can be assigned a logic-focused role during planning polls.</li>
+</ul>
+<h3>GroqBot</h3>
+<ul>
+<li>LLM chat agent backed by Groq APIs.</li>
+</ul>
 <h2>Running the bots</h2>
-<p>Common XMPP env (put in <code>.env</code>):</p>
+<p>Common XMPP env (put in <code>.env</code> or RDF profiles):</p>
 <pre><code>XMPP_SERVICE=xmpp://your-host:5222     # or xmpps://... with NODE_TLS_REJECT_UNAUTHORIZED=0
 XMPP_DOMAIN=your-domain
 MUC_ROOM=general@conference.your-domain
+LOG_ROOM_JID=log@conference.your-domain
 XMPP_RESOURCE=...                      # optional; defaults to bot nickname
 </code></pre>
+<p>Ensure the log room exists on the XMPP server (create it once and reuse it).</p>
 <p>XMPP passwords live in <code>config/agents/secrets.json</code> (ignored by git). Override the path
 with <code>AGENT_SECRETS_PATH</code> if needed.</p>
 <h3>Mistral Bot</h3>

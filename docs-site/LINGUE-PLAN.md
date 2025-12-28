@@ -1,5 +1,7 @@
 # Lingue Protocol Integration Plan
 
+Status: maintained; review after major changes.
+
 > **Status**: Planning Phase
 > **Updated**: 2024-12-19
 > **Goal**: Full Lingue protocol support with modular, NPM-ready architecture

@@ -1,5 +1,7 @@
 # Model-First Reasoning Multi-Agent Architecture
 
+Status: maintained; review after major changes.
+
 ## Executive Summary
 
 This document outlines an architecture for implementing Model-First Reasoning (MFR) in a multi-agent system, leveraging RDF ontologies and the Lingue language negotiation framework.

@@ -1,5 +1,7 @@
 # Provider Guide
 
+Status: maintained; review after major changes.
+
 This guide explains how to create custom providers for tia-agents. Providers handle incoming messages and generate responses.
 
 ## Table of Contents

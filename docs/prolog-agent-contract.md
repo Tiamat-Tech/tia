@@ -1,5 +1,7 @@
 # Prolog Agent Contract (MFR)
 
+Status: maintained; review after major changes.
+
 This document defines the expected behavior of the Prolog (Logical Reasoning) agent during Model-First Reasoning (MFR) sessions.
 
 ## Role Summary

@@ -1,5 +1,7 @@
 # MFR Room Creation Testing
 
+Status: maintained; review after major changes.
+
 ## Problem
 
 The original `src/examples/create-mfr-rooms.js` script reports success when rooms are created, but doesn't actually verify that the rooms persist and are functional. The script:

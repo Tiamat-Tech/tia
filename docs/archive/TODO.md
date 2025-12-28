@@ -1,3 +1,5 @@
+Status: scratchpad; candidate for removal.
+
 The IBIS support is lacking some key constructs from the methodology. These already have URIs minted for them, their meaning is clear from their names. Chair should recognise these terms and abbreviated versions, eg. "Question:" = "Q:"
 
 All in the namespace http://purl.org/ibis#

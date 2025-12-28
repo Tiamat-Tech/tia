@@ -19,6 +19,7 @@
   <body>
     <main>
       <h1>MCP Server Guide</h1>
+<p>Status: maintained; review after major changes.</p>
 <h2>What is MCP?</h2>
 <p>The <strong>Model Context Protocol (MCP)</strong> is an open standard that enables AI assistants like Claude to securely connect to external data sources and tools. MCP servers expose capabilities (tools, resources, prompts) that AI clients can discover and use dynamically.</p>
 <p>TIA implements MCP servers that expose XMPP chat operations and semantic processing capabilities, allowing AI assistants to participate in chat rooms, negotiate structured dialogue modes (Lingue), and interact with knowledge graphs via SPARQL.</p>
@@ -40,8 +41,8 @@
 <ul>
 <li><p><strong><code>sendMessage</code></strong>: Send a message to the MUC room or direct message a specific JID</p>
 <ul>
-<li>Parameters: <code>text</code> (string), <code>directJid</code> (string, optional)</li>
-<li>Use case: Post messages to chat rooms, send DMs</li>
+<li>Parameters: <code>text</code> (string), <code>directJid</code> (string, optional), <code>roomJid</code> (string, optional)</li>
+<li>Use case: Post messages to a specific room or send DMs</li>
 </ul>
 </li>
 <li><p><strong><code>offerLingueMode</code></strong>: Negotiate a structured dialogue mode with a peer</p>
@@ -60,7 +61,7 @@
 </li>
 <li><p><strong><code>getRecentMessages</code></strong>: Return recent chat messages seen by the MCP agent</p>
 <ul>
-<li>Parameters: <code>limit</code> (number, optional, max 200)</li>
+<li>Parameters: <code>limit</code> (number, optional, max 200), <code>roomJid</code> (string, optional)</li>
 <li>Returns: JSON array of <code>{ body, sender, from, roomJid, type, timestamp }</code></li>
 <li>Use case: Poll for replies without a streaming connection</li>
 </ul>
@@ -73,15 +74,16 @@
 </ul>
 </li>
 </ul>
-<p><strong>Configuration:</strong>
-If <code>AGENT_PROFILE</code> is set, the server loads that profile from <code>config/agents/*.ttl</code>.
-If <code>AGENT_PROFILE</code> is not set, the server auto-creates a transient profile and auto-registers a new XMPP account:</p>
-<ul>
-<li>Username/nick: <code>mcp-###</code> (random 3-digit suffix)</li>
-<li>Room: <code>MUC_ROOM</code> (default <code>general@conference.tensegrity.it</code>)</li>
-<li>Service/domain: <code>XMPP_SERVICE</code>/<code>XMPP_DOMAIN</code></li>
-</ul>
-<p>Outgoing group messages are queued until the agent confirms it has joined the MUC.</p>
+<p><strong>Configuration (preferred):</strong>
+Set <code>AGENT_PROFILE</code> and provide credentials in <code>config/agents/secrets.json</code> (or <code>AGENT_SECRETS_PATH</code>).
+Set all room JIDs explicitly in <code>.env</code> or the profile:</p>
+<pre><code>MUC_ROOM=general@conference.your-domain
+LOG_ROOM_JID=log@conference.your-domain
+</code></pre>
+<p>If <code>AGENT_PROFILE</code> is omitted, the server can auto-register a transient profile for local dev,
+but production runs should always use explicit profiles and room IDs.</p>
+<p>Outgoing group messages are queued until the agent confirms it has joined the MUC.
+The MCP server joins the log room and uses it for verbose traces (consensus and planning logs).</p>
 <h3>2. SPARQL Server</h3>
 <p><strong>Purpose</strong>: Provides SPARQL query and update operations against remote endpoints (e.g., DBpedia, Wikidata, custom triple stores).</p>
 <p><strong>Start the server:</strong></p>
