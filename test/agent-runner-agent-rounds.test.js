@@ -2,7 +2,7 @@ import { describe, it, expect } from "vitest";
 import { AgentRunner } from "../src/agents/core/agent-runner.js";
 
 describe("AgentRunner agent rounds", () => {
-  it("suppresses agent messages after max rounds until human mention", async () => {
+  it("suppresses unaddressed agent messages but allows explicit mentions", async () => {
     const replies = [];
     const provider = {
       async handle() {
@@ -50,6 +50,6 @@ describe("AgentRunner agent rounds", () => {
       reply: (text) => replies.push(text)
     });
 
-    expect(replies).toEqual(["ok", "ok"]);
+    expect(replies).toEqual(["ok", "ok", "ok"]);
   });
 });

@@ -23,6 +23,10 @@
 - Use async/await for I/O; keep logging terse via `src/lib/logger.js`.
 - Two-space indentation, single-responsibility modules, and descriptive function names (`joinMUC`, `handleStanza`).
 - Configuration must be loaded from RDF profiles, `config/agents/secrets.json`, or `.env` for remote services. Avoid hardcoded defaults/fallbacks.
+- Refactoring should be an ongoing process.
+- Unit and/or integration tests should be created and run before and after any significant changes.
+- No source files should be over 500 lines, they should be further modularised following best practices.
+
 ## Testing Guidelines
 - `npm test` runs the current unit and integration test set.
 - Favor runnable example scripts per feature alongside Vitest coverage.

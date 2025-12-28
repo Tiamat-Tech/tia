@@ -1,3 +1,5 @@
+// THIS IS NO LONGER USED AND SHOULD BE REMOVED
+
 import { xml } from "@xmpp/client";
 import { MFR_ROOM_TYPES, getRoomForPhase } from "./constants.js";
 
