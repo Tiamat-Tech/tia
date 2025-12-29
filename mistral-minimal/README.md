@@ -79,6 +79,24 @@ import { Claude } from "hyperdata-clients";
 
 ## Creating a New Agent
 
+### Using Claude Code
+
+If you're using [Claude Code](https://code.claude.com), there's a built-in skill to help you create new agents! Just ask:
+
+```
+"Help me create a new TIA agent"
+"Build a bot using Groq"
+"Set up an XMPP agent with Claude"
+```
+
+The `create-tia-agent` skill will guide you through:
+- Copying and customizing this template
+- Configuring for different LLM providers (Mistral, Groq, Claude, etc.)
+- Setting up XMPP connections
+- Troubleshooting common issues
+
+### Manual Setup
+
 To create a new agent (instead of using the example `mistral2`):
 
 1. Copy `config/agents/mistral2.ttl` to `config/agents/your-agent.ttl`
