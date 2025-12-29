@@ -36,6 +36,59 @@ The design goal is a clean, library-ready architecture that supports both deploy
 
 [![debate diagram](docs/debate.png)](docs/debate.svg)  [![dataflow diagram](docs/dataflow.png)](docs/dataflow.svg)
 
+## Getting Started
+
+### Using TIA as an NPM Package
+
+TIA is published as [`tia-agents`](https://www.npmjs.com/package/tia-agents) on npm. The package provides the core framework for building XMPP agents without bundling specific LLM implementations.
+
+**Quick Start:**
+
+```bash
+npm install tia-agents hyperdata-clients dotenv
+```
+
+The framework provides:
+- Core agent machinery (`AgentRunner`, `createSimpleAgent`)
+- Base classes for building providers (`BaseProvider`, `BaseLLMProvider`)
+- Profile loading from RDF/Turtle files
+- XMPP utilities (auto-registration, room management)
+- History stores (`InMemoryHistoryStore`)
+- Lingue protocol support
+- MCP integration
+
+LLM API access is handled through [`hyperdata-clients`](https://www.npmjs.com/package/hyperdata-clients), which provides unified interfaces for Mistral, Groq, Claude, OpenAI, Ollama, and more.
+
+**Complete Example:**
+
+See [mistral-minimal/](mistral-minimal/) for a fully-working minimal agent example. Copy that directory and run:
+
+```bash
+npm install
+# Configure .env with your API key
+npm start
+```
+
+**Documentation:**
+- 📚 [Quick Start Guide](docs/quick-start.md) - Detailed getting started
+- 🔧 [Provider Guide](docs/provider-guide.md) - Creating custom providers
+- 📖 [API Reference](docs/api-reference.md) - Complete API docs
+- 📁 [Templates](templates/) - Example configurations
+
+### Development Setup (Source Install)
+
+For contributing to TIA or running the full test suite with all agents:
+
+```bash
+git clone https://github.com/danja/tia.git
+cd tia
+npm install
+```
+
+Configure `.env` (see `.env.example`) and `config/agents/secrets.json` for XMPP passwords.
+
+See the [Agent Startup Guide](AGENT_STARTUP_GUIDE.md) for complete installation and configuration instructions.
+
 ## Testbed Server
 
 Use the shared Prosody testbed at `tensegrity.it` to connect with any standard XMPP client. You will first have to register - is just simpe username & password.
@@ -200,19 +253,9 @@ await runner.start();
 
 See [examples/minimal-agent.js](examples/minimal-agent.js) for a runnable local example.
 
-## NPM Package Usage
+## Advanced Library Usage
 
-TIA is published as `tia-agents` on npm and supports two approaches to creating bots:
-
-### Quick Start
-
-```bash
-npm install tia-agents
-```
-
-For a minimal, npm-packaged Mistral bot starter, see `mistral-minimal/README.md`.
-If you're using the Mistral provider, install the peer dependency and ensure the API key env var referenced in your profile is set (default: `MISTRAL_API_KEY`).
-If you want auto-registration, omit `xmpp:passwordKey` from the profile and set `autoRegister: true` when creating the agent.
+For more control, you can use the core classes directly:
 
 ### Approach 1: Config-Driven (Profile Files)
 
@@ -283,26 +326,49 @@ const runner = createSimpleAgent({
 });
 ```
 
-### AI-Powered Bots
+### AI-Powered Bots with LLM Providers
 
-Install peer dependency:
-```bash
-npm install @mistralai/mistralai
-```
+Use `BaseLLMProvider` as a base class and `hyperdata-clients` for the API client:
 
-Use MistralProvider:
 ```javascript
-import { createAgent, InMemoryHistoryStore } from "tia-agents";
-import { MistralProvider } from "tia-agents/providers/mistral";
+import { BaseLLMProvider, createSimpleAgent, InMemoryHistoryStore } from "tia-agents";
+import { Mistral } from "hyperdata-clients";
 
-const provider = new MistralProvider({
+class MyMistralProvider extends BaseLLMProvider {
+  initializeClient(apiKey) {
+    return new Mistral({ apiKey });
+  }
+
+  async completeChatRequest({ messages, maxTokens, temperature }) {
+    return await this.client.client.chat.complete({
+      model: this.model,
+      messages,
+      maxTokens,
+      temperature
+    });
+  }
+
+  extractResponseText(response) {
+    return response.choices[0]?.message?.content?.trim() || null;
+  }
+}
+
+const provider = new MyMistralProvider({
   apiKey: process.env.MISTRAL_API_KEY,
+  model: "mistral-small-latest",
   historyStore: new InMemoryHistoryStore({ maxEntries: 40 })
 });
 
-const runner = await createAgent("aibot", provider);
+const runner = await createSimpleAgent({
+  xmppConfig: { /* ... */ },
+  roomJid: "general@conference.xmpp",
+  nickname: "MyBot",
+  provider
+});
 await runner.start();
 ```
+
+See [mistral-minimal/mistral-provider.js](mistral-minimal/mistral-provider.js) for a complete working example.
 
 ### Templates & Examples
 
@@ -311,18 +377,7 @@ Copy templates to get started:
 cp -r node_modules/tia-agents/templates/* ./
 ```
 
-See templates for:
-- Profile file examples (`.ttl`)
-- Provider templates (simple & LLM patterns)
-- Runnable example scripts
-
-### Documentation
-
-- 📚 [Quick Start Guide](docs/quick-start.md) - Detailed getting started guide
-- 🔧 [Provider Guide](docs/provider-guide.md) - Creating custom providers
-- 📖 [API Reference](docs/api-reference.md) - Complete API documentation
-- 📁 [Templates](templates/) - Example configurations and code
-- 🌐 GitHub Pages site (generated from `docs/` via `scripts/build-docs.mjs` with `DOCS_DIR` and `DOCS_OUT_DIR`)
+Or use the [mistral-minimal/](mistral-minimal/) example as a starting point.
 
 ## Custom Agent API
 
