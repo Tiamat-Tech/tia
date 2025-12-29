@@ -8,7 +8,7 @@
 
 import dotenv from "dotenv";
 import { createSimpleAgent, InMemoryHistoryStore, loadAgentProfile } from "tia-agents";
-import { MistralProvider } from "tia-agents/providers/mistral";
+import { MistralProvider } from "./mistral-provider.js";
 
 dotenv.config();
 

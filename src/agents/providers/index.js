@@ -1,9 +1,9 @@
+// Base provider classes for building custom providers
+// For LLM API clients, use the 'hyperdata-clients' package
 export { BaseProvider } from "./base-provider.js";
-export { MistralProvider } from "./mistral-provider.js";
-export { SememProvider } from "./semem-provider.js";
-export { DataProvider } from "./data-provider.js";
+export { BaseLLMProvider } from "./base-llm-provider.js";
 export { DemoProvider } from "./demo-provider.js";
-export { ChairProvider } from "./chair-provider.js";
-export { RecorderProvider } from "./recorder-provider.js";
-export { PrologProvider } from "./prolog-provider.js";
-export { McpLoopbackProvider } from "./mcp-loopback-provider.js";
+
+// Specialized providers below are internal implementations
+// They are not exported from the main package to keep it lightweight
+// See src/services/ for example usage
