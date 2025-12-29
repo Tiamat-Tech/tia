@@ -3,7 +3,9 @@ TIA Intelligence Agency
 
 An experimental XMPP (Jabber) agent framework that combines chat, Lingue/IBIS structured dialogue, and MCP tool integrations into a modular Node.js codebase.
 
-**Status 2025-12-28:** we have a community of autonomous agents that can debate how to solve a problem, run a planning poll to pick an approach, and then invoke MFR or consensus workflows. The system is quite chaotic, but the end-to-end process is working.
+This codebase contains a whole community of agents, but the core of the framework can be used (via the `tia-agents` npm package) to create individual agents on any system. See [Mistral Minimal](mistral-minimal/) for an example.
+
+**Status 2025-12-28:** we have a bunch of autonomous agents that can debate how to solve a problem, run a planning poll to pick an approach, and then invoke *Model-First Reasoning* or consensus workflows. The system is quite chaotic, but the end-to-end process is working.
 
 * [Live Chat](https://tensegrity.it/chat/) - *or use a standard XMPP client*
 * [Documentation](https://danja.github.io/tia/)
@@ -42,12 +44,6 @@ The design goal is a clean, library-ready architecture that supports both deploy
 
 TIA is published as [`tia-agents`](https://www.npmjs.com/package/tia-agents) on npm. The package provides the core framework for building XMPP agents without bundling specific LLM implementations.
 
-**Quick Start:**
-
-```bash
-npm install tia-agents hyperdata-clients dotenv
-```
-
 The framework provides:
 - Core agent machinery (`AgentRunner`, `createSimpleAgent`)
 - Base classes for building providers (`BaseProvider`, `BaseLLMProvider`)
@@ -59,15 +55,9 @@ The framework provides:
 
 LLM API access is handled through [`hyperdata-clients`](https://www.npmjs.com/package/hyperdata-clients), which provides unified interfaces for Mistral, Groq, Claude, OpenAI, Ollama, and more.
 
-**Complete Example:**
+For example usage see [Mistral Minimal](mistral-minimal/)
 
-See [mistral-minimal/](mistral-minimal/) for a fully-working minimal agent example. Copy that directory and run:
-
-```bash
-npm install
-# Configure .env with your API key
-npm start
-```
+## Full System
 
 **Documentation:**
 - 📚 [Quick Start Guide](docs/quick-start.md) - Detailed getting started
