@@ -1,45 +1,53 @@
 # MFR Room Creation Testing
 
-Status: maintained; review after major changes.
+Status: historical; the system no longer uses separate MFR phase rooms.
 
-## Problem
+## Note
 
-The original `src/examples/create-mfr-rooms.js` script reports success when rooms are created, but doesn't actually verify that the rooms persist and are functional. The script:
+As of late 2025, the TIA system has been simplified to use only two rooms:
+- `general@conference.tensegrity.it` - Main coordination room
+- `log@conference.tensegrity.it` - Verbose logging room
 
-1. Joins/creates the room
-2. Sends a configuration message
-3. Sends a test message
-4. Exits and reports success
+This document is retained for historical reference and may be useful if multi-room coordination is needed in the future.
 
-**Issue**: The script assumes success based on receiving presence stanzas, but doesn't verify:
-- The room actually persists after the script exits
-- Other users can join the room
-- The room is properly configured
-- The room information is queryable
+## Original Problem
 
-## Solution
+The original `src/examples/create-mfr-rooms.js` script reported success when rooms were created, but didn't actually verify that the rooms persisted and were functional. The script:
 
-Created a comprehensive integration test (`test/integration/mfr-room-creation.test.js`) that:
+1. Joined/created the room
+2. Sent a configuration message
+3. Sent a test message
+4. Exited and reported success
+
+**Issue**: The script assumed success based on receiving presence stanzas, but didn't verify:
+- The room actually persisted after the script exited
+- Other users could join the room
+- The room was properly configured
+- The room information was queryable
+
+## Original Solution
+
+A comprehensive integration test (`test/integration/mfr-room-creation.test.js`) was created that:
 
 ### Phase 1: Room Creation
-- Connects as admin user
-- Attempts to create/join each MFR room
-- Configures rooms as instant rooms (publicly accessible)
-- Sends test messages
-- Captures status codes to confirm creation (status 201)
+- Connected as admin user
+- Attempted to create/join each MFR room
+- Configured rooms as instant rooms (publicly accessible)
+- Sent test messages
+- Captured status codes to confirm creation (status 201)
 
 ### Phase 2: Verification
-- Connects as a **different test user**
-- Attempts to join each room
-- Verifies rooms are accessible by non-admin users
-- Detects "item-not-found" errors (room doesn't exist)
-- Confirms presence stanzas (room exists and is joinable)
+- Connected as a **different test user**
+- Attempted to join each room
+- Verified rooms were accessible by non-admin users
+- Detected "item-not-found" errors (room doesn't exist)
+- Confirmed presence stanzas (room exists and is joinable)
 
 ### Phase 3: Information Query
-- Queries room disco#info for each room
-- Retrieves room identities and features
-- Confirms rooms are discoverable and queryable
-- Provides detailed room metadata
+- Queried room disco#info for each room
+- Retrieved room identities and features
+- Confirmed rooms were discoverable and queryable
+- Provided detailed room metadata
 
 ## Usage
 

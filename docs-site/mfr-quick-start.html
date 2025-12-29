@@ -49,19 +49,15 @@ XMPP_DOMAIN=tensegrity.it
 MUC_ROOM=general@conference.tensegrity.it
 LOG_ROOM_JID=log@conference.tensegrity.it
 </code></pre>
-<h2>Step 3: Create MUC Rooms</h2>
-<pre><code class="language-bash">node src/examples/create-mfr-rooms.js
-</code></pre>
-<p>Expected output:</p>
-<pre><code>=== Creating MFR MUC Rooms ===
-✅ Joined room: mfr-construct@conference.tensegrity.it
-✅ Joined room: mfr-validate@conference.tensegrity.it
-✅ Joined room: mfr-reason@conference.tensegrity.it
-✅ All MFR rooms created successfully!
-</code></pre>
+<h2>Step 3: Create Log Room</h2>
 <p>Create the log room once (if your server does not auto-create rooms):</p>
 <pre><code class="language-bash">NODE_TLS_REJECT_UNAUTHORIZED=0 node src/examples/create-log-room.js
 </code></pre>
+<p>The MFR system uses two rooms:</p>
+<ul>
+<li><code>general@conference.tensegrity.it</code> - Main room for all agent coordination</li>
+<li><code>log@conference.tensegrity.it</code> - Verbose traces and diagnostics</li>
+</ul>
 <h2>Step 4: Start the MFR System</h2>
 <pre><code class="language-bash">./start-mfr-system.sh
 </code></pre>

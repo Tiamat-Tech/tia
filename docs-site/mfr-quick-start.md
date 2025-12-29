@@ -42,25 +42,16 @@ MUC_ROOM=general@conference.tensegrity.it
 LOG_ROOM_JID=log@conference.tensegrity.it
 ```
 
-## Step 3: Create MUC Rooms
-
-```bash
-node src/examples/create-mfr-rooms.js
-```
-
-Expected output:
-```
-=== Creating MFR MUC Rooms ===
-✅ Joined room: mfr-construct@conference.tensegrity.it
-✅ Joined room: mfr-validate@conference.tensegrity.it
-✅ Joined room: mfr-reason@conference.tensegrity.it
-✅ All MFR rooms created successfully!
-```
+## Step 3: Create Log Room
 
 Create the log room once (if your server does not auto-create rooms):
 ```bash
 NODE_TLS_REJECT_UNAUTHORIZED=0 node src/examples/create-log-room.js
 ```
+
+The MFR system uses two rooms:
+- `general@conference.tensegrity.it` - Main room for all agent coordination
+- `log@conference.tensegrity.it` - Verbose traces and diagnostics
 
 ## Step 4: Start the MFR System
 

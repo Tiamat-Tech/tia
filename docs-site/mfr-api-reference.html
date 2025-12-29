@@ -28,7 +28,6 @@
 <li><a href="#mfrshaclvalidator">MfrShaclValidator</a></li>
 <li><a href="#mfrprotocolstate">MfrProtocolState</a></li>
 <li><a href="#mfrmodelmerger">MfrModelMerger</a></li>
-<li><a href="#multiroommanager">MultiRoomManager</a></li>
 <li><a href="#rdfutils">RdfUtils</a></li>
 <li><a href="#shapesloader">ShapesLoader</a></li>
 </ul>
@@ -438,11 +437,11 @@ console.log(`Actions: ${counts[&#39;http://purl.org/stuff/mfr/Action&#39;]}`);
 <li><code>options.modelStore</code> (MfrModelStore): Model store instance</li>
 <li><code>options.validator</code> (MfrShaclValidator): SHACL validator</li>
 <li><code>options.merger</code> (MfrModelMerger): Model merger</li>
-<li><code>options.multiRoomManager</code> (MultiRoomManager): Room manager</li>
 <li><code>options.debateTimeoutMs</code> (Number): Debate timeout in milliseconds</li>
 <li><code>options.contributionTimeoutMs</code> (Number): Contribution timeout in milliseconds</li>
 <li><code>options.logger</code> (Object): Logger instance</li>
 </ul>
+<p><strong>Note</strong>: The coordinator now operates within the general room. All MFR phase coordination happens in <code>general@conference.tensegrity.it</code> with verbose traces sent to the log room.</p>
 <h4>Commands</h4>
 <h5>mfr-start <problem></h5>
 <p>Starts a new MFR session.</p>

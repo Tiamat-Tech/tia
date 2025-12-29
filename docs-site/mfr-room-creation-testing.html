@@ -19,46 +19,53 @@
   <body>
     <main>
       <h1>MFR Room Creation Testing</h1>
-<p>Status: maintained; review after major changes.</p>
-<h2>Problem</h2>
-<p>The original <code>src/examples/create-mfr-rooms.js</code> script reports success when rooms are created, but doesn&#39;t actually verify that the rooms persist and are functional. The script:</p>
-<ol>
-<li>Joins/creates the room</li>
-<li>Sends a configuration message</li>
-<li>Sends a test message</li>
-<li>Exits and reports success</li>
-</ol>
-<p><strong>Issue</strong>: The script assumes success based on receiving presence stanzas, but doesn&#39;t verify:</p>
+<p>Status: historical; the system no longer uses separate MFR phase rooms.</p>
+<h2>Note</h2>
+<p>As of late 2025, the TIA system has been simplified to use only two rooms:</p>
 <ul>
-<li>The room actually persists after the script exits</li>
-<li>Other users can join the room</li>
-<li>The room is properly configured</li>
-<li>The room information is queryable</li>
+<li><code>general@conference.tensegrity.it</code> - Main coordination room</li>
+<li><code>log@conference.tensegrity.it</code> - Verbose logging room</li>
 </ul>
-<h2>Solution</h2>
-<p>Created a comprehensive integration test (<code>test/integration/mfr-room-creation.test.js</code>) that:</p>
+<p>This document is retained for historical reference and may be useful if multi-room coordination is needed in the future.</p>
+<h2>Original Problem</h2>
+<p>The original <code>src/examples/create-mfr-rooms.js</code> script reported success when rooms were created, but didn&#39;t actually verify that the rooms persisted and were functional. The script:</p>
+<ol>
+<li>Joined/created the room</li>
+<li>Sent a configuration message</li>
+<li>Sent a test message</li>
+<li>Exited and reported success</li>
+</ol>
+<p><strong>Issue</strong>: The script assumed success based on receiving presence stanzas, but didn&#39;t verify:</p>
+<ul>
+<li>The room actually persisted after the script exited</li>
+<li>Other users could join the room</li>
+<li>The room was properly configured</li>
+<li>The room information was queryable</li>
+</ul>
+<h2>Original Solution</h2>
+<p>A comprehensive integration test (<code>test/integration/mfr-room-creation.test.js</code>) was created that:</p>
 <h3>Phase 1: Room Creation</h3>
 <ul>
-<li>Connects as admin user</li>
-<li>Attempts to create/join each MFR room</li>
-<li>Configures rooms as instant rooms (publicly accessible)</li>
-<li>Sends test messages</li>
-<li>Captures status codes to confirm creation (status 201)</li>
+<li>Connected as admin user</li>
+<li>Attempted to create/join each MFR room</li>
+<li>Configured rooms as instant rooms (publicly accessible)</li>
+<li>Sent test messages</li>
+<li>Captured status codes to confirm creation (status 201)</li>
 </ul>
 <h3>Phase 2: Verification</h3>
 <ul>
-<li>Connects as a <strong>different test user</strong></li>
-<li>Attempts to join each room</li>
-<li>Verifies rooms are accessible by non-admin users</li>
-<li>Detects &quot;item-not-found&quot; errors (room doesn&#39;t exist)</li>
-<li>Confirms presence stanzas (room exists and is joinable)</li>
+<li>Connected as a <strong>different test user</strong></li>
+<li>Attempted to join each room</li>
+<li>Verified rooms were accessible by non-admin users</li>
+<li>Detected &quot;item-not-found&quot; errors (room doesn&#39;t exist)</li>
+<li>Confirmed presence stanzas (room exists and is joinable)</li>
 </ul>
 <h3>Phase 3: Information Query</h3>
 <ul>
-<li>Queries room disco#info for each room</li>
-<li>Retrieves room identities and features</li>
-<li>Confirms rooms are discoverable and queryable</li>
-<li>Provides detailed room metadata</li>
+<li>Queried room disco#info for each room</li>
+<li>Retrieved room identities and features</li>
+<li>Confirmed rooms were discoverable and queryable</li>
+<li>Provided detailed room metadata</li>
 </ul>
 <h2>Usage</h2>
 <h3>Quick Test</h3>

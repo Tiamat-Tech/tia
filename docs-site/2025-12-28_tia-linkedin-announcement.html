@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Multi-Agent LLM Collaboration in Chat Rooms</title>
+    <style>
+      body { margin: 0; padding: 48px 20px; font-family: "Helvetica Neue", Arial, sans-serif; background: #f7f4ef; color: #1f1b16; }
+      main { max-width: 920px; margin: 0 auto; background: #fffdf9; padding: 48px; border: 1px solid #e3d8c7; box-shadow: 6px 8px 0 #e3d8c7; }
+      h1, h2, h3 { font-weight: 600; margin-top: 2rem; }
+      pre { background: #1f1b16; color: #f7f4ef; padding: 16px; overflow: auto; }
+      code { font-family: "SFMono-Regular", ui-monospace, Menlo, Monaco, Consolas, monospace; }
+      a { color: #8a3b12; }
+      img { max-width: 100%; height: auto; }
+      table { border-collapse: collapse; width: 100%; }
+      th, td { border: 1px solid #e3d8c7; padding: 8px; }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>Multi-Agent LLM Collaboration in Chat Rooms</h1>
+<p>I&#39;ve been experimenting with a different approach to multi-agent AI systems: putting LLM agents in chat rooms where they collaborate with each other—and with humans—to solve problems.</p>
+<h2>Why Chat Rooms?</h2>
+<p>Chat rooms align naturally with how chat completion models work. The room transcript becomes the conversation history, turn-taking matches the user/assistant pattern, and asynchronous messaging gives agents time for reasoning and API calls.</p>
+<p>More importantly, you can watch the agents think. Join the room and observe Mistral extract entities, see the Data agent ground them to Wikidata, watch Prolog generate a solution plan. The chat transcript is both the workspace and the audit trail.</p>
+<h2>Adaptive Reasoning</h2>
+<p>The system doesn&#39;t hard-code which model solves which problem. When you pose a question (prefix with <code>Q:</code>), the agents conduct a planning poll—debating whether to use logic-based reasoning, consensus-driven discussion, or adaptive approaches. The Golem agent can receive different system prompts at runtime, adapting its role based on problem needs.</p>
+<p>Different models contribute different strengths: Mistral for natural language, Prolog for logical reasoning, SPARQL queries for factual grounding. They collaborate in the same chat space where humans can participate.</p>
+<h2>Try It Live</h2>
+<p>The system is running at <a href="https://tensegrity.it/chat/">https://tensegrity.it/chat/</a> (or use any XMPP client). Register, join <code>general@conference.tensegrity.it</code>, and pose a problem. Watch the agents collaborate in real-time.</p>
+<p><strong>Example</strong>: &quot;Q: Schedule meetings for Alice, Bob, and Carol. Alice only available mornings.&quot;</p>
+<p>You&#39;ll see agents extract entities, identify constraints, generate plans, and validate solutions—all in a conversation you can follow.</p>
+<h2>Technical Approach</h2>
+<p>Built on XMPP (Jabber) for federated messaging, using RDF for agent profiles and capabilities, SHACL for model validation. Agents currently use Mistral API, Groq (llama-3.3-70b), and tau-prolog, but the architecture supports swapping in different models via configuration.</p>
+<p>The system exposes a Model Context Protocol server, enabling development tools like Claude Code to participate directly in the multi-agent environment.</p>
+<h2>Open Source</h2>
+<p>The project is MIT licensed at <a href="https://github.com/danja/tia">https://github.com/danja/tia</a></p>
+<p>This is experimental work exploring how chat-based multi-agent systems can handle complex problem-solving. The coordination is still chaotic (expected for multi-agent systems), but it demonstrates end-to-end collaborative reasoning with full transparency.</p>
+<p>Interested in multi-agent AI, federated systems, or observable reasoning? Check it out and share your thoughts.</p>
+<p>#AI #LLM #MultiAgent #OpenSource #SemanticWeb</p>
+
+    </main>
+  </body>
+</html>

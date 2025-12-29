@@ -38,12 +38,9 @@
 <li><strong>Golem</strong> (Adaptive Role Agent): Can be assigned logic-focused roles when planning polls request it</li>
 </ul>
 <h3>MUC Rooms</h3>
-<p>The system uses multiple XMPP MUC rooms for phase-based communication:</p>
+<p>The system uses two XMPP MUC rooms:</p>
 <ul>
-<li><code>general@conference.tensegrity.it</code>: Primary room where coordinator receives requests</li>
-<li><code>mfr-construct@conference.tensegrity.it</code>: Model construction phase communication</li>
-<li><code>mfr-validate@conference.tensegrity.it</code>: Validation phase communication</li>
-<li><code>mfr-reason@conference.tensegrity.it</code>: Reasoning phase communication</li>
+<li><code>general@conference.tensegrity.it</code>: Primary room where coordinator receives requests and all agents collaborate</li>
 <li><code>log@conference.tensegrity.it</code>: Verbose traces, Prolog payloads, and consensus logs</li>
 </ul>
 <h2>Setup</h2>
@@ -80,13 +77,7 @@ export SEMEM_AUTH_TOKEN=your_semem_token  # optional
 <pre><code class="language-bash"># Create the MFR MUC rooms
 node src/examples/create-mfr-rooms.js
 </code></pre>
-<p>Expected output:</p>
-<pre><code>=== Creating MFR MUC Rooms ===
-✅ Joined room: mfr-construct@conference.tensegrity.it
-✅ Joined room: mfr-validate@conference.tensegrity.it
-✅ Joined room: mfr-reason@conference.tensegrity.it
-✅ All MFR rooms created successfully!
-</code></pre>
+<p><strong>Note</strong>: The system now uses only the general and log rooms. This script is no longer required.</p>
 <p>Create the log room once (if required by your XMPP server):</p>
 <pre><code class="language-bash">NODE_TLS_REJECT_UNAUTHORIZED=0 node src/examples/create-log-room.js
 </code></pre>
@@ -201,7 +192,7 @@ node src/examples/test-mfr-session.js
 <ul>
 <li>User sends problem to Coordinator</li>
 <li>Coordinator creates session, initializes state machine</li>
-<li>Broadcasts to <code>mfr-construct</code> room</li>
+<li>Coordinates with agents in the general room</li>
 </ul>
 <h3>Phase 2: Entity Discovery</h3>
 <ul>
@@ -218,15 +209,15 @@ node src/examples/test-mfr-session.js
 </ul>
 <h3>Phase 4: Model Validation</h3>
 <ul>
-<li>Coordinator broadcasts to <code>mfr-validate</code> room</li>
-<li>SHACL validation performed</li>
+<li>Coordinator performs SHACL validation</li>
 <li>Completeness checked (entities, actions, goals present)</li>
 <li>Conflicts detected by Semem</li>
 <li>If invalid, negotiation phase begins</li>
+<li>Validation details sent to log room</li>
 </ul>
 <h3>Phase 5: Constrained Reasoning</h3>
 <ul>
-<li>Coordinator broadcasts validated model to <code>mfr-reason</code> room</li>
+<li>Coordinator requests solutions from agents in general room</li>
 <li>Prolog generates solution plans</li>
 <li>Semem validates solutions against constraints</li>
 <li>Coordinator ranks solutions</li>

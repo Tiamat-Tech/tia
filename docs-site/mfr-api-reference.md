@@ -11,7 +11,6 @@ Complete API documentation for the TIA Model-First Reasoning system.
   - [MfrShaclValidator](#mfrshaclvalidator)
   - [MfrProtocolState](#mfrprotocolstate)
   - [MfrModelMerger](#mfrmodelmerger)
-  - [MultiRoomManager](#multiroommanager)
   - [RdfUtils](#rdfutils)
   - [ShapesLoader](#shapesloader)
 - [Agent Providers](#agent-providers)
@@ -552,10 +551,11 @@ new CoordinatorProvider(options)
 - `options.modelStore` (MfrModelStore): Model store instance
 - `options.validator` (MfrShaclValidator): SHACL validator
 - `options.merger` (MfrModelMerger): Model merger
-- `options.multiRoomManager` (MultiRoomManager): Room manager
 - `options.debateTimeoutMs` (Number): Debate timeout in milliseconds
 - `options.contributionTimeoutMs` (Number): Contribution timeout in milliseconds
 - `options.logger` (Object): Logger instance
+
+**Note**: The coordinator now operates within the general room. All MFR phase coordination happens in `general@conference.tensegrity.it` with verbose traces sent to the log room.
 
 #### Commands
 
