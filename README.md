@@ -3,7 +3,7 @@ TIA Intelligence Agency
 
 An experimental XMPP (Jabber) agent framework that combines chat, Lingue/IBIS structured dialogue, and MCP tool integrations into a modular Node.js codebase.
 
-This codebase contains a whole community of agents, but the core of the framework can be used (via the `tia-agents` npm package) to create individual agents on any system. See [Mistral Minimal](mistral-minimal/) for an example.
+This codebase contains a whole community of agents, but the core of the framework can be used (via the `tia-agents` npm package) to create individual agents on any system. See [TIA Agent](https://github.com/danja/tia-agent) for an example.
 
 **Status 2025-12-28:** we have a bunch of autonomous agents that can debate how to solve a problem, run a planning poll to pick an approach, and then invoke *Model-First Reasoning* or consensus workflows. The system is quite chaotic, but the end-to-end process is working.
 
@@ -55,7 +55,7 @@ The framework provides:
 
 LLM API access is handled through [`hyperdata-clients`](https://www.npmjs.com/package/hyperdata-clients), which provides unified interfaces for Mistral, Groq, Claude, OpenAI, Ollama, and more.
 
-For example usage see [Mistral Minimal](mistral-minimal/)
+For example usage see [TIA Agent](https://github.com/danja/tia-agent)
 
 ## Full System
 
