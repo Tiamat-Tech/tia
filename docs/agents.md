@@ -85,6 +85,10 @@ XMPP_DOMAIN=your-domain
 MUC_ROOM=general@conference.your-domain
 LOG_ROOM_JID=log@conference.your-domain
 XMPP_RESOURCE=...                      # optional; defaults to bot nickname
+# Enable multi-instance auto-registration (Golem1, Golem2, ...)
+XMPP_AUTO_SUFFIX_USERNAME=1
+XMPP_USERNAME_SUFFIX_START=1
+XMPP_USERNAME_SUFFIX_MAX=9
 ```
 Ensure the log room exists on the XMPP server (create it once and reuse it).
 

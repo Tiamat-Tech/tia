@@ -12,6 +12,7 @@ TIA implements MCP servers that expose XMPP chat operations and semantic process
 
 TIA's MCP server implementation (`src/mcp/server-bridge.js`) provides:
 - **stdio transport**: Standard JSON-RPC 2.0 communication over stdin/stdout
+- **HTTP transport**: Streamable HTTP endpoint at `/mcp` (GET/POST/DELETE)
 - **Tool registration**: Dynamic tool discovery and invocation
 - **XMPP integration**: Bridge between MCP calls and XMPP operations
 - **Lingue support**: Structured dialogue negotiation (IBIS, Prolog, profile exchange)
@@ -26,6 +27,13 @@ TIA's MCP server implementation (`src/mcp/server-bridge.js`) provides:
 ```bash
 node src/mcp/servers/tia-mcp-server.js
 ```
+
+**Enable Streamable HTTP (optional):**
+```bash
+MCP_HTTP_ENABLED=1 MCP_HTTP_PORT=7000 node src/mcp/servers/tia-mcp-server.js
+```
+
+Schema: `http://localhost:7000/mcp/schema`
 
 **Tools exposed:**
 

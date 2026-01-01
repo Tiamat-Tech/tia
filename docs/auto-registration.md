@@ -140,6 +140,28 @@ if (credentials.registered) {
 }
 ```
 
+### Auto-Suffix for Multiple Instances
+
+If you want multiple instances of the same agent type, enable auto-suffixing so the
+registration step falls back to `myagent1`, `myagent2`, etc. on conflicts.
+
+```bash
+XMPP_AUTO_SUFFIX_USERNAME=1
+XMPP_USERNAME_SUFFIX_START=1
+XMPP_USERNAME_SUFFIX_MAX=9
+```
+
+```javascript
+const { xmpp, credentials } = await autoConnectXmpp({
+  service: "xmpp://tensegrity.it:5222",
+  domain: "tensegrity.it",
+  username: "myagent",
+  autoRegister: true
+});
+
+console.log(`Connected as ${credentials.username}`);
+```
+
 ### With XmppRoomAgent
 
 ```javascript

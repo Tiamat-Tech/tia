@@ -15,6 +15,9 @@ import path from "path";
  * @param {Object} [options.tls] - TLS options
  * @param {string} [options.secretsPath] - Path to secrets.json file
  * @param {boolean} [options.autoRegister=true] - Whether to auto-register if auth fails
+ * @param {boolean} [options.autoSuffixUsername=false] - Whether to auto-suffix username on registration conflict
+ * @param {number} [options.usernameSuffixStart=1] - Starting suffix for auto-suffixing
+ * @param {number} [options.usernameSuffixMax=9] - Max suffix attempts for auto-suffixing
  * @param {Object} [options.logger=console] - Logger instance
  * @returns {Promise<{xmpp: Object, credentials: {username: string, password: string, registered: boolean}}>}
  */
@@ -27,14 +30,43 @@ export async function autoConnectXmpp({
   tls = { rejectUnauthorized: false },
   secretsPath = "config/agents/secrets.json",
   autoRegister = true,
+  autoSuffixUsername = ["1", "true", "yes"].includes(
+    String(process.env.XMPP_AUTO_SUFFIX_USERNAME || "").toLowerCase()
+  ),
+  usernameSuffixStart = Number(process.env.XMPP_USERNAME_SUFFIX_START || 1),
+  usernameSuffixMax = Number(process.env.XMPP_USERNAME_SUFFIX_MAX || 9),
   logger = console
 }) {
+  const passwordProvided = Boolean(password);
   let actualPassword = password;
   let wasRegistered = false;
+  let resolvedUsername = username;
 
   // Try to load password from secrets.json if not provided
   if (!actualPassword) {
     actualPassword = await readPasswordFromSecrets({ username, secretsPath, logger });
+  }
+
+  if (actualPassword && autoRegister && autoSuffixUsername && !passwordProvided) {
+    try {
+      const result = await registerWithSuffix({
+        service,
+        domain,
+        username,
+        password: actualPassword,
+        tls,
+        logger,
+        autoSuffixUsername,
+        usernameSuffixStart,
+        usernameSuffixMax
+      });
+      logger.info(`[AutoConnect] ${result.message}`);
+      wasRegistered = true;
+      resolvedUsername = result.username || username;
+      await savePassword({ username: resolvedUsername, password: actualPassword, secretsPath, logger });
+    } catch (err) {
+      logger.warn?.(`[AutoConnect] Auto-suffix registration skipped: ${err.message}`);
+    }
   }
 
   // If still no password and auto-register is enabled, register
@@ -44,20 +76,24 @@ export async function autoConnectXmpp({
     actualPassword = generatePassword(16);
 
     try {
-      const result = await registerXmppAccount({
+      const result = await registerWithSuffix({
         service,
         domain,
         username,
         password: actualPassword,
         tls,
-        logger
+        logger,
+        autoSuffixUsername,
+        usernameSuffixStart,
+        usernameSuffixMax
       });
 
       logger.info(`[AutoConnect] ${result.message}`);
       wasRegistered = true;
+      resolvedUsername = result.username || username;
 
       // Save to secrets.json
-      await savePassword({ username, password: actualPassword, secretsPath, logger });
+      await savePassword({ username: resolvedUsername, password: actualPassword, secretsPath, logger });
     } catch (err) {
       if (isAlreadyRegisteredError(err)) {
         logger.warn?.(`[AutoConnect] ${err.message}; trying stored credentials instead`);
@@ -80,7 +116,7 @@ export async function autoConnectXmpp({
   const xmppConfig = {
     service,
     domain,
-    username,
+    username: resolvedUsername,
     password: actualPassword,
     resource,
     tls
@@ -114,22 +150,27 @@ export async function autoConnectXmpp({
           try {
             // Generate new password and register
             const newPassword = generatePassword(16);
-            const result = await registerXmppAccount({
+            const result = await registerWithSuffix({
               service,
               domain,
               username,
               password: newPassword,
               tls,
-              logger
+              logger,
+              autoSuffixUsername,
+              usernameSuffixStart,
+              usernameSuffixMax
             });
 
             logger.info(`[AutoConnect] ${result.message}`);
+            resolvedUsername = result.username || username;
 
             // Save to secrets.json
-            await savePassword({ username, password: newPassword, secretsPath, logger });
+            await savePassword({ username: resolvedUsername, password: newPassword, secretsPath, logger });
 
             // Try connecting again with new credentials
             xmppConfig.password = newPassword;
+            xmppConfig.username = resolvedUsername;
             const newXmpp = client(xmppConfig);
 
             newXmpp.on("online", (address) => {
@@ -137,7 +178,7 @@ export async function autoConnectXmpp({
               connected = true;
               resolve({
                 xmpp: newXmpp,
-                credentials: { username, password: newPassword, registered: true }
+                credentials: { username: resolvedUsername, password: newPassword, registered: true }
               });
             });
 
@@ -166,7 +207,7 @@ export async function autoConnectXmpp({
         clearTimeout(timeout);
         resolve({
           xmpp,
-          credentials: { username, password: actualPassword, registered: wasRegistered }
+          credentials: { username: resolvedUsername, password: actualPassword, registered: wasRegistered }
         });
       }
     });
@@ -176,6 +217,55 @@ export async function autoConnectXmpp({
       reject(err);
     });
   });
+}
+
+async function registerWithSuffix({
+  service,
+  domain,
+  username,
+  password,
+  tls,
+  logger,
+  autoSuffixUsername,
+  usernameSuffixStart,
+  usernameSuffixMax
+}) {
+  try {
+    const result = await registerXmppAccount({
+      service,
+      domain,
+      username,
+      password,
+      tls,
+      logger
+    });
+    return { ...result, username };
+  } catch (err) {
+    if (!autoSuffixUsername || !isAlreadyRegisteredError(err)) {
+      throw err;
+    }
+  }
+
+  for (let i = usernameSuffixStart; i <= usernameSuffixMax; i += 1) {
+    const candidate = `${username}${i}`;
+    try {
+      const result = await registerXmppAccount({
+        service,
+        domain,
+        username: candidate,
+        password,
+        tls,
+        logger
+      });
+      return { ...result, username: candidate };
+    } catch (err) {
+      if (!isAlreadyRegisteredError(err)) {
+        throw err;
+      }
+    }
+  }
+
+  throw new Error(`Auto-registration failed: no available suffixes for ${username}`);
 }
 
 /**

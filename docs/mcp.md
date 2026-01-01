@@ -9,6 +9,7 @@ For detailed tooling, see `docs/mcp-server.md` and `docs/mcp-client.md`.
 
 - **Chat + Lingue server**: `node src/mcp/servers/tia-mcp-server.js`
   - Exposes XMPP tools like `sendMessage`, `getRecentMessages`, `offerLingueMode`.
+  - Optional HTTP transport at `/mcp` (see `docs/mcp-http.md`).
 - **Echo/debug server**: `node src/mcp/servers/Echo.js`
   - Simple JSON-RPC echo plus basic XMPP diagnostics.
 - **SPARQL server**: `node src/mcp/servers/sparql-server.js`

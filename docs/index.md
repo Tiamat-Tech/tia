@@ -68,6 +68,7 @@ Language mode negotiation for multi-agent communication:
 Integration with external tools and services:
 - **[MCP Overview](mcp.md)** - Model Context Protocol introduction
 - **[MCP Server Guide](mcp-server.md)** - Exposing TIA as an MCP server
+- **[MCP HTTP Server](mcp-http.md)** - Streamable HTTP endpoint details
 - **[MCP Client Guide](mcp-client.md)** - Consuming external MCP services
 - **[MCP Development Plan](MCP-PLAN.md)** - MCP integration roadmap
 

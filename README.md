@@ -63,6 +63,7 @@ For example usage see [TIA Agent](https://github.com/danja/tia-agent)
 - 📚 [Quick Start Guide](docs/quick-start.md) - Detailed getting started
 - 🔧 [Provider Guide](docs/provider-guide.md) - Creating custom providers
 - 📖 [API Reference](docs/api-reference.md) - Complete API docs
+- 🌐 [MCP HTTP Server](docs/mcp-http.md) - Streamable HTTP endpoint setup
 - 📁 [Templates](templates/) - Example configurations
 
 ### Development Setup (Source Install)
@@ -76,6 +77,8 @@ npm install
 ```
 
 Configure `.env` (see `.env.example`) and `config/agents/secrets.json` for XMPP passwords.
+If you want multiple instances of the same agent type, enable auto-suffixing (`XMPP_AUTO_SUFFIX_USERNAME=1`)
+to auto-register `mistral1`, `mistral2`, etc. when the base username is taken.
 
 See the [Agent Startup Guide](AGENT_STARTUP_GUIDE.md) for complete installation and configuration instructions.
 

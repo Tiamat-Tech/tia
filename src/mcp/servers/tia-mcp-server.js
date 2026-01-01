@@ -158,3 +158,12 @@ const server = new McpServerBridge({
 });
 
 await server.startStdio();
+const httpEnabled = ["1", "true", "yes"].includes(String(process.env.MCP_HTTP_ENABLED || "").toLowerCase());
+const httpPort = process.env.MCP_HTTP_PORT ? Number(process.env.MCP_HTTP_PORT) : null;
+if (httpEnabled || httpPort) {
+  await server.startHttp({
+    port: httpPort || 7000,
+    host: process.env.MCP_HTTP_HOST || "0.0.0.0",
+    path: process.env.MCP_HTTP_PATH || "/mcp"
+  });
+}

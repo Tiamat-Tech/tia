@@ -15,6 +15,11 @@ export class XmppRoomAgent {
     reconnectDelayMs = 2000,
     maxReconnectDelayMs = 30000,
     autoRegister = false,
+    autoSuffixUsername = ["1", "true", "yes"].includes(
+      String(process.env.XMPP_AUTO_SUFFIX_USERNAME || "").toLowerCase()
+    ),
+    usernameSuffixStart = Number(process.env.XMPP_USERNAME_SUFFIX_START || 1),
+    usernameSuffixMax = Number(process.env.XMPP_USERNAME_SUFFIX_MAX || 9),
     secretsPath,
     logRoomJid = null,
     logToRoom = false,
@@ -22,6 +27,9 @@ export class XmppRoomAgent {
   }) {
     this.xmppConfig = xmppConfig;
     this.autoRegister = autoRegister;
+    this.autoSuffixUsername = autoSuffixUsername;
+    this.usernameSuffixStart = usernameSuffixStart;
+    this.usernameSuffixMax = usernameSuffixMax;
     this.secretsPath = secretsPath;
     this.logRoomJid = logRoomJid;
     this.logToRoom = logToRoom;
@@ -259,12 +267,25 @@ export class XmppRoomAgent {
           tls: this.xmppConfig.tls,
           secretsPath: this.secretsPath,
           autoRegister: true,
+          autoSuffixUsername: this.autoSuffixUsername,
+          usernameSuffixStart: this.usernameSuffixStart,
+          usernameSuffixMax: this.usernameSuffixMax,
           logger: this.logger
         });
 
         this.xmpp = xmpp;
         this.isOnline = true;
         this.reconnectAttempts = 0;
+        const previousUsername = this.xmppConfig.username;
+        if (credentials?.username && credentials.username !== previousUsername) {
+          this.xmppConfig.username = credentials.username;
+          if (this.nickname === previousUsername) {
+            this.nickname = credentials.username;
+          }
+          if (this.currentNickname === previousUsername) {
+            this.currentNickname = credentials.username;
+          }
+        }
         this.logger.info(`[XmppRoomAgent] Connected successfully${credentials.registered ? ' (new account registered)' : ''}`);
       } catch (err) {
         this.logger.error("[XmppRoomAgent] Auto-connect failed:", err.message);
